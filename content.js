@@ -320,15 +320,26 @@ setInterval(() => {
 // ==========================================
 // 6. 智慧合句引擎 (Smart Sentence Merging)
 // ==========================================
+// 音效與背景噪音標籤過濾器 (去除 [Music], [Applause], ♪, [音樂], [音楽] 等無效音訊註釋)
+function cleanSubtitleNoise(text) {
+  if (!text) return '';
+  return text
+    .replace(/[\[\(](?:music|applause|laughter|cheering|screaming|snort|gasp|sigh|crying|groan|groaning|bell|chime|silence|whisper|cough|coughing|throat clearing|instrumental|sound effect|bgm|音樂|掌聲|笑聲|鼓掌|歓声|拍手|音楽)[\]\)]/gi, '')
+    .replace(/[♪♫♩♬]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function parseCues(captionJson, sourceLang) {
   if (!captionJson.events) return;
 
-  // 步驟一：提取並清洗原生片段
+  // 步驟一：提取、清洗音效噪聲並過濾純音樂片段
   const rawSegments = [];
   for (const e of captionJson.events) {
     if (!e.segs || e.segs.length === 0) continue;
-    const text = e.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ').trim();
-    if (!text) continue;
+    let text = e.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ');
+    text = cleanSubtitleNoise(text);
+    if (!text) continue; // 若該片段純為 [Music] 或音符，直接過濾避免無效請求與介面雜訊
 
     const start = (e.tStartMs || 0) / 1000;
     const duration = (e.dDurationMs !== undefined && e.dDurationMs !== null) ? (e.dDurationMs / 1000) : 2.0;
