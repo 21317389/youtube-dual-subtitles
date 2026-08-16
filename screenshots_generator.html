@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>Chrome Web Store 官方 1280x800 宣傳截圖生成器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+    .header-bar {
+      text-align: center;
+      max-width: 900px;
+    }
+    .header-bar h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .header-bar p {
+      color: #888;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #ccc;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: #e50914;
+      border-color: #e50914;
+      color: #fff;
+    }
+    .download-btn {
+      padding: 10px 24px;
+      background: #22c55e;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+      transition: all 0.2s;
+    }
+    .download-btn:hover {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    /* 1280 x 800 Canvas Frame */
+    .screenshot-frame {
+      width: 1280px;
+      height: 800px;
+      min-width: 1280px;
+      min-height: 800px;
+      background: #0f0f0f;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      position: relative;
+      border: 1px solid #282828;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Chrome Browser Bar */
+    .browser-nav {
+      height: 52px;
+      background: #181818;
+      border-bottom: 1px solid #282828;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+    }
+    .traffic-dots {
+      display: flex;
+      gap: 8px;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+    .url-bar {
+      flex: 1;
+      height: 32px;
+      background: #242424;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 13px;
+      color: #aaa;
+      gap: 8px;
+    }
+    .ext-icon-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: rgba(255, 0, 51, 0.15);
+      border: 1px solid #ff0033;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #ff4d4d;
+    }
+
+    /* Video Player Canvas */
+    .player-area {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at center, #1a2238 0%, #080b12 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .mock-video-bg {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1280&q=80') center/cover no-repeat;
+      filter: brightness(0.65);
+    }
+
+    /* Player Overlay Title */
+    .video-title-banner {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .video-title-banner h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .feature-tag {
+      background: #ff0033;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* Dual Subtitle Container (Overlay) */
+    .dual-sub-box {
+      position: absolute;
+      bottom: 84px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .cue-orig-mock {
+      display: inline-block;
+      padding: 6px 18px;
+      background: rgba(0, 0, 0, 0.88);
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 600;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      letter-spacing: 0.2px;
+    }
+    .cue-trans-mock {
+      display: inline-block;
+      padding: 6px 18px;
+      background: rgba(0, 0, 0, 0.88);
+      color: #ffe600;
+      font-size: 20px;
+      font-weight: 600;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    /* Tooltip Mockup (Screen 2) */
+    .mock-tooltip {
+      position: absolute;
+      bottom: 170px;
+      left: 50%;
+      transform: translateX(-30%);
+      width: 280px;
+      background: rgba(24, 24, 24, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.8);
+      backdrop-filter: blur(12px);
+      z-index: 60;
+    }
+    .mock-tooltip-header {
+      font-size: 16px;
+      font-weight: 700;
+      color: #4fc3f7;
+      margin-bottom: 6px;
+    }
+    .mock-tooltip-body {
+      font-size: 14px;
+      color: #e0e0e0;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .mock-tooltip-btns {
+      display: flex;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(255,255,255,0.15);
+    }
+    .mock-t-btn {
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 5px;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Popup Panel Mockup (Screen 3) */
+    .mock-popup-panel {
+      position: absolute;
+      top: 60px;
+      right: 32px;
+      width: 290px;
+      background: #1e1e1e;
+      border: 1px solid #383838;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+      z-index: 70;
+    }
+
+    /* Player Progress Bar */
+    .player-controls-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 48px;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      z-index: 20;
+    }
+    .play-btn { font-size: 18px; color: #fff; }
+    .progress-track {
+      flex: 1;
+      height: 4px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+      position: relative;
+    }
+    .progress-fill {
+      width: 38%;
+      height: 100%;
+      background: #ff0000;
+      border-radius: 2px;
+    }
+    .time-label { font-size: 12px; color: #ddd; }
+
+    /* Marketing Headline Badge */
+    .hero-badge {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #22c55e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <div class="header-bar">
+    <h1>📸 Chrome Web Store 官方 1280x800 高解析截圖生成器</h1>
+    <p>精確符合 Google 商店 1280x800 審查規範。點擊下方切換不同宣傳截圖，並點擊「下載這張截圖 (PNG)」即可直接上傳！</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchScene(1)">截圖 1：60fps 雙語字幕畫面</button>
+    <button class="tab-btn" onclick="switchScene(2)">截圖 2：反白選詞與聽原聲</button>
+    <button class="tab-btn" onclick="switchScene(3)">截圖 3：設定面板與快捷鍵</button>
+    <button class="download-btn" onclick="downloadScreenshot()">📥 下載當前 1280x800 截圖 (PNG)</button>
+  </div>
+
+  <!-- 1280x800 Capturable Frame -->
+  <div id="captureFrame" class="screenshot-frame">
+    <!-- Browser Top Bar -->
+    <div class="browser-nav">
+      <div class="traffic-dots">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+      </div>
+      <div class="url-bar">
+        <span>🔒</span>
+        <span>https://www.youtube.com/watch?v=language_learning_demo</span>
+      </div>
+      <div class="ext-icon-badge">
+        <span>🎬 YouTube Dual Subtitles Active</span>
+      </div>
+    </div>
+
+    <!-- Video Player Content Area -->
+    <div class="player-area">
+      <div class="mock-video-bg"></div>
+
+      <div class="video-title-banner">
+        <span class="feature-tag">TED Talk & Lecture</span>
+        <h2>How learning a new language changes your brain architecture</h2>
+      </div>
+
+      <div class="hero-badge">
+        <span>⚡ 60fps 零延遲動畫幀同步</span>
+      </div>
+
+      <!-- Scene 1 & 2 Subtitle Box -->
+      <div id="subtitleBox" class="dual-sub-box">
+        <div class="cue-orig-mock" id="cueOrigText">The best way to acquire natural fluency is through immersive listening.</div>
+        <div class="cue-trans-mock" id="cueTransText">獲得自然流利度的最佳途徑是透過沉浸式聆聽。</div>
+      </div>
+
+      <!-- Scene 2 Tooltip Overlay -->
+      <div id="tooltipMock" class="mock-tooltip" style="display: none;">
+        <div class="mock-tooltip-header">immersive</div>
+        <div class="mock-tooltip-body">沉浸式的 / 身臨其境的</div>
+        <div class="mock-tooltip-btns">
+          <div class="mock-t-btn">🎬 聽原聲</div>
+          <div class="mock-t-btn">🗣️ 朗讀</div>
+        </div>
+      </div>
+
+      <!-- Scene 3 Popup Panel Overlay -->
+      <div id="popupMock" class="mock-popup-panel" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #333;">
+          <span style="font-size: 14px; font-weight: 700;">🎬 雙語字幕設定</span>
+          <span style="background: #22c55e; color: #000; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;">開啟 ON</span>
+        </div>
+        <div style="font-size: 11px; color: #aaa; margin-bottom: 4px;">目標翻譯語言</div>
+        <div style="padding: 6px 10px; background: #2d2d2d; border-radius: 6px; font-size: 12px; margin-bottom: 10px;">繁體中文 (Traditional Chinese)</div>
+        <div style="font-size: 11px; color: #aaa; margin-bottom: 4px;">字幕與視窗大小</div>
+        <div style="padding: 6px 10px; background: #2d2d2d; border-radius: 6px; font-size: 12px; margin-bottom: 10px;">標準 (Medium - 20px / 16px)</div>
+        <div style="background: #282828; border-radius: 6px; padding: 10px; font-size: 11px; color: #bbb; line-height: 1.6;">
+          <div style="color: #4fc3f7; font-weight: 600; margin-bottom: 4px;">⚡ 鍵盤快捷鍵指南</div>
+          <div><b style="color:#fff;">R</b> 重播當前句子影片原聲</div>
+          <div><b style="color:#fff;">A</b> 跳至上一句字幕</div>
+          <div><b style="color:#fff;">D</b> 跳至下一句字幕</div>
+        </div>
+      </div>
+
+      <!-- Player Controls -->
+      <div class="player-controls-bar">
+        <span class="play-btn">❚❚</span>
+        <span class="time-label">04:18 / 18:45</span>
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+        </div>
+        <span class="time-label">1080p HD</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentScene = 1;
+
+    function switchScene(sceneNum) {
+      currentScene = sceneNum;
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === (sceneNum - 1));
+      });
+
+      const tooltip = document.getElementById('tooltipMock');
+      const popup = document.getElementById('popupMock');
+      const subBox = document.getElementById('subtitleBox');
+
+      if (sceneNum === 1) {
+        tooltip.style.display = 'none';
+        popup.style.display = 'none';
+        subBox.style.display = 'flex';
+      } else if (sceneNum === 2) {
+        tooltip.style.display = 'block';
+        popup.style.display = 'none';
+        subBox.style.display = 'flex';
+      } else if (sceneNum === 3) {
+        tooltip.style.display = 'none';
+        popup.style.display = 'block';
+        subBox.style.display = 'flex';
+      }
+    }
+
+    function downloadScreenshot() {
+      const frame = document.getElementById('captureFrame');
+      html2canvas(frame, {
+        width: 1280,
+        height: 800,
+        scale: 1,
+        useCORS: true
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `screenshot_${currentScene}_1280x800.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>
