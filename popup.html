@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 280px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    /* 總開關 Switch 樣式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #444;
+      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    input:checked + .slider {
+      background-color: #22c55e;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .settings-content {
+      transition: opacity 0.2s ease;
+    }
+    .settings-content.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+      filter: grayscale(0.5);
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      background-color: #2d2d2d;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus {
+      border-color: #ff0000;
+    }
+    .offset-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .offset-btn {
+      padding: 6px 10px;
+      background: #333;
+      color: #eee;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .offset-btn:hover {
+      background: #444;
+    }
+    .offset-value {
+      flex: 1;
+      text-align: center;
+      font-weight: bold;
+      color: #ffe600;
+      font-size: 13px;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #ccc;
+      cursor: pointer;
+    }
+    .checkbox-group input {
+      cursor: pointer;
+      accent-color: #ff0000;
+      width: 14px;
+      height: 14px;
+    }
+    .hotkey-card {
+      margin-top: 12px;
+      padding: 10px;
+      background: #282828;
+      border: 1px solid #383838;
+      border-radius: 6px;
+      font-size: 11.5px;
+      color: #bbb;
+      line-height: 1.6;
+    }
+    .hotkey-title {
+      font-weight: 600;
+      color: #4fc3f7;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    kbd {
+      background: #3a3a3a;
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: monospace;
+      color: #fff;
+      font-size: 11px;
+    }
+    .status {
+      font-size: 12px;
+      color: #4caf50;
+      text-align: right;
+      height: 16px;
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .status.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-row">
+    <h2>🎬 雙語字幕設定</h2>
+    <label class="switch" title="啟用/停用擴充功能">
+      <input type="checkbox" id="extensionEnabled" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div id="settingsContent" class="settings-content">
+    <div class="form-group">
+      <label for="targetLang">目標翻譯語言</label>
+      <select id="targetLang">
+        <option value="zh-TW">繁體中文 (Traditional Chinese)</option>
+        <option value="zh-CN">簡體中文 (Simplified Chinese)</option>
+        <option value="en">英文 (English)</option>
+        <option value="ja">日文 (Japanese)</option>
+        <option value="ko">韓文 (Korean)</option>
+        <option value="es">西班牙文 (Spanish)</option>
+        <option value="fr">法文 (French)</option>
+        <option value="de">德文 (German)</option>
+        <option value="vi">越南文 (Vietnamese)</option>
+        <option value="th">泰文 (Thai)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="uiSize">字幕與選詞視窗大小</label>
+      <select id="uiSize">
+        <option value="small">小型 (Small - 16px / 13px)</option>
+        <option value="medium">標準 (Medium - 20px / 16px)</option>
+        <option value="large">大型 (Large - 24px / 19px)</option>
+        <option value="xlarge">特大 (Extra Large - 28px / 23px)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="offsetValue">
+        <span>字幕時間軸微調 (同步補償)</span>
+      </label>
+      <div class="offset-controls">
+        <button id="offsetMinus" class="offset-btn" title="字幕提前 0.2 秒">-0.2s</button>
+        <span id="offsetDisplay" class="offset-value">0.0s</span>
+        <button id="offsetPlus" class="offset-btn" title="字幕延後 0.2 秒">+0.2s</button>
+        <button id="offsetReset" class="offset-btn" title="重設為 0 秒">重設</button>
+      </div>
+    </div>
+
+    <label class="checkbox-group">
+      <input type="checkbox" id="hoverPause">
+      <span>懸停字幕時自動暫停影片</span>
+    </label>
+
+    <div class="hotkey-card">
+      <div class="hotkey-title">⚡ 鍵盤快捷鍵 (快捷學習)</div>
+      <div><kbd>R</kbd> 重播當前句子影片原聲</div>
+      <div><kbd>A</kbd> 跳至上一句字幕</div>
+      <div><kbd>D</kbd> 跳至下一句字幕</div>
+    </div>
+  </div>
+
+  <div id="statusMessage" class="status">✓ 設定已儲存</div>
+  <script src="popup.js"></script>
+</body>
+</html>
