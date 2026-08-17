@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>Chrome Web Store 官方 1280x800 宣傳截圖生成器 (v1.1.0)</title>
+  <title>Chrome Web Store 官方素材全套生成器 (1280x800 / 440x280 / 1400x560)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -13,11 +13,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 30px;
+      gap: 24px;
     }
     .header-bar {
       text-align: center;
-      max-width: 900px;
+      max-width: 960px;
     }
     .header-bar h1 {
       font-size: 26px;
@@ -32,13 +32,13 @@
     }
     .tabs {
       display: flex;
-      gap: 12px;
-      margin-bottom: 10px;
+      gap: 10px;
+      margin-bottom: 8px;
       flex-wrap: wrap;
       justify-content: center;
     }
     .tab-btn {
-      padding: 10px 18px;
+      padding: 9px 16px;
       background: #222;
       border: 1px solid #333;
       border-radius: 8px;
@@ -54,12 +54,12 @@
       color: #fff;
     }
     .download-btn {
-      padding: 10px 24px;
+      padding: 9px 22px;
       background: #22c55e;
       border: none;
       border-radius: 8px;
       color: #000;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
@@ -70,7 +70,9 @@
       color: #fff;
     }
 
-    /* 1280 x 800 Canvas Frame */
+    /* =================================================== */
+    /* 1. 1280 x 800 Canvas Frame (Official Store Screenshot) */
+    /* =================================================== */
     .screenshot-frame {
       width: 1280px;
       height: 800px;
@@ -86,7 +88,6 @@
       flex-direction: column;
     }
 
-    /* Top Chrome Browser Bar */
     .browser-nav {
       height: 52px;
       background: #181818;
@@ -96,10 +97,7 @@
       padding: 0 20px;
       gap: 16px;
     }
-    .traffic-dots {
-      display: flex;
-      gap: 8px;
-    }
+    .traffic-dots { display: flex; gap: 8px; }
     .dot { width: 12px; height: 12px; border-radius: 50%; }
     .dot-red { background: #ff5f56; }
     .dot-yellow { background: #ffbd2e; }
@@ -129,7 +127,6 @@
       color: #ff4d4d;
     }
 
-    /* Video Player Canvas */
     .player-area {
       flex: 1;
       position: relative;
@@ -145,8 +142,6 @@
       background: url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1280&q=80') center/cover no-repeat;
       filter: brightness(0.60);
     }
-
-    /* Player Overlay Title */
     .video-title-banner {
       position: absolute;
       top: 24px;
@@ -171,8 +166,6 @@
       font-weight: 700;
       letter-spacing: 0.5px;
     }
-
-    /* Marketing Headline Badge */
     .hero-badge {
       position: absolute;
       top: 24px;
@@ -191,7 +184,6 @@
       z-index: 20;
     }
 
-    /* v1.1.0 Dual-Slot Subtitle Container */
     .dual-sub-container {
       position: absolute;
       bottom: 74px;
@@ -217,9 +209,7 @@
       transform: scale(0.96);
       transform-origin: bottom center;
     }
-    .cue-slot-curr {
-      opacity: 1;
-    }
+    .cue-slot-curr { opacity: 1; }
     .cue-slot-orig, .cue-slot-trans {
       display: inline-block;
       padding: 5px 14px;
@@ -236,9 +226,7 @@
       color: #ffffff;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
     }
-    .cue-slot-prev .cue-slot-orig {
-      font-size: 20px;
-    }
+    .cue-slot-prev .cue-slot-orig { font-size: 20px; }
     .cue-slot-trans {
       font-size: 18px;
       font-weight: 500;
@@ -251,7 +239,6 @@
       color: #fae150;
     }
 
-    /* Tooltip Mockup (Scene 2) */
     .mock-tooltip {
       position: absolute;
       bottom: 180px;
@@ -272,21 +259,9 @@
       align-items: center;
       margin-bottom: 6px;
     }
-    .mock-tooltip-word {
-      font-size: 18px;
-      font-weight: 700;
-      color: #4fc3f7;
-    }
-    .mock-tooltip-phonetic {
-      font-size: 12px;
-      color: #aaa;
-    }
-    .mock-tooltip-body {
-      font-size: 15px;
-      color: #ffffff;
-      line-height: 1.4;
-      margin-bottom: 12px;
-    }
+    .mock-tooltip-word { font-size: 18px; font-weight: 700; color: #4fc3f7; }
+    .mock-tooltip-phonetic { font-size: 12px; color: #aaa; }
+    .mock-tooltip-body { font-size: 15px; color: #ffffff; line-height: 1.4; margin-bottom: 12px; }
     .mock-tooltip-btns {
       display: flex;
       gap: 10px;
@@ -303,13 +278,8 @@
       color: #fff;
       font-weight: 600;
       text-align: center;
-      cursor: pointer;
-    }
-    .mock-t-btn:hover {
-      background: rgba(255,255,255,0.2);
     }
 
-    /* Popup Panel Mockup (Scene 3) */
     .mock-popup-panel {
       position: absolute;
       top: 60px;
@@ -323,7 +293,6 @@
       z-index: 70;
     }
 
-    /* Player Progress Bar */
     .player-controls-bar {
       position: absolute;
       bottom: 0; left: 0; right: 0;
@@ -343,33 +312,196 @@
       border-radius: 2px;
       position: relative;
     }
-    .progress-fill {
-      width: 42%;
-      height: 100%;
-      background: #ff0000;
-      border-radius: 2px;
-    }
+    .progress-fill { width: 42%; height: 100%; background: #ff0000; border-radius: 2px; }
     .time-label { font-size: 12px; color: #ddd; }
+
+    /* =================================================== */
+    /* 2. 440 x 280 Small Promo Tile (小型宣傳圖塊)         */
+    /* =================================================== */
+    .small-promo-frame {
+      width: 440px;
+      height: 280px;
+      min-width: 440px;
+      min-height: 280px;
+      background: radial-gradient(circle at 80% 20%, #2a0808 0%, #0d0d0f 70%, #050507 100%);
+      border: 1px solid #2e2e38;
+      border-radius: 0; /* Web Store 規範要求無圓角 */
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px 26px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+    }
+    .small-promo-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .small-promo-icon {
+      width: 48px;
+      height: 48px;
+      background: #ff0033;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 4px 16px rgba(255, 0, 51, 0.4);
+    }
+    .small-promo-title-box h3 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .small-promo-title-box span {
+      font-size: 11px;
+      color: #ff4d4d;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .small-promo-sub-mock {
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 8px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .small-sub-orig {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .small-sub-trans {
+      font-size: 12px;
+      font-weight: 500;
+      color: #ffe600;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .small-promo-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .small-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ccc;
+    }
+    .small-pill-highlight {
+      background: #22c55e;
+      color: #000;
+      font-weight: 800;
+    }
+
+    /* =================================================== */
+    /* 3. 1400 x 560 Marquee Promo Tile (跑馬燈宣傳圖塊)    */
+    /* =================================================== */
+    .marquee-promo-frame {
+      width: 1400px;
+      height: 560px;
+      min-width: 1400px;
+      min-height: 560px;
+      background: radial-gradient(circle at 75% 50%, #3d0d0d 0%, #12131a 55%, #08080c 100%);
+      border: 1px solid #2e2e38;
+      border-radius: 0; /* Web Store 規範要求無圓角 */
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 0 70px;
+      gap: 50px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.85);
+    }
+    .marquee-left {
+      flex: 1;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .marquee-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 0, 51, 0.2);
+      border: 1px solid #ff0033;
+      color: #ff4d4d;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .marquee-title {
+      font-size: 42px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+    }
+    .marquee-desc {
+      font-size: 18px;
+      color: #b0b4c0;
+      line-height: 1.5;
+    }
+    .marquee-badges {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .m-badge {
+      background: #1c1d26;
+      border: 1px solid #333647;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .marquee-right {
+      width: 580px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
   <div class="header-bar">
-    <h1>📸 Chrome Web Store 官方 1280x800 高解析截圖生成器 (v1.1.0)</h1>
-    <p>精確符合 Google 商店 1280x800 審查規範。點擊下方切換不同宣傳截圖，並點擊「下載截圖 (PNG)」即可直接上傳！</p>
+    <h1>🎨 Chrome Web Store 官方素材全套生成器 (v1.1.0)</h1>
+    <p>包含 1280x800 官方截圖、440x280 小型宣傳圖塊與 1400x560 跑馬燈大圖，點擊分頁即可一鍵下載！</p>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchScene(1)">截圖 1：句級雙槽雙語滾動 (首創引擎)</button>
-    <button class="tab-btn" onclick="switchScene(2)">截圖 2：反白選詞與聽原聲發音</button>
-    <button class="tab-btn" onclick="switchScene(3)">截圖 3：設定面板與跟讀快捷鍵</button>
-    <button class="download-btn" onclick="downloadScreenshot()">📥 下載當前 1280x800 截圖 (PNG)</button>
+    <button class="tab-btn active" onclick="switchMainScene('screen1')">📸 截圖 1：句級雙槽雙語滾動 (1280x800)</button>
+    <button class="tab-btn" onclick="switchMainScene('screen2')">📸 截圖 2：反白查詞與聽原聲 (1280x800)</button>
+    <button class="tab-btn" onclick="switchMainScene('screen3')">📸 截圖 3：設定面板與快捷鍵 (1280x800)</button>
+    <button class="tab-btn" onclick="switchMainScene('smallPromo')">🖼️ 小型宣傳圖塊 (440x280)</button>
+    <button class="tab-btn" onclick="switchMainScene('marqueePromo')">🌟 跑馬燈宣傳大圖 (1400x560)</button>
+    <button class="download-btn" onclick="downloadCurrent()">📥 下載當前素材 (PNG)</button>
   </div>
 
-  <!-- 1280x800 Capturable Frame -->
-  <div id="captureFrame" class="screenshot-frame">
-    <!-- Browser Top Bar -->
+  <!-- 1. 1280x800 Container -->
+  <div id="captureFrame1280" class="screenshot-frame" style="display: flex;">
     <div class="browser-nav">
       <div class="traffic-dots">
         <div class="dot dot-red"></div>
@@ -385,7 +517,6 @@
       </div>
     </div>
 
-    <!-- Video Player Content Area -->
     <div class="player-area">
       <div class="mock-video-bg"></div>
 
@@ -398,20 +529,16 @@
         <span>✨ 句級對稱雙槽滾動 + 60fps 零延遲</span>
       </div>
 
-      <!-- v1.1.0 Dual-Slot Subtitle Container -->
       <div id="dualSubContainer" class="dual-sub-container">
-        <!-- Upper Slot 1: Finished Complete Sentence -->
         <div class="cue-slot cue-slot-prev" id="slot1Mock">
           <div class="cue-slot-orig">In particular, sometimes I get comments telling me that nobody understands them.</div>
           <div class="cue-slot-trans">特別是，有時我收到評論告訴我，當他們說英語時沒人聽得懂。</div>
         </div>
-        <!-- Lower Slot 2: Currently Spoken Streaming Sentence -->
         <div class="cue-slot cue-slot-curr" id="slot2Mock">
           <div class="cue-slot-orig">And they ask me how they can improve their pronunciation and speak naturally</div>
         </div>
       </div>
 
-      <!-- Scene 2 Tooltip Overlay -->
       <div id="tooltipMock" class="mock-tooltip" style="display: none;">
         <div class="mock-tooltip-header">
           <span class="mock-tooltip-word">pronunciation</span>
@@ -424,7 +551,6 @@
         </div>
       </div>
 
-      <!-- Scene 3 Popup Panel Overlay -->
       <div id="popupMock" class="mock-popup-panel" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #333;">
           <span style="font-size: 15px; font-weight: 700;">🎬 YouTube 雙語字幕</span>
@@ -442,7 +568,6 @@
         </div>
       </div>
 
-      <!-- Player Controls -->
       <div class="player-controls-bar">
         <span class="play-btn">❚❚</span>
         <span class="time-label">03:24 / 14:15</span>
@@ -454,44 +579,131 @@
     </div>
   </div>
 
-  <script>
-    let currentScene = 1;
+  <!-- 2. 440x280 Small Promo Tile -->
+  <div id="captureFrame440" class="small-promo-frame" style="display: none;">
+    <div class="small-promo-top">
+      <div class="small-promo-icon">🎬</div>
+      <div class="small-promo-title-box">
+        <h3>YouTube 雙語字幕</h3>
+        <span>DUAL SUBTITLES & TRANSLATE</span>
+      </div>
+    </div>
 
-    function switchScene(sceneNum) {
-      currentScene = sceneNum;
+    <div class="small-promo-sub-mock">
+      <div class="small-sub-orig">Speak English with confidence & clarity.</div>
+      <div class="small-sub-trans">自信清晰地說英語。</div>
+    </div>
+
+    <div class="small-promo-footer">
+      <span class="small-pill">⚡ 60fps 零延遲</span>
+      <span class="small-pill">🔍 反白聽原聲</span>
+      <span class="small-pill small-pill-highlight">v1.1 雙軌分流</span>
+    </div>
+  </div>
+
+  <!-- 3. 1400x560 Marquee Promo Tile -->
+  <div id="captureFrame1400" class="marquee-promo-frame" style="display: none;">
+    <div class="marquee-left">
+      <div class="marquee-tag">✨ 全新 v1.1.0 重磅升級</div>
+      <h1 class="marquee-title">YouTube 雙語字幕<br>& 即時選詞翻譯</h1>
+      <p class="marquee-desc">首創句級雙槽即時滾動 · 雙軌智慧自動分流 · 60fps 零延遲同步</p>
+      <div class="marquee-badges">
+        <div class="m-badge">🚀 支援傳統CC與Gemini串流</div>
+        <div class="m-badge">🎬 反白即聽影片原聲</div>
+        <div class="m-badge">🛡️ 100% 本地隱私安全</div>
+      </div>
+    </div>
+
+    <div class="marquee-right">
+      <div class="cue-slot cue-slot-prev" style="opacity: 0.7;">
+        <div class="cue-slot-orig" style="font-size: 19px;">The best way to acquire natural fluency is through immersive listening.</div>
+        <div class="cue-slot-trans" style="font-size: 16px;">獲得自然流利度的最佳途徑是透過沉浸式聆聽。</div>
+      </div>
+      <div class="cue-slot cue-slot-curr">
+        <div class="cue-slot-orig" style="font-size: 21px;">And practicing shadowing with native speakers every day.</div>
+        <div class="cue-slot-trans" style="font-size: 18px;">並且每天與母語人士進行影子跟讀練習。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeTarget = 'screen1';
+
+    function switchMainScene(mode) {
+      activeTarget = mode;
       document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', idx === (sceneNum - 1));
+        btn.classList.remove('active');
       });
+      event.target.classList.add('active');
+
+      const f1280 = document.getElementById('captureFrame1280');
+      const f440 = document.getElementById('captureFrame440');
+      const f1400 = document.getElementById('captureFrame1400');
 
       const tooltip = document.getElementById('tooltipMock');
       const popup = document.getElementById('popupMock');
       const heroBadge = document.getElementById('heroBadge');
 
-      if (sceneNum === 1) {
-        tooltip.style.display = 'none';
-        popup.style.display = 'none';
-        heroBadge.innerHTML = '<span>✨ 句級對稱雙槽滾動 + 60fps 零延遲</span>';
-      } else if (sceneNum === 2) {
-        tooltip.style.display = 'block';
-        popup.style.display = 'none';
-        heroBadge.innerHTML = '<span>🔍 反白即查詞 + 🎬 精準原聲片段重播</span>';
-      } else if (sceneNum === 3) {
-        tooltip.style.display = 'none';
-        popup.style.display = 'block';
-        heroBadge.innerHTML = '<span>⚙️ 極簡控制面板 + 鍵盤跟讀快捷鍵</span>';
+      if (mode.startsWith('screen')) {
+        f1280.style.display = 'flex';
+        f440.style.display = 'none';
+        f1400.style.display = 'none';
+
+        if (mode === 'screen1') {
+          tooltip.style.display = 'none';
+          popup.style.display = 'none';
+          heroBadge.innerHTML = '<span>✨ 句級對稱雙槽滾動 + 60fps 零延遲</span>';
+        } else if (mode === 'screen2') {
+          tooltip.style.display = 'block';
+          popup.style.display = 'none';
+          heroBadge.innerHTML = '<span>🔍 反白即查詞 + 🎬 精準原聲片段重播</span>';
+        } else if (mode === 'screen3') {
+          tooltip.style.display = 'none';
+          popup.style.display = 'block';
+          heroBadge.innerHTML = '<span>⚙️ 極簡控制面板 + 鍵盤跟讀快捷鍵</span>';
+        }
+      } else if (mode === 'smallPromo') {
+        f1280.style.display = 'none';
+        f440.style.display = 'flex';
+        f1400.style.display = 'none';
+      } else if (mode === 'marqueePromo') {
+        f1280.style.display = 'none';
+        f440.style.display = 'none';
+        f1400.style.display = 'flex';
       }
     }
 
-    function downloadScreenshot() {
-      const frame = document.getElementById('captureFrame');
-      html2canvas(frame, {
-        width: 1280,
-        height: 800,
+    function downloadCurrent() {
+      let targetEl = null;
+      let width = 1280;
+      let height = 800;
+      let filename = 'screenshot_1280x800.png';
+
+      if (activeTarget.startsWith('screen')) {
+        targetEl = document.getElementById('captureFrame1280');
+        width = 1280;
+        height = 800;
+        filename = `${activeTarget}_1280x800.png`;
+      } else if (activeTarget === 'smallPromo') {
+        targetEl = document.getElementById('captureFrame440');
+        width = 440;
+        height = 280;
+        filename = 'small_promo_tile_440x280.png';
+      } else if (activeTarget === 'marqueePromo') {
+        targetEl = document.getElementById('captureFrame1400');
+        width = 1400;
+        height = 560;
+        filename = 'marquee_promo_tile_1400x560.png';
+      }
+
+      html2canvas(targetEl, {
+        width: width,
+        height: height,
         scale: 1,
         useCORS: true
       }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `screenshot_${currentScene}_1280x800.png`;
+        link.download = filename;
         link.href = canvas.toDataURL('image/png');
         link.click();
       });
