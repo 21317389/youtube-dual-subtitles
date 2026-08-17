@@ -51,13 +51,22 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
   z-index: 99;
 }
 
-/* 隱藏 YouTube 預設字幕 */
+/* 隱藏 YouTube 預設字幕 (使用透明度隱藏以保留 DOM 節點供即時轉譯讀取) */
 .ytp-caption-window-bottom,
 .caption-window {
-  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-/* 單行文字樣式 */
+/* 單行與雙行滾動文字樣式 */
+.cue-orig-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+
 .cue-orig,
 .cue-trans {
   display: inline-block;
@@ -76,6 +85,66 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
   font-weight: 600;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+}
+
+/* 雙語句級對稱滾動槽位 (Sentence-Driven Bilingual Slots) */
+.cue-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.cue-slot-prev {
+  opacity: 0.65;
+  margin-bottom: 6px;
+  transform: scale(0.96);
+  transform-origin: bottom center;
+}
+
+.cue-slot-curr {
+  opacity: 1;
+}
+
+.cue-slot-orig,
+.cue-slot-trans {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.84);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  line-height: 1.4;
+  word-break: break-word;
+  user-select: text !important;
+  cursor: text;
+  max-width: 92%;
+  box-sizing: border-box;
+}
+
+.cue-slot-orig {
+  font-size: var(--cue-orig-size, 20px);
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.cue-slot-prev .cue-slot-orig {
+  font-size: calc(var(--cue-orig-size, 20px) * 0.92);
+}
+
+.cue-slot-trans {
+  font-size: var(--cue-trans-size, 16px);
+  font-weight: 500;
+  color: #ffe600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  margin-top: 3px;
+}
+
+.cue-slot-prev .cue-slot-trans {
+  font-size: calc(var(--cue-trans-size, 16px) * 0.92);
+  color: #fae150;
 }
 
 .cue-trans {
@@ -83,6 +152,7 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
   font-weight: 500;
   color: #ffe600;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  transition: all 0.2s ease-out;
 }
 
 /* 浮動翻譯 Tooltip */
