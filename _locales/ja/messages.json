@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "YouTube デュアル字幕 & 単語翻訳",
+    "description": "拡張機能の名前"
+  },
+  "extDesc": {
+    "message": "従来のCCとGeminiリアルタイム音声ストリームに対応したデュアル字幕、60fps同期、単語選択翻訳と音声再生。",
+    "description": "拡張機能の説明"
+  },
+  "popupTitle": {
+    "message": "YouTube デュアル字幕",
+    "description": "ポップアップタイトル"
+  },
+  "masterToggle": {
+    "message": "デュアル字幕を有効にする",
+    "description": "主電源スイッチ"
+  },
+  "targetLangLabel": {
+    "message": "翻訳先の言語",
+    "description": "ターゲット言語"
+  },
+  "uiSizeLabel": {
+    "message": "字幕とウィンドウのサイズ",
+    "description": "文字サイズ"
+  },
+  "sizeSmall": {
+    "message": "小 (85%)",
+    "description": "小"
+  },
+  "sizeMedium": {
+    "message": "標準 (100% - デフォルト)",
+    "description": "標準"
+  },
+  "sizeLarge": {
+    "message": "大 (115%)",
+    "description": "大"
+  },
+  "sizeExtraLarge": {
+    "message": "特大 (130%)",
+    "description": "特大"
+  },
+  "hoverPauseLabel": {
+    "message": "字幕ホバー時に動画を一時停止",
+    "description": "ホバー一時停止"
+  },
+  "syncOffsetLabel": {
+    "message": "タイムライン微調整 (秒)",
+    "description": "同期調整"
+  },
+  "btnEarlier": {
+    "message": "0.2秒 早める",
+    "description": "早める"
+  },
+  "btnReset": {
+    "message": "リセット",
+    "description": "リセット"
+  },
+  "btnLater": {
+    "message": "0.2秒 遅らせる",
+    "description": "遅らせる"
+  },
+  "shortcutsTitle": {
+    "message": "⚡ シャドーイング用ショートカット",
+    "description": "ショートカット見出し"
+  },
+  "shortcutR": {
+    "message": "現在の文の音声をリプレイ",
+    "description": "R ショートカット"
+  },
+  "shortcutA": {
+    "message": "前の字幕に移動",
+    "description": "A ショートカット"
+  },
+  "shortcutD": {
+    "message": "次の字幕に移動",
+    "description": "D ショートカット"
+  },
+  "savedToast": {
+    "message": "設定を保存しました ✓",
+    "description": "保存通知"
+  },
+  "tooltipTranslating": {
+    "message": "翻訳中...",
+    "description": "翻訳ステータス"
+  },
+  "tooltipPlaySnippet": {
+    "message": "🎬 原音を聴く",
+    "description": "原音再生ボタン"
+  },
+  "tooltipSpeak": {
+    "message": "🗣️ 音声読上げ",
+    "description": "TTS読上げ"
+  },
+  "tooltipNoDef": {
+    "message": "定義が見つかりません",
+    "description": "定義なし"
+  }
+}

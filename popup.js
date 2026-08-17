@@ -17,6 +17,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentOffset = 0;
 
+  // 1. 自動套用 Chrome 國際化 (i18n) 語言文字
+  function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const msg = chrome.i18n.getMessage(key);
+      if (msg) {
+        if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+          el.value = msg;
+        } else {
+          el.textContent = msg;
+        }
+      }
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      const msg = chrome.i18n.getMessage(key);
+      if (msg) el.title = msg;
+    });
+  }
+  applyI18n();
+
+  // 2. 依使用者系統/瀏覽器語言自動推薦預設目標翻譯語言
+  function getSystemDefaultTargetLang() {
+    const uiLang = (chrome.i18n.getUILanguage?.() || navigator.language || 'en').toLowerCase();
+    if (uiLang.startsWith('zh-tw') || uiLang.startsWith('zh-hk') || uiLang.startsWith('zh-mo')) return 'zh-TW';
+    if (uiLang.startsWith('zh')) return 'zh-CN';
+    if (uiLang.startsWith('ja')) return 'ja';
+    if (uiLang.startsWith('ko')) return 'ko';
+    if (uiLang.startsWith('es')) return 'es';
+    if (uiLang.startsWith('fr')) return 'fr';
+    if (uiLang.startsWith('de')) return 'de';
+    if (uiLang.startsWith('vi')) return 'vi';
+    if (uiLang.startsWith('th')) return 'th';
+    return 'en';
+  }
+
   function showSavedStatus() {
     statusMessage.classList.add('show');
     setTimeout(() => {
@@ -37,10 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 讀取既有設定 (extensionEnabled 預設為 true)
+  // 讀取既有設定 (若為首次安裝，自動適應用戶瀏覽器語言)
+  const defaultTargetLang = getSystemDefaultTargetLang();
   chrome.storage.sync.get({
     extensionEnabled: true,
-    targetLang: 'zh-TW',
+    targetLang: defaultTargetLang,
     uiSize: 'medium',
     hoverPause: false,
     subtitleOffset: 0

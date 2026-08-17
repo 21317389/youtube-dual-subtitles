@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "YouTube Dual Subtitles & Quick Translate",
+    "description": "The name of the extension"
+  },
+  "extDesc": {
+    "message": "Dual-track YouTube dual subtitles with sentence-driven streaming, 60fps zero-delay sync, and instant word lookup with audio replay.",
+    "description": "The description of the extension"
+  },
+  "popupTitle": {
+    "message": "YouTube Dual Subtitles",
+    "description": "Popup header title"
+  },
+  "masterToggle": {
+    "message": "Enable Dual Subtitles",
+    "description": "Master switch label"
+  },
+  "targetLangLabel": {
+    "message": "Target Language",
+    "description": "Target translation language label"
+  },
+  "uiSizeLabel": {
+    "message": "Subtitle & Tooltip Size",
+    "description": "UI size label"
+  },
+  "sizeSmall": {
+    "message": "Small (85%)",
+    "description": "Small size"
+  },
+  "sizeMedium": {
+    "message": "Medium (100% - Default)",
+    "description": "Medium size"
+  },
+  "sizeLarge": {
+    "message": "Large (115%)",
+    "description": "Large size"
+  },
+  "sizeExtraLarge": {
+    "message": "Extra Large (130%)",
+    "description": "Extra large size"
+  },
+  "hoverPauseLabel": {
+    "message": "Pause video on subtitle hover",
+    "description": "Hover pause option"
+  },
+  "syncOffsetLabel": {
+    "message": "Subtitle Sync Offset (s)",
+    "description": "Offset timing label"
+  },
+  "btnEarlier": {
+    "message": "-0.2s",
+    "description": "Offset minus button"
+  },
+  "btnReset": {
+    "message": "Reset",
+    "description": "Offset reset button"
+  },
+  "btnLater": {
+    "message": "+0.2s",
+    "description": "Offset plus button"
+  },
+  "shortcutsTitle": {
+    "message": "⚡ Keyboard Shortcuts",
+    "description": "Shortcuts section title"
+  },
+  "shortcutR": {
+    "message": "Replay current sentence audio",
+    "description": "R shortcut"
+  },
+  "shortcutA": {
+    "message": "Jump to previous sentence",
+    "description": "A shortcut"
+  },
+  "shortcutD": {
+    "message": "Jump to next sentence",
+    "description": "D shortcut"
+  },
+  "savedToast": {
+    "message": "Settings Saved ✓",
+    "description": "Saved toast message"
+  },
+  "tooltipTranslating": {
+    "message": "Translating...",
+    "description": "Tooltip translating status"
+  },
+  "tooltipPlaySnippet": {
+    "message": "🎬 Play Snippet",
+    "description": "Tooltip play video audio snippet"
+  },
+  "tooltipSpeak": {
+    "message": "🗣️ Speak",
+    "description": "Tooltip TTS speech"
+  },
+  "tooltipNoDef": {
+    "message": "No definition found",
+    "description": "Tooltip no definition found"
+  }
+}

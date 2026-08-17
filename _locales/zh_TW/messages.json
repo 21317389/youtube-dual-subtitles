@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "YouTube 雙語字幕與即時選詞翻譯",
+    "description": "擴充功能名稱"
+  },
+  "extDesc": {
+    "message": "支援傳統CC與Gemini即時串流雙軌分流、句級雙槽雙語字幕、60fps零延遲同步與反白查詞原聲重播",
+    "description": "擴充功能簡短描述"
+  },
+  "popupTitle": {
+    "message": "YouTube 雙語字幕",
+    "description": "彈出視窗標題"
+  },
+  "masterToggle": {
+    "message": "啟用雙語字幕",
+    "description": "總開關"
+  },
+  "targetLangLabel": {
+    "message": "目標翻譯語言",
+    "description": "目標語言"
+  },
+  "uiSizeLabel": {
+    "message": "字幕與視窗大小",
+    "description": "字級與視窗大小"
+  },
+  "sizeSmall": {
+    "message": "小型 (85%)",
+    "description": "小型"
+  },
+  "sizeMedium": {
+    "message": "標準 (100% - 預設)",
+    "description": "標準"
+  },
+  "sizeLarge": {
+    "message": "大型 (115%)",
+    "description": "大型"
+  },
+  "sizeExtraLarge": {
+    "message": "特大 (130%)",
+    "description": "特大"
+  },
+  "hoverPauseLabel": {
+    "message": "懸停字幕時自動暫停影片",
+    "description": "懸停暫停"
+  },
+  "syncOffsetLabel": {
+    "message": "時間軸微調 (秒)",
+    "description": "時間軸微調"
+  },
+  "btnEarlier": {
+    "message": "提前 0.2s",
+    "description": "提前"
+  },
+  "btnReset": {
+    "message": "歸零",
+    "description": "歸零"
+  },
+  "btnLater": {
+    "message": "延後 0.2s",
+    "description": "延後"
+  },
+  "shortcutsTitle": {
+    "message": "⚡ 鍵盤跟讀快捷鍵",
+    "description": "快捷鍵標題"
+  },
+  "shortcutR": {
+    "message": "重播當前句子影片原聲",
+    "description": "R 快捷鍵"
+  },
+  "shortcutA": {
+    "message": "跳至上一句字幕",
+    "description": "A 快捷鍵"
+  },
+  "shortcutD": {
+    "message": "跳至下一句字幕",
+    "description": "D 快捷鍵"
+  },
+  "savedToast": {
+    "message": "設定已儲存 ✓",
+    "description": "儲存提示"
+  },
+  "tooltipTranslating": {
+    "message": "翻譯中...",
+    "description": "釋義載入中"
+  },
+  "tooltipPlaySnippet": {
+    "message": "🎬 聽原聲",
+    "description": "聽原聲按鈕"
+  },
+  "tooltipSpeak": {
+    "message": "🗣️ 朗讀",
+    "description": "朗讀按鈕"
+  },
+  "tooltipNoDef": {
+    "message": "查無釋義",
+    "description": "無釋義"
+  }
+}

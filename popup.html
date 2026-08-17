@@ -186,8 +186,8 @@
 </head>
 <body>
   <div class="header-row">
-    <h2>🎬 雙語字幕設定</h2>
-    <label class="switch" title="啟用/停用擴充功能">
+    <h2 data-i18n="popupTitle">🎬 雙語字幕設定</h2>
+    <label class="switch" data-i18n-title="masterToggle" title="啟用/停用擴充功能">
       <input type="checkbox" id="extensionEnabled" checked>
       <span class="slider"></span>
     </label>
@@ -195,57 +195,57 @@
 
   <div id="settingsContent" class="settings-content">
     <div class="form-group">
-      <label for="targetLang">目標翻譯語言</label>
+      <label for="targetLang" data-i18n="targetLangLabel">目標翻譯語言</label>
       <select id="targetLang">
         <option value="zh-TW">繁體中文 (Traditional Chinese)</option>
         <option value="zh-CN">簡體中文 (Simplified Chinese)</option>
-        <option value="en">英文 (English)</option>
-        <option value="ja">日文 (Japanese)</option>
-        <option value="ko">韓文 (Korean)</option>
-        <option value="es">西班牙文 (Spanish)</option>
-        <option value="fr">法文 (French)</option>
-        <option value="de">德文 (German)</option>
-        <option value="vi">越南文 (Vietnamese)</option>
-        <option value="th">泰文 (Thai)</option>
+        <option value="en">English</option>
+        <option value="ja">日本語 (Japanese)</option>
+        <option value="ko">한국어 (Korean)</option>
+        <option value="es">Español (Spanish)</option>
+        <option value="fr">Français (French)</option>
+        <option value="de">Deutsch (German)</option>
+        <option value="vi">Tiếng Việt (Vietnamese)</option>
+        <option value="th">ไทย (Thai)</option>
       </select>
     </div>
 
     <div class="form-group">
-      <label for="uiSize">字幕與選詞視窗大小</label>
+      <label for="uiSize" data-i18n="uiSizeLabel">字幕與選詞視窗大小</label>
       <select id="uiSize">
-        <option value="small">小型 (Small - 16px / 13px)</option>
-        <option value="medium">標準 (Medium - 20px / 16px)</option>
-        <option value="large">大型 (Large - 24px / 19px)</option>
-        <option value="xlarge">特大 (Extra Large - 28px / 23px)</option>
+        <option value="small" data-i18n="sizeSmall">小型 (85%)</option>
+        <option value="medium" data-i18n="sizeMedium">標準 (100% - 預設)</option>
+        <option value="large" data-i18n="sizeLarge">大型 (115%)</option>
+        <option value="xlarge" data-i18n="sizeExtraLarge">特大 (130%)</option>
       </select>
     </div>
 
     <div class="form-group">
       <label for="offsetValue">
-        <span>字幕時間軸微調 (同步補償)</span>
+        <span data-i18n="syncOffsetLabel">字幕時間軸微調 (秒)</span>
       </label>
       <div class="offset-controls">
-        <button id="offsetMinus" class="offset-btn" title="字幕提前 0.2 秒">-0.2s</button>
+        <button id="offsetMinus" class="offset-btn" data-i18n="btnEarlier">-0.2s</button>
         <span id="offsetDisplay" class="offset-value">0.0s</span>
-        <button id="offsetPlus" class="offset-btn" title="字幕延後 0.2 秒">+0.2s</button>
-        <button id="offsetReset" class="offset-btn" title="重設為 0 秒">重設</button>
+        <button id="offsetPlus" class="offset-btn" data-i18n="btnLater">+0.2s</button>
+        <button id="offsetReset" class="offset-btn" data-i18n="btnReset">歸零</button>
       </div>
     </div>
 
     <label class="checkbox-group">
       <input type="checkbox" id="hoverPause">
-      <span>懸停字幕時自動暫停影片</span>
+      <span data-i18n="hoverPauseLabel">懸停字幕時自動暫停影片</span>
     </label>
 
     <div class="hotkey-card">
-      <div class="hotkey-title">⚡ 鍵盤快捷鍵 (快捷學習)</div>
-      <div><kbd>R</kbd> 重播當前句子影片原聲</div>
-      <div><kbd>A</kbd> 跳至上一句字幕</div>
-      <div><kbd>D</kbd> 跳至下一句字幕</div>
+      <div class="hotkey-title" data-i18n="shortcutsTitle">⚡ 鍵盤跟讀快捷鍵</div>
+      <div><kbd>R</kbd> <span data-i18n="shortcutR">重播當前句子影片原聲</span></div>
+      <div><kbd>A</kbd> <span data-i18n="shortcutA">跳至上一句字幕</span></div>
+      <div><kbd>D</kbd> <span data-i18n="shortcutD">跳至下一句字幕</span></div>
     </div>
   </div>
 
-  <div id="statusMessage" class="status">✓ 設定已儲存</div>
+  <div id="statusMessage" class="status" data-i18n="savedToast">✓ 設定已儲存</div>
   <script src="popup.js"></script>
 </body>
 </html>

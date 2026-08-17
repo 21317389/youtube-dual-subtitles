@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "YouTube 듀얼 자막 & 실시간 단어 번역",
+    "description": "확장 프로그램 이름"
+  },
+  "extDesc": {
+    "message": "기존 CC 및 Gemini 실시간 스트리밍 지원 듀얼 자막, 60fps 무지연 동기화, 단어 선택 번역 및 음성 재생.",
+    "description": "확장 프로그램 설명"
+  },
+  "popupTitle": {
+    "message": "YouTube 듀얼 자막",
+    "description": "팝업 제목"
+  },
+  "masterToggle": {
+    "message": "듀얼 자막 활성화",
+    "description": "메인 스위치"
+  },
+  "targetLangLabel": {
+    "message": "번역 대상 언어",
+    "description": "대상 언어"
+  },
+  "uiSizeLabel": {
+    "message": "자막 및 팝업 크기",
+    "description": "글자 크기"
+  },
+  "sizeSmall": {
+    "message": "작게 (85%)",
+    "description": "작게"
+  },
+  "sizeMedium": {
+    "message": "보통 (100% - 기본값)",
+    "description": "보통"
+  },
+  "sizeLarge": {
+    "message": "크게 (115%)",
+    "description": "크게"
+  },
+  "sizeExtraLarge": {
+    "message": "매우 크게 (130%)",
+    "description": "매우 크게"
+  },
+  "hoverPauseLabel": {
+    "message": "자막에 마우스 올리면 비디오 일시 정지",
+    "description": "호버 일시 정지"
+  },
+  "syncOffsetLabel": {
+    "message": "타임라인 미세 조정 (초)",
+    "description": "동기화 조정"
+  },
+  "btnEarlier": {
+    "message": "0.2초 빠르게",
+    "description": "빠르게"
+  },
+  "btnReset": {
+    "message": "초기화",
+    "description": "초기화"
+  },
+  "btnLater": {
+    "message": "0.2초 느리게",
+    "description": "느리게"
+  },
+  "shortcutsTitle": {
+    "message": "⚡ 섀도잉 단축키",
+    "description": "단축키 제목"
+  },
+  "shortcutR": {
+    "message": "현재 문장 원음 다시 듣기",
+    "description": "R 단축키"
+  },
+  "shortcutA": {
+    "message": "이전 자막으로 이동",
+    "description": "A 단축키"
+  },
+  "shortcutD": {
+    "message": "다음 자막으로 이동",
+    "description": "D 단축키"
+  },
+  "savedToast": {
+    "message": "설정이 저장되었습니다 ✓",
+    "description": "저장 토스트"
+  },
+  "tooltipTranslating": {
+    "message": "번역 중...",
+    "description": "번역 상태"
+  },
+  "tooltipPlaySnippet": {
+    "message": "🎬 원음 재생",
+    "description": "원음 재생 버튼"
+  },
+  "tooltipSpeak": {
+    "message": "🗣️ 음성 읽기",
+    "description": "TTS 읽기 버튼"
+  },
+  "tooltipNoDef": {
+    "message": "단어 정의를 찾을 수 없습니다",
+    "description": "정의 없음"
+  }
+}

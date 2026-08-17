@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "Subtítulos Dobles y Traducción Rápida para YouTube",
+    "description": "Nombre de la extensión"
+  },
+  "extDesc": {
+    "message": "Subtítulos dobles para YouTube con sincronización a 60 fps, streaming de doble ranura y traducción de palabras con audio.",
+    "description": "Descripción de la extensión"
+  },
+  "popupTitle": {
+    "message": "Subtítulos Dobles YouTube",
+    "description": "Título del popup"
+  },
+  "masterToggle": {
+    "message": "Activar Subtítulos Dobles",
+    "description": "Interruptor principal"
+  },
+  "targetLangLabel": {
+    "message": "Idioma de traducción",
+    "description": "Etiqueta de idioma objetivo"
+  },
+  "uiSizeLabel": {
+    "message": "Tamaño de subtítulos y ventana",
+    "description": "Tamaño de fuente"
+  },
+  "sizeSmall": {
+    "message": "Pequeño (85%)",
+    "description": "Pequeño"
+  },
+  "sizeMedium": {
+    "message": "Mediano (100% - Predeterminado)",
+    "description": "Mediano"
+  },
+  "sizeLarge": {
+    "message": "Grande (115%)",
+    "description": "Grande"
+  },
+  "sizeExtraLarge": {
+    "message": "Extra Grande (130%)",
+    "description": "Extra grande"
+  },
+  "hoverPauseLabel": {
+    "message": "Pausar video al pasar el mouse sobre el subtítulo",
+    "description": "Pausa al pasar mouse"
+  },
+  "syncOffsetLabel": {
+    "message": "Ajuste de sincronización (s)",
+    "description": "Ajuste de tiempo"
+  },
+  "btnEarlier": {
+    "message": "-0.2s",
+    "description": "Botón adelantar"
+  },
+  "btnReset": {
+    "message": "Restablecer",
+    "description": "Botón restablecer"
+  },
+  "btnLater": {
+    "message": "+0.2s",
+    "description": "Botón retrasar"
+  },
+  "shortcutsTitle": {
+    "message": "⚡ Atajos de teclado",
+    "description": "Título de atajos"
+  },
+  "shortcutR": {
+    "message": "Repetir audio de la frase actual",
+    "description": "Atajo R"
+  },
+  "shortcutA": {
+    "message": "Ir al subtítulo anterior",
+    "description": "Atajo A"
+  },
+  "shortcutD": {
+    "message": "Ir al subtítulo siguiente",
+    "description": "Atajo D"
+  },
+  "savedToast": {
+    "message": "Configuración guardada ✓",
+    "description": "Mensaje de guardado"
+  },
+  "tooltipTranslating": {
+    "message": "Traduciendo...",
+    "description": "Estado de traducción"
+  },
+  "tooltipPlaySnippet": {
+    "message": "🎬 Reproducir audio original",
+    "description": "Botón reproducir fragmento"
+  },
+  "tooltipSpeak": {
+    "message": "🗣️ Pronunciar",
+    "description": "Botón pronunciación"
+  },
+  "tooltipNoDef": {
+    "message": "No se encontró definición",
+    "description": "Sin definición"
+  }
+}

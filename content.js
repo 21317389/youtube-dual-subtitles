@@ -58,14 +58,29 @@ let isHoveringSubtitleOrTooltip = false;
 let hoverResumeTimer = null;
 let snippetPauseTimer = null;
 
+function getSystemDefaultTargetLang() {
+  const uiLang = (chrome?.i18n?.getUILanguage?.() || navigator.language || 'en').toLowerCase();
+  if (uiLang.startsWith('zh-tw') || uiLang.startsWith('zh-hk') || uiLang.startsWith('zh-mo')) return 'zh-TW';
+  if (uiLang.startsWith('zh')) return 'zh-CN';
+  if (uiLang.startsWith('ja')) return 'ja';
+  if (uiLang.startsWith('ko')) return 'ko';
+  if (uiLang.startsWith('es')) return 'es';
+  if (uiLang.startsWith('fr')) return 'fr';
+  if (uiLang.startsWith('de')) return 'de';
+  if (uiLang.startsWith('vi')) return 'vi';
+  if (uiLang.startsWith('th')) return 'th';
+  return 'en';
+}
+
 // ==========================================
 // 2. Storage 設定讀取與動態更新
 // ==========================================
 try {
   if (typeof chrome !== 'undefined' && chrome?.storage?.sync) {
+    const defaultTargetLang = getSystemDefaultTargetLang();
     chrome.storage.sync.get({
       extensionEnabled: true,
-      targetLang: 'zh-TW',
+      targetLang: defaultTargetLang,
       uiSize: 'medium',
       hoverPause: false,
       subtitleOffset: 0
@@ -922,14 +937,18 @@ function handleSubtitleMouseUp(e) {
   const snippetStart = active?.currentSubCue?.start ?? active?.currentSentence?.start ?? (currentTime - 0.5);
   const snippetEnd = active?.currentSubCue?.end ?? active?.currentSentence?.end ?? (currentTime + 2.0);
 
+  const msgTranslating = chrome?.i18n?.getMessage('tooltipTranslating') || '翻譯中...';
+  const msgPlaySnippet = chrome?.i18n?.getMessage('tooltipPlaySnippet') || '🎬 聽原聲';
+  const msgSpeak = chrome?.i18n?.getMessage('tooltipSpeak') || '🗣️ 朗讀';
+
   tooltip.innerHTML = `
     <button class="tooltip-close-btn" id="tooltipCloseBtn">✕</button>
     <div class="tooltip-header">${escapeHtml(selectedText)}</div>
     <hr/>
-    <div class="tooltip-body" id="tooltipTransBody">翻譯中...</div>
+    <div class="tooltip-body" id="tooltipTransBody">${escapeHtml(msgTranslating)}</div>
     <div class="tooltip-actions">
-      <button class="tooltip-btn" id="btnPlaySnippet">🎬 聽原聲</button>
-      <button class="tooltip-btn" id="btnSpeakWord">🗣️ 朗讀</button>
+      <button class="tooltip-btn" id="btnPlaySnippet">${escapeHtml(msgPlaySnippet)}</button>
+      <button class="tooltip-btn" id="btnSpeakWord">${escapeHtml(msgSpeak)}</button>
     </div>
   `;
   tooltip.style.display = 'block';
