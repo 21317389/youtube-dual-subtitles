@@ -291,21 +291,96 @@ window.addEventListener('message', async (event) => {
 
   const sessionId = ++currentFetchSessionId;
 
+  // 構造與正規化字幕 URL (替換或追加 fmt=json3)
   let captionUrl = track.baseUrl;
   if (track.targetTlang && !captionUrl.includes('&tlang=') && !captionUrl.includes('?tlang=')) {
-    captionUrl += `&tlang=${track.targetTlang}`;
+    captionUrl += `&tlang=${encodeURIComponent(track.targetTlang)}`;
   }
-  captionUrl += '&fmt=json3';
+  if (/[?&]fmt=/.test(captionUrl)) {
+    captionUrl = captionUrl.replace(/([?&])fmt=[^&]*/, '$1fmt=json3');
+  } else {
+    captionUrl += (captionUrl.includes('?') ? '&' : '?') + 'fmt=json3';
+  }
 
   try {
-    const res = await fetch(captionUrl);
-    const data = await res.json();
+    const res = await fetch(captionUrl, { credentials: 'include' });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} (${res.statusText})`);
+    }
+
+    const rawText = await res.text();
+    if (!rawText || !rawText.trim()) {
+      console.warn('[YT-Dual-Sub] 下載之字幕內容為空，略過解析');
+      return;
+    }
+
     if (sessionId !== currentFetchSessionId) return;
-    parseCues(data, track.languageCode);
+
+    let data = null;
+    try {
+      data = JSON.parse(rawText);
+    } catch (jsonErr) {
+      // 若非 JSON3 格式（例如 XML/TimedText/SRV1 格式），降級使用 XML 解析器
+      data = parseXmlCaptions(rawText);
+    }
+
+    if (data && data.events) {
+      parseCues(data, track.languageCode);
+    } else {
+      console.warn('[YT-Dual-Sub] 無法解析此影片之字幕格式');
+    }
   } catch (err) {
     console.error('[YT-Dual-Sub] 下載字幕失敗:', err);
   }
 });
+
+// XML / TimedText 字幕降級解析器 (支援 <transcript><text> 與 <p t="" d=""> 格式)
+function parseXmlCaptions(xmlString) {
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+    const events = [];
+
+    // 格式 A: <p t="0" d="2000">文字</p> (srv3/timedtext 格式)
+    const pElements = xmlDoc.querySelectorAll('p');
+    if (pElements.length > 0) {
+      pElements.forEach(p => {
+        const tStartMs = parseInt(p.getAttribute('t') || '0', 10);
+        const dDurationMs = parseInt(p.getAttribute('d') || '2000', 10);
+        const text = p.textContent || '';
+        if (text.trim()) {
+          events.push({
+            tStartMs,
+            dDurationMs,
+            segs: [{ utf8: text }]
+          });
+        }
+      });
+      return { events };
+    }
+
+    // 格式 B: <text start="1.5" dur="2.0">文字</text> (傳統 transcript 格式)
+    const textElements = xmlDoc.querySelectorAll('text');
+    if (textElements.length > 0) {
+      textElements.forEach(t => {
+        const startSec = parseFloat(t.getAttribute('start') || '0');
+        const durSec = parseFloat(t.getAttribute('dur') || '2.0');
+        const text = t.textContent || '';
+        if (text.trim()) {
+          events.push({
+            tStartMs: Math.round(startSec * 1000),
+            dDurationMs: Math.round(durSec * 1000),
+            segs: [{ utf8: text }]
+          });
+        }
+      });
+      return { events };
+    }
+  } catch (e) {
+    console.warn('[YT-Dual-Sub] XML 解析嘗試失敗:', e);
+  }
+  return null;
+}
 
 // URL 變更兜底防護
 setInterval(() => {
