@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>Chrome Web Store 官方 1280x800 宣傳截圖生成器</title>
+  <title>Chrome Web Store 官方 1280x800 宣傳截圖生成器 (v1.1.0)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -34,14 +34,16 @@
       display: flex;
       gap: 12px;
       margin-bottom: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     .tab-btn {
-      padding: 10px 20px;
+      padding: 10px 18px;
       background: #222;
       border: 1px solid #333;
       border-radius: 8px;
       color: #ccc;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -141,7 +143,7 @@
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       background: url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1280&q=80') center/cover no-repeat;
-      filter: brightness(0.65);
+      filter: brightness(0.60);
     }
 
     /* Player Overlay Title */
@@ -170,10 +172,29 @@
       letter-spacing: 0.5px;
     }
 
-    /* Dual Subtitle Container (Overlay) */
-    .dual-sub-box {
+    /* Marketing Headline Badge */
+    .hero-badge {
       position: absolute;
-      bottom: 84px;
+      top: 24px;
+      right: 32px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #22c55e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      z-index: 20;
+    }
+
+    /* v1.1.0 Dual-Slot Subtitle Container */
+    .dual-sub-container {
+      position: absolute;
+      bottom: 74px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 50;
@@ -181,84 +202,124 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
+      width: 90%;
+      max-width: 1000px;
       text-align: center;
     }
-    .cue-orig-mock {
-      display: inline-block;
-      padding: 6px 18px;
-      background: rgba(0, 0, 0, 0.88);
-      color: #ffffff;
-      font-size: 24px;
-      font-weight: 600;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-      letter-spacing: 0.2px;
+    .cue-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
     }
-    .cue-trans-mock {
+    .cue-slot-prev {
+      opacity: 0.65;
+      transform: scale(0.96);
+      transform-origin: bottom center;
+    }
+    .cue-slot-curr {
+      opacity: 1;
+    }
+    .cue-slot-orig, .cue-slot-trans {
       display: inline-block;
-      padding: 6px 18px;
-      background: rgba(0, 0, 0, 0.88);
-      color: #ffe600;
-      font-size: 20px;
+      padding: 5px 14px;
+      border-radius: 6px;
+      background-color: rgba(0, 0, 0, 0.84);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      line-height: 1.4;
+      word-break: break-word;
+      max-width: 92%;
+    }
+    .cue-slot-orig {
+      font-size: 22px;
       font-weight: 600;
-      border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    }
+    .cue-slot-prev .cue-slot-orig {
+      font-size: 20px;
+    }
+    .cue-slot-trans {
+      font-size: 18px;
+      font-weight: 500;
+      color: #ffe600;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      margin-top: 3px;
+    }
+    .cue-slot-prev .cue-slot-trans {
+      font-size: 16px;
+      color: #fae150;
     }
 
-    /* Tooltip Mockup (Screen 2) */
+    /* Tooltip Mockup (Scene 2) */
     .mock-tooltip {
       position: absolute;
-      bottom: 170px;
+      bottom: 180px;
       left: 50%;
-      transform: translateX(-30%);
-      width: 280px;
+      transform: translateX(-20%);
+      width: 300px;
       background: rgba(24, 24, 24, 0.98);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 10px;
-      padding: 14px 18px;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.8);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
       backdrop-filter: blur(12px);
       z-index: 60;
     }
     .mock-tooltip-header {
-      font-size: 16px;
-      font-weight: 700;
-      color: #4fc3f7;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 6px;
     }
+    .mock-tooltip-word {
+      font-size: 18px;
+      font-weight: 700;
+      color: #4fc3f7;
+    }
+    .mock-tooltip-phonetic {
+      font-size: 12px;
+      color: #aaa;
+    }
     .mock-tooltip-body {
-      font-size: 14px;
-      color: #e0e0e0;
+      font-size: 15px;
+      color: #ffffff;
       line-height: 1.4;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .mock-tooltip-btns {
       display: flex;
-      gap: 8px;
-      padding-top: 8px;
-      border-top: 1px dashed rgba(255,255,255,0.15);
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255,255,255,0.2);
     }
     .mock-t-btn {
-      padding: 5px 10px;
+      flex: 1;
+      padding: 6px 10px;
       background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 5px;
+      border-radius: 6px;
       font-size: 12px;
       color: #fff;
       font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+    .mock-t-btn:hover {
+      background: rgba(255,255,255,0.2);
     }
 
-    /* Popup Panel Mockup (Screen 3) */
+    /* Popup Panel Mockup (Scene 3) */
     .mock-popup-panel {
       position: absolute;
       top: 60px;
       right: 32px;
-      width: 290px;
+      width: 300px;
       background: #1e1e1e;
       border: 1px solid #383838;
       border-radius: 12px;
-      padding: 18px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.85);
       z-index: 70;
     }
 
@@ -283,44 +344,26 @@
       position: relative;
     }
     .progress-fill {
-      width: 38%;
+      width: 42%;
       height: 100%;
       background: #ff0000;
       border-radius: 2px;
     }
     .time-label { font-size: 12px; color: #ddd; }
-
-    /* Marketing Headline Badge */
-    .hero-badge {
-      position: absolute;
-      top: 24px;
-      right: 32px;
-      background: rgba(0, 0, 0, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 24px;
-      padding: 6px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #22c55e;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      backdrop-filter: blur(8px);
-    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
   <div class="header-bar">
-    <h1>📸 Chrome Web Store 官方 1280x800 高解析截圖生成器</h1>
-    <p>精確符合 Google 商店 1280x800 審查規範。點擊下方切換不同宣傳截圖，並點擊「下載這張截圖 (PNG)」即可直接上傳！</p>
+    <h1>📸 Chrome Web Store 官方 1280x800 高解析截圖生成器 (v1.1.0)</h1>
+    <p>精確符合 Google 商店 1280x800 審查規範。點擊下方切換不同宣傳截圖，並點擊「下載截圖 (PNG)」即可直接上傳！</p>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchScene(1)">截圖 1：60fps 雙語字幕畫面</button>
-    <button class="tab-btn" onclick="switchScene(2)">截圖 2：反白選詞與聽原聲</button>
-    <button class="tab-btn" onclick="switchScene(3)">截圖 3：設定面板與快捷鍵</button>
+    <button class="tab-btn active" onclick="switchScene(1)">截圖 1：句級雙槽雙語滾動 (首創引擎)</button>
+    <button class="tab-btn" onclick="switchScene(2)">截圖 2：反白選詞與聽原聲發音</button>
+    <button class="tab-btn" onclick="switchScene(3)">截圖 3：設定面板與跟讀快捷鍵</button>
     <button class="download-btn" onclick="downloadScreenshot()">📥 下載當前 1280x800 截圖 (PNG)</button>
   </div>
 
@@ -335,10 +378,10 @@
       </div>
       <div class="url-bar">
         <span>🔒</span>
-        <span>https://www.youtube.com/watch?v=language_learning_demo</span>
+        <span>https://www.youtube.com/watch?v=english_speaking_masterclass</span>
       </div>
       <div class="ext-icon-badge">
-        <span>🎬 YouTube Dual Subtitles Active</span>
+        <span>🎬 Dual Subtitles v1.1.0 Active</span>
       </div>
     </div>
 
@@ -347,24 +390,34 @@
       <div class="mock-video-bg"></div>
 
       <div class="video-title-banner">
-        <span class="feature-tag">TED Talk & Lecture</span>
-        <h2>How learning a new language changes your brain architecture</h2>
+        <span class="feature-tag">English Masterclass</span>
+        <h2>3 Secrets to Speak English with Confidence & Clarity</h2>
       </div>
 
-      <div class="hero-badge">
-        <span>⚡ 60fps 零延遲動畫幀同步</span>
+      <div class="hero-badge" id="heroBadge">
+        <span>✨ 句級對稱雙槽滾動 + 60fps 零延遲</span>
       </div>
 
-      <!-- Scene 1 & 2 Subtitle Box -->
-      <div id="subtitleBox" class="dual-sub-box">
-        <div class="cue-orig-mock" id="cueOrigText">The best way to acquire natural fluency is through immersive listening.</div>
-        <div class="cue-trans-mock" id="cueTransText">獲得自然流利度的最佳途徑是透過沉浸式聆聽。</div>
+      <!-- v1.1.0 Dual-Slot Subtitle Container -->
+      <div id="dualSubContainer" class="dual-sub-container">
+        <!-- Upper Slot 1: Finished Complete Sentence -->
+        <div class="cue-slot cue-slot-prev" id="slot1Mock">
+          <div class="cue-slot-orig">In particular, sometimes I get comments telling me that nobody understands them.</div>
+          <div class="cue-slot-trans">特別是，有時我收到評論告訴我，當他們說英語時沒人聽得懂。</div>
+        </div>
+        <!-- Lower Slot 2: Currently Spoken Streaming Sentence -->
+        <div class="cue-slot cue-slot-curr" id="slot2Mock">
+          <div class="cue-slot-orig">And they ask me how they can improve their pronunciation and speak naturally</div>
+        </div>
       </div>
 
       <!-- Scene 2 Tooltip Overlay -->
       <div id="tooltipMock" class="mock-tooltip" style="display: none;">
-        <div class="mock-tooltip-header">immersive</div>
-        <div class="mock-tooltip-body">沉浸式的 / 身臨其境的</div>
+        <div class="mock-tooltip-header">
+          <span class="mock-tooltip-word">pronunciation</span>
+          <span class="mock-tooltip-phonetic">/prəˌnʌn.siˈeɪ.ʃən/</span>
+        </div>
+        <div class="mock-tooltip-body">n. 發音；讀法；發音方式</div>
         <div class="mock-tooltip-btns">
           <div class="mock-t-btn">🎬 聽原聲</div>
           <div class="mock-t-btn">🗣️ 朗讀</div>
@@ -373,26 +426,26 @@
 
       <!-- Scene 3 Popup Panel Overlay -->
       <div id="popupMock" class="mock-popup-panel" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #333;">
-          <span style="font-size: 14px; font-weight: 700;">🎬 雙語字幕設定</span>
-          <span style="background: #22c55e; color: #000; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px;">開啟 ON</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #333;">
+          <span style="font-size: 15px; font-weight: 700;">🎬 YouTube 雙語字幕</span>
+          <span style="background: #22c55e; color: #000; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px;">開啟 ON</span>
         </div>
         <div style="font-size: 11px; color: #aaa; margin-bottom: 4px;">目標翻譯語言</div>
-        <div style="padding: 6px 10px; background: #2d2d2d; border-radius: 6px; font-size: 12px; margin-bottom: 10px;">繁體中文 (Traditional Chinese)</div>
+        <div style="padding: 7px 10px; background: #2d2d2d; border-radius: 6px; font-size: 12px; margin-bottom: 12px; color: #fff;">繁體中文 (Traditional Chinese)</div>
         <div style="font-size: 11px; color: #aaa; margin-bottom: 4px;">字幕與視窗大小</div>
-        <div style="padding: 6px 10px; background: #2d2d2d; border-radius: 6px; font-size: 12px; margin-bottom: 10px;">標準 (Medium - 20px / 16px)</div>
-        <div style="background: #282828; border-radius: 6px; padding: 10px; font-size: 11px; color: #bbb; line-height: 1.6;">
-          <div style="color: #4fc3f7; font-weight: 600; margin-bottom: 4px;">⚡ 鍵盤快捷鍵指南</div>
-          <div><b style="color:#fff;">R</b> 重播當前句子影片原聲</div>
-          <div><b style="color:#fff;">A</b> 跳至上一句字幕</div>
-          <div><b style="color:#fff;">D</b> 跳至下一句字幕</div>
+        <div style="padding: 7px 10px; background: #2d2d2d; border-radius: 6px; font-size: 12px; margin-bottom: 14px; color: #fff;">標準 (Medium - 20px / 16px)</div>
+        <div style="background: #282828; border-radius: 8px; padding: 12px; font-size: 11px; color: #bbb; line-height: 1.6;">
+          <div style="color: #4fc3f7; font-weight: 700; margin-bottom: 6px;">⚡ 鍵盤跟讀快捷鍵</div>
+          <div><b style="color:#fff; background:#444; padding: 1px 5px; border-radius: 3px;">R</b> 重播當前句子原聲（跟讀）</div>
+          <div><b style="color:#fff; background:#444; padding: 1px 5px; border-radius: 3px;">A</b> 跳至上一句字幕</div>
+          <div><b style="color:#fff; background:#444; padding: 1px 5px; border-radius: 3px;">D</b> 跳至下一句字幕</div>
         </div>
       </div>
 
       <!-- Player Controls -->
       <div class="player-controls-bar">
         <span class="play-btn">❚❚</span>
-        <span class="time-label">04:18 / 18:45</span>
+        <span class="time-label">03:24 / 14:15</span>
         <div class="progress-track">
           <div class="progress-fill"></div>
         </div>
@@ -412,20 +465,20 @@
 
       const tooltip = document.getElementById('tooltipMock');
       const popup = document.getElementById('popupMock');
-      const subBox = document.getElementById('subtitleBox');
+      const heroBadge = document.getElementById('heroBadge');
 
       if (sceneNum === 1) {
         tooltip.style.display = 'none';
         popup.style.display = 'none';
-        subBox.style.display = 'flex';
+        heroBadge.innerHTML = '<span>✨ 句級對稱雙槽滾動 + 60fps 零延遲</span>';
       } else if (sceneNum === 2) {
         tooltip.style.display = 'block';
         popup.style.display = 'none';
-        subBox.style.display = 'flex';
+        heroBadge.innerHTML = '<span>🔍 反白即查詞 + 🎬 精準原聲片段重播</span>';
       } else if (sceneNum === 3) {
         tooltip.style.display = 'none';
         popup.style.display = 'block';
-        subBox.style.display = 'flex';
+        heroBadge.innerHTML = '<span>⚙️ 極簡控制面板 + 鍵盤跟讀快捷鍵</span>';
       }
     }
 
