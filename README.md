@@ -11,19 +11,24 @@
   <img src="https://img.shields.io/badge/Zero-Dependencies-orange?style=for-the-badge" alt="Zero Dependencies" />
 </p>
 
-A high-performance, zero-delay, and privacy-first **YouTube Dual Subtitles & Instant Vocabulary Translation Chrome Extension** built for language learners, creators, and international viewers.
+A high-performance, zero-delay, and privacy-first **Dual-Track YouTube Dual Subtitles & Instant Vocabulary Translation Chrome Extension** built for language learners, creators, and international viewers.
 
-Engineered on the modern **Chrome Manifest V3** standard, featuring 60fps frame synchronization, smart punctuation sentence merging, sliding-window preloaded translation, multi-endpoint timeout rotation, audio snippet playback, and keyboard shortcut navigation.
+Engineered on the modern **Chrome Manifest V3** standard, featuring 60fps frame synchronization, sentence-driven dual-slot real-time streaming, smart punctuation sentence merging, sliding-window preloaded translation, multi-endpoint timeout rotation, audio snippet playback, and keyboard shortcut navigation.
 
 ---
 
 ## ✨ Key Features
 
+* 🌟 **Dual-Track Smart Routing**:
+  * **Track 1 (Traditional Static Subtitles)**: Batch full-sentence pre-translation, 60fps binary-search frame sync, zero-latency seeking.
+  * **Track 2 (Gemini ASR Live Streaming)**: World's first "Sentence-Driven Dual-Slot Rolling Engine" — Slot 1 securely holds the previous complete sentence (English + Translation in a 0.65 contrast capsule), while Slot 2 streams real-time word-by-word token extension without line jumping or race condition corruption.
 * ⚡ **60fps Frame Synchronization (Zero-Delay Sync)**:
   * Replaces low-frequency `video.timeupdate` with `requestAnimationFrame` loops (16.6ms precision), eliminating the standard 250ms subtitle lag.
 * 🧠 **Smart Sentence Merging & Intra-Segment Split**:
   * Automatically aggregates fragmented ASR words into coherent, grammatical sentences.
   * Enforces strict punctuation boundary rules (`.`, `?`, `!`, `。`, `？`, `！`) to **prevent sentence overflow or trailing overlaps**.
+* 🧹 **YouTube Native Noise & Laughter Filter (ASR Noise Cleaner)**:
+  * Automatically purges `>>`, `>>>`, `&gt;&gt;` (speaker changes/laughter markers) along with `[Laughter]`, `[Music]`, `[Applause]` notes for a distraction-free view.
 * 🚀 **First-Sentence Instant Fast Lane**:
   * On video load or timeline seeking, prioritizes the immediate sentence to deliver translations in **80ms ~ 120ms**, eliminating "Translating..." waiting states.
 * 🛡️ **2.5s Timeout Circuit Breaker & 3-Tier Endpoint Rotation**:
@@ -39,6 +44,33 @@ Engineered on the modern **Chrome Manifest V3** standard, featuring 60fps frame 
 * 🎨 **Dynamic 4-Tier Scaling & Master Toggle**:
   * Offers Small, Medium, Large, and Extra Large scaling options with synchronized subtitle and tooltip dimensions.
   * Features an iOS-style Master On/Off switch in the popup for instant enabling/disabling.
+
+---
+
+## 📖 User Guide (How to Use)
+
+### 1. Enable Bilingual Subtitles
+1. Open any YouTube video or YouTube Shorts.
+2. Click the **"CC" Subtitle Button** on the YouTube video control bar (or press keyboard shortcut <kbd>C</kbd>).
+3. The extension automatically detects the video stream type:
+   * **Standard Video**: Loads static full-video cues with batch pre-translation.
+   * **Live / Gemini ASR Stream**: Automatically activates the real-time Dual-Slot Rolling Engine.
+
+### 2. Reading the Dual-Slot Display
+* **Slot 1 (Upper Slot)**: Securely displays the **previous complete finished sentence** (Original + Translation in high-contrast 0.65 black capsule background).
+* **Slot 2 (Lower Slot)**: Actively displays the **current spoken sentence** extending smoothly word-by-word, and seamlessly promotes to Slot 1 once a sentence-ending punctuation is encountered.
+
+### 3. Word Lookup & Audio Snippet Replay
+1. Highlight any word or phrase on the subtitles with your mouse cursor.
+2. A glassmorphic dictionary tooltip pops up immediately displaying the definition.
+3. Click **"🎬 Play Snippet"**: The player rewinds and precisely replays the speaker's original voice slice from the video!
+4. Click **"🗣️ Speak"**: Reads the word aloud via speech synthesis.
+
+### 4. Popup Panel Configuration
+Click the extension icon in your browser toolbar to customize:
+* **Master On/Off Switch**: iOS-style toggle to turn dual subtitles on or off instantly.
+* **Target Language**: Choose Traditional Chinese (zh-TW), Simplified Chinese (zh-CN), Japanese (ja), Korean (ko), Spanish (es), and more.
+* **Font Size**: Small (85%), Medium (100%), Large (115%), Extra Large (130%) with synchronized tooltip scaling.
 
 ---
 
