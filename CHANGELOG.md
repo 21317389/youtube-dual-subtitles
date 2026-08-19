@@ -4,6 +4,16 @@
 
 ---
 
+## [v1.1.2] - 2026-08-19
+
+### 🛡️ Chrome Web Store 審查規範純淨打包 (Production Package Cleanliness)
+
+* **剔除開發輔助檔案**：
+  * 嚴格規範發布 ZIP 僅包含執行期必要檔案（`manifest.json`、核心 JS 模組、`popup`、`styles.css`、`icons/` 與 `_locales/`）。
+  * 徹底移除發布包內的截圖生成器、預覽工具與外部 CDN 引用，100% 遵從 Google Manifest V3 禁止遠端代管程式碼（Blue Argon）政策。
+
+---
+
 ## [v1.1.1] - 2026-08-17
 
 ### 🌐 全球多國語言國際化 (Full Chrome i18n Internationalization)
