@@ -114,6 +114,29 @@ async function requestTranslationWithFallback(text, sourceLang, targetLang) {
 
 // 4. 監聽 Content Script 請求
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'fetchCaption') {
+    const { url } = request;
+    if (!url) {
+      sendResponse({ error: 'Missing url' });
+      return false;
+    }
+
+    fetch(url)
+      .then(async (res) => {
+        if (!res.ok) {
+          sendResponse({ error: `HTTP ${res.status} (${res.statusText})` });
+          return;
+        }
+        const text = await res.text();
+        sendResponse({ text });
+      })
+      .catch((err) => {
+        sendResponse({ error: err.message });
+      });
+
+    return true;
+  }
+
   if (request.action !== 'translate') return;
 
   const { text, sourceLang = 'auto', targetLang = 'zh-TW' } = request;

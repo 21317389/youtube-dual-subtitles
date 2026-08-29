@@ -13,14 +13,16 @@
 /* 自訂雙語字幕主容器 */
 #yt-dual-subtitle-container {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
   bottom: 80px;
   z-index: 60;
   text-align: center;
-  max-width: 85%;
-  min-width: 200px;
-  pointer-events: auto;
+  box-sizing: border-box;
+  padding: 0 16px;
+  pointer-events: none;
   user-select: text !important;
   transition: bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: none;
@@ -52,40 +54,13 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
 }
 
 /* 隱藏 YouTube 預設字幕 (使用透明度隱藏以保留 DOM 節點供即時轉譯讀取) */
+.ytp-caption-window,
 .ytp-caption-window-bottom,
-.caption-window {
+.ytp-caption-window-rollup,
+.caption-window,
+[class*="caption-window"] {
   opacity: 0 !important;
   pointer-events: none !important;
-}
-
-/* 單行與雙行滾動文字樣式 */
-.cue-orig-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  width: 100%;
-}
-
-.cue-orig,
-.cue-trans {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 6px;
-  background-color: rgba(0, 0, 0, 0.82);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  line-height: 1.4;
-  word-break: break-word;
-  user-select: text !important;
-  cursor: text;
-}
-
-.cue-orig {
-  font-size: var(--cue-orig-size, 20px);
-  font-weight: 600;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  transition: transform 0.22s ease-out, opacity 0.22s ease-out;
 }
 
 /* 雙語句級對稱滾動槽位 (Sentence-Driven Bilingual Slots) */
@@ -94,7 +69,6 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
   flex-direction: column;
   align-items: center;
   width: 100%;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
 .cue-slot-prev {
@@ -119,8 +93,9 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
   word-break: break-word;
   user-select: text !important;
   cursor: text;
-  max-width: 92%;
+  max-width: min(90%, 860px);
   box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .cue-slot-orig {
@@ -145,6 +120,8 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
 .cue-slot-prev .cue-slot-trans {
   font-size: calc(var(--cue-trans-size, 16px) * 0.92);
   color: #fae150;
+  min-height: 1.2em;
+  box-sizing: border-box;
 }
 
 .cue-trans {
