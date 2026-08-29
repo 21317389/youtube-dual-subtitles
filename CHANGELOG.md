@@ -4,6 +4,22 @@
 
 ---
 
+## [v1.2.0] - 2026-08-30
+
+### 🛡️ 雙槽穩定性與排版防抖重大升級 (Dual-Slot Stability & Layout Anti-Jitter Overhaul)
+
+* **CSS 物理全寬解耦（Flexbox Anti-Shrink-To-Fit）**：
+  * 將字幕主容器 `#yt-dual-subtitle-container` 升級為播放器 100% 全寬獨立排版，徹底解決因下槽短字收縮導致上槽被擠成兩行、下槽長字時又彈回一行的惡性跳動問題。
+  * 各槽位膠囊最大寬度設為 `min(90%, 860px)`，上槽排版完全獨立於下槽字數長短。
+* **Gemini 模式黏性雙槽停頓架構（Sticky Gap Architecture）**：
+  * 在講者停頓換氣期，下槽穩固保留剛完結的句子（帶完整譯文），直到新句開口吐字時才優雅升槽，徹底根治下槽瞬間清空蒸發導致畫面在單行與兩行之間劇烈抽搐的問題。
+* **Mode 1 內建文本 CORS 代理下載**：
+  * 針對 YouTube TimedText API 網頁端 fetch 受限問題，改由 `background.js` Service Worker 進行跨網域代理下載，並修復未定義呼叫，內建字幕雙槽率達到 100% 穩態常駐。
+* **自動化回歸測試矩陣**：
+  * 於 `test/` 目錄建立覆蓋真實 YouTube ASR 滾動突變快照與靜態播放測試（`node test/run_all_tests.js`），全面保障版本穩定性。
+
+---
+
 ## [v1.1.2] - 2026-08-19
 
 ### 🛡️ Chrome Web Store 審查規範純淨打包 (Production Package Cleanliness)
