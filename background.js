@@ -112,95 +112,16 @@ async function requestTranslationWithFallback(text, sourceLang, targetLang) {
   throw lastError || new Error('所有備用翻譯端點均無法連線');
 }
 
-// 4. InnerTube 官方播放器通道兜底抓取器 (當前置網頁 URL 受 exp=xpe 污染返回 0 字元時啟動)
-async function fetchFreshCaptionTrack(videoId, preferredLang = 'en') {
-  try {
-    const postData = JSON.stringify({
-      context: {
-        client: {
-          clientName: 'ANDROID',
-          clientVersion: '20.10.38',
-          osName: 'Android',
-          osVersion: '11',
-          hl: preferredLang || 'en'
-        }
-      },
-      videoId: videoId
-    });
-
-    const response = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: postData
-    });
-
-    if (!response.ok) return null;
-    const playerJson = await response.json();
-    const tracks = playerJson?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
-    if (tracks.length === 0) return null;
-
-    const candidateTracks = [
-      tracks.find(t => t.languageCode === preferredLang && t.kind !== 'asr'),
-      tracks.find(t => t.languageCode === preferredLang),
-      tracks.find(t => t.kind !== 'asr'),
-      tracks[0]
-    ].filter(Boolean);
-
-    for (const trk of candidateTracks) {
-      const urlsToTry = [];
-      if (trk.baseUrl) {
-        let j3 = trk.baseUrl.includes('&fmt=') ? trk.baseUrl.replace(/&fmt=[^&]+/, '&fmt=json3') : (trk.baseUrl + '&fmt=json3');
-        urlsToTry.push(j3);
-        let vtt = trk.baseUrl.includes('&fmt=') ? trk.baseUrl.replace(/&fmt=[^&]+/, '&fmt=vtt') : (trk.baseUrl + '&fmt=vtt');
-        urlsToTry.push(vtt);
-        urlsToTry.push(trk.baseUrl);
-      }
-      for (const u of urlsToTry) {
-        try {
-          const subRes = await fetch(u);
-          if (subRes.ok) {
-            const subText = await subRes.text();
-            const isHtmlBlock = subText && (subText.trim().startsWith('<html') || subText.includes('<title>Sorry...'));
-            if (subText && subText.trim().length > 0 && !isHtmlBlock) {
-              return { track: trk, text: subText, vtt: subText };
-            }
-          }
-        } catch (e) {}
-      }
-    }
-  } catch (e) {
-    console.warn('[YT-Dual-Sub Background] InnerTube 兜底抓取異常:', e);
-  }
-  return null;
-}
-
-// 5. 監聽 Content Script 請求
+// 4. 監聽 Content Script 請求
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'fetchCaption') {
-    const { url, videoId, languageCode } = request;
+    const { url } = request;
     if (!url) {
       sendResponse({ error: 'Missing url' });
       return false;
     }
 
     (async () => {
-      // 若 URL 已包含 exp=xpe，表示受 YouTube SABR 伺服器端 Token-Gate 鎖定，直接 fetch 必定回傳 0 字元，
-      // 立即啟動 Android InnerTube 偷跑通道，省去 2~4 秒的無效網路等待！
-      if (url.includes('exp=xpe') && videoId) {
-        try {
-          console.log('[YT-Dual-Sub Background] 檢測到 exp=xpe 標記，極速啟動 InnerTube 偷跑通道:', videoId);
-          const fresh = await fetchFreshCaptionTrack(videoId, languageCode);
-          if (fresh && (fresh.text || fresh.vtt)) {
-            sendResponse({ text: fresh.text || fresh.vtt });
-            return;
-          }
-        } catch (err) {
-          console.warn('[YT-Dual-Sub Background] InnerTube 兜底失敗:', err.message);
-        }
-      }
-
       try {
         const res = await fetch(url);
         if (res.status === 429) {
@@ -222,21 +143,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         }
       } catch (e) {
-        console.warn('[YT-Dual-Sub Background] 初次字幕抓取受阻:', e.message);
-      }
-
-      // 若直接抓取返回 0 字元 (且非 429)，自動啟動 InnerTube 偷跑通道
-      if (videoId) {
-        try {
-          console.log('[YT-Dual-Sub Background] 檢測到 timedtext 返回 0 字元，啟動 InnerTube 偷跑通道:', videoId);
-          const fresh = await fetchFreshCaptionTrack(videoId, languageCode);
-          if (fresh && (fresh.text || fresh.vtt)) {
-            sendResponse({ text: fresh.text || fresh.vtt });
-            return;
-          }
-        } catch (err) {
-          console.warn('[YT-Dual-Sub Background] InnerTube 兜底失敗:', err.message);
-        }
+        console.warn('[YT-Dual-Sub Background] 字幕抓取受阻:', e.message);
       }
 
       sendResponse({ text: '' });

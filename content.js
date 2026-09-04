@@ -14,6 +14,12 @@ const CONFIG = {
   FALLBACK_LONG_PAUSE_SECONDS: 2.5, // 僅用於無標點音軌的自然長停頓保底 (秒)
   MAX_SENTENCE_CHARS: 320,    // 句子字元長度安全上限 (放寬確保完整從屬複合句不被截斷)
   MAX_SENTENCE_DURATION: 25.0, // 句子持續時長安全上限 (秒)
+  BACKGROUND_FETCH_TIMEOUT: 6000,   // Background 特權字幕下載逾時 (毫秒)
+  INNERTUBE_FETCH_TIMEOUT: 4000,    // 主環境同源 InnerTube 下載逾時 (毫秒)
+  MAIN_WORLD_FETCH_TIMEOUT: 2000,   // 主環境同源 fetch 下載逾時 (毫秒)
+  TRANSCRIPT_FETCH_TIMEOUT: 1200,   // 主環境 get_transcript 逐字稿逾時 (毫秒)
+  RATE_LIMIT_COOLDOWN_MS: 60000,    // 429 速率限制防護冷卻期 (毫秒)
+  MODE2_DEBOUNCE_MS: 350,           // Mode 2 DOM 串流防抖延遲 (毫秒)
   UI_SIZE_MAP: {
     small:  { orig: '16px', trans: '13px', minW: '160px', maxW: '260px', pad: '8px 12px',  head: '13px', body: '12px', btn: '11px', btnPad: '3px 7px' },
     medium: { orig: '20px', trans: '16px', minW: '190px', maxW: '320px', pad: '10px 14px', head: '15px', body: '14px', btn: '12px', btnPad: '4px 9px' },
@@ -456,7 +462,7 @@ function fetchTranscriptViaMainWorld(videoId) {
         window.removeEventListener('message', onMsg);
         resolve(null);
       }
-    }, 1200);
+    }, CONFIG.TRANSCRIPT_FETCH_TIMEOUT);
 
     function onMsg(e) {
       if (e.source !== window || e.data?.type !== 'YT_FETCH_TRANSCRIPT_RESPONSE') return;
@@ -491,7 +497,7 @@ function fetchCaptionViaMainWorldInnerTube(videoId, languageCode) {
         window.removeEventListener('message', onMsg);
         resolve(null);
       }
-    }, 4000);
+    }, CONFIG.INNERTUBE_FETCH_TIMEOUT);
 
     function onMsg(e) {
       if (e.source !== window || e.data?.type !== 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE') return;
@@ -527,7 +533,7 @@ function fetchCaptionViaMainWorld(url) {
         window.removeEventListener('message', onMsg);
         resolve(null);
       }
-    }, 2000);
+    }, CONFIG.MAIN_WORLD_FETCH_TIMEOUT);
 
     function onMsg(e) {
       if (e.source !== window || e.data?.type !== 'YT_FETCH_CAPTION_RESPONSE') return;
@@ -559,15 +565,15 @@ function fetchCaptionViaBackground(url, videoId, languageCode) {
         settled = true;
         resolve(null);
       }
-    }, 12000);
+    }, CONFIG.BACKGROUND_FETCH_TIMEOUT);
 
     safeSendMessage({ action: 'fetchCaption', url, videoId: vid, languageCode }, async (res) => {
       if (settled) return;
       if (res?.error === 'RATE_LIMIT_429') {
         settled = true;
         clearTimeout(timer);
-        timedtextCooldownUntil = Date.now() + 60000;
-        console.warn('[YT-Dual-Sub] 收到 429 限流信號，立即啟動 60 秒冷卻，絕不發起任何二次請求！');
+        timedtextCooldownUntil = Date.now() + CONFIG.RATE_LIMIT_COOLDOWN_MS;
+        console.warn('[YT-Dual-Sub] 收到 429 限流信號，立即啟動冷卻，絕不發起任何二次請求！');
         resolve(null);
         return;
       }
@@ -578,30 +584,12 @@ function fetchCaptionViaBackground(url, videoId, languageCode) {
         return;
       }
 
-      // 若 background.js 因 0 字元受阻 (且非 429)，立即啟動主環境同源特權通道 (帶 Cookies)
+      // 若 background.js 因 0 字元受阻 (且非 429)，啟動主環境同源特權通道 (帶 Cookies)
       const mainWorldText = await fetchCaptionViaMainWorld(url);
-      if (mainWorldText && mainWorldText.trim().length > 0) {
-        settled = true;
-        clearTimeout(timer);
-        resolve(mainWorldText);
-        return;
-      }
-
-      // 兜底直接 fetch
-      fetch(url)
-        .then(r => (r.ok ? r.text() : ''))
-        .then(text => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          resolve(text || null);
-        })
-        .catch(() => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          resolve(null);
-        });
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(mainWorldText && mainWorldText.trim().length > 0 ? mainWorldText : null);
     });
   });
 }
@@ -2034,7 +2022,7 @@ function debouncedTranslateLiveProgress(text) {
         }
       }
     });
-  }, 350);
+  }, CONFIG.MODE2_DEBOUNCE_MS);
 }
 
 function stopNativeCaptionObserver() {

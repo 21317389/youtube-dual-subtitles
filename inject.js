@@ -223,29 +223,9 @@
         params = domPanel?.data?.content?.continuationItemRenderer?.continuationEndpoint?.getTranscriptEndpoint?.params;
       }
 
-      function buildTranscriptParams(vid) {
-        if (!vid) return null;
-        const vidBytes = [];
-        for (let i = 0; i < vid.length; i++) vidBytes.push(vid.charCodeAt(i));
-        const subStr = 'CgNhc3ISAmVuGgA%3D';
-        const subBytes = [];
-        for (let i = 0; i < subStr.length; i++) subBytes.push(subStr.charCodeAt(i));
-        const panelStr = 'engagement-panel-searchable-transcript-search-panel';
-        const panelBytes = [];
-        for (let i = 0; i < panelStr.length; i++) panelBytes.push(panelStr.charCodeAt(i));
-
-        const bytes = [
-          0x0a, vidBytes.length, ...vidBytes,
-          0x12, subBytes.length, ...subBytes,
-          0x18, 0x01,
-          0x2a, panelBytes.length, ...panelBytes,
-          0x30, 0x00, 0x38, 0x01, 0x40, 0x01
-        ];
-        return btoa(String.fromCharCode(...bytes));
-      }
-
       if (!params) {
-        params = buildTranscriptParams(videoId || getCurrentVideoId());
+        // 若頁面資料與 DOM 均無官方 transcript 參數，不發起無效請求以防觸發 400 錯誤
+        return null;
       }
 
       console.log('[YT-Dual-Sub MainWorld] get_transcript 開始: apiKey?', !!apiKey, 'context?', !!context, 'params?', !!params);
