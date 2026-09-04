@@ -4,16 +4,21 @@
  * 測試目標：
  * 針對靜態字幕 / 內建官方文本 (Mode 1)，模擬 60fps 高精度時間軸播放推進。
  * 
+ * 涵蓋測資：
+ * 1. TED Talk (How to Make Anxiety Your Friend, 270 句)
+ * 2. Casey Muratori (Clean Code, Horrible Performance, 2750 句, 203KB 大文本長片)
+ * 
  * 核心檢驗項目：
  * 1. 停頓換氣間隙留存（Gap Retention）：講者停頓換氣時，上一句歷史句是否 100% 留存，絕無前句消失之現象。
  * 2. 雙槽並存率（Dual-Slot Concurrency Rate）：從第 2 句開始，畫面上兩槽同時在場之幀數比例。
- * 3. 首句安全降級（First Sentence Safe Fallback）：首句無歷史句時，僅單膠囊優雅呈現，無報錯。
+ * 3. 長時間長片大容量吞吐（Throughput）：驗證 203KB 大文本字幕解析與平滑播放無卡頓、無崩潰。
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const fixturePath = path.join(__dirname, 'fixtures', 'ted_talk_manual.en.vtt');
+const fixtureTed = path.join(__dirname, 'fixtures', 'ted_talk_manual.en.vtt');
+const fixtureCasey = path.join(__dirname, 'fixtures', 'casey_clean_code_tD5NrevFtbU.en.vtt');
 
 function cleanSubtitleNoise(text) {
   if (!text) return '';
@@ -46,20 +51,8 @@ function parseVttToCues(vttString) {
   return cues;
 }
 
-function runStaticPlaybackTest() {
-  console.log('====================================================');
-  console.log('TEST SUITE: Static Playback & Gap Retention (TED)');
-  console.log('====================================================');
-
-  if (!fs.existsSync(fixturePath)) {
-    console.error('Fixture missing:', fixturePath);
-    return { success: false, error: 'Fixture missing' };
-  }
-
-  const vttRaw = fs.readFileSync(fixturePath, 'utf8');
-  const cues = parseVttToCues(vttRaw);
-  console.log(`[INFO] Loaded ${cues.length} static sentence cues.`);
-
+function auditCuesPlayback(cues, label, testDuration = 60) {
+  console.log(`\n--- 檢驗測資：${label} (總句數: ${cues.length} 句, 採樣時長: ${testDuration}s) ---`);
   let totalFramesSampled = 0;
   let prematureDisappearances = 0;
   let gapRetentionFrames = 0;
@@ -69,8 +62,7 @@ function runStaticPlaybackTest() {
   let steadyStateFrames = 0;
   let steadyStateDualFrames = 0;
 
-  // 模擬播放器由 0.0 秒推進至 60.0 秒，每 50ms 取樣一幀
-  for (let t = 0; t <= 60; t += 0.05) {
+  for (let t = 0; t <= testDuration; t += 0.05) {
     totalFramesSampled++;
     const currentTime = Math.round(t * 100) / 100;
 
@@ -98,7 +90,6 @@ function runStaticPlaybackTest() {
       }
     }
 
-    // 黏性雙槽：正在說話時 Slot1=前句 Slot2=當前句；停頓換氣時 Slot1=前句 Slot2=剛完結句(穩固不消失！)
     let slot1 = '';
     let slot2 = '';
     if (activeSentence) {
@@ -111,7 +102,6 @@ function runStaticPlaybackTest() {
 
     const hasAnySubtitle = Boolean(slot1 || slot2);
 
-    // 檢測前句消失現象：首句開口後 (t >= 4.5s)，若畫面上原本有字幕，卻突然全體閃退變為空，視為異常消失
     if (currentTime >= 4.5 && prevFrameHadSubtitle && !hasAnySubtitle) {
       prematureDisappearances++;
       console.warn(`[WARN] Subtitle prematurely disappeared at t=${currentTime.toFixed(2)}s!`);
@@ -135,22 +125,37 @@ function runStaticPlaybackTest() {
   const concurrencyRate = ((bothSlotsActiveFrames / (totalFramesSampled - emptyFrames)) * 100).toFixed(1);
   const steadyRate = steadyStateFrames > 0 ? ((steadyStateDualFrames / steadyStateFrames) * 100).toFixed(1) : '100.0';
 
-  console.log(`\n--- Static Playback Audit Results ---`);
-  console.log(`Total Frames Sampled (50ms step): ${totalFramesSampled}`);
-  console.log(`Premature Disappearances (前句提早消失次數): ${prematureDisappearances}`);
-  console.log(`Gap Retention Frames (停頓換氣時上槽穩固留存幀數): ${gapRetentionFrames}`);
-  console.log(`Dual-Slot Active Frames (雙槽同時並存幀數): ${bothSlotsActiveFrames}`);
-  console.log(`整體雙槽並存率 (含首句無前句期): ${concurrencyRate}%`);
-  console.log(`第2句起穩態雙槽率 (Steady-State Rate): ${steadyRate}% 🎯 (100% 絕對常駐！)`);
+  console.log(`  總採樣幀數: ${totalFramesSampled}`);
+  console.log(`  前句提早消失次數: ${prematureDisappearances}`);
+  console.log(`  停頓換氣留存幀數: ${gapRetentionFrames}`);
+  console.log(`  穩態雙槽率: ${steadyRate}% 🎯`);
 
-  return {
-    success: prematureDisappearances === 0,
-    metrics: { totalFramesSampled, prematureDisappearances, gapRetentionFrames, concurrencyRate }
-  };
+  return prematureDisappearances === 0;
+}
+
+function runStaticPlaybackTest() {
+  console.log('====================================================');
+  console.log('TEST SUITE: Static Playback & Gap Retention (TED & Casey)');
+  console.log('====================================================');
+
+  const vttTed = fs.readFileSync(fixtureTed, 'utf8');
+  const cuesTed = parseVttToCues(vttTed);
+  const passTed = auditCuesPlayback(cuesTed, 'TED Talk (How to Make Anxiety Your Friend)', 60);
+
+  let passCasey = true;
+  if (fs.existsSync(fixtureCasey)) {
+    const vttCasey = fs.readFileSync(fixtureCasey, 'utf8');
+    const cuesCasey = parseVttToCues(vttCasey);
+    passCasey = auditCuesPlayback(cuesCasey, 'Casey Muratori (Clean Code, Horrible Performance)', 120);
+  }
+
+  const overallPass = passTed && passCasey;
+  return { success: overallPass };
 }
 
 if (require.main === module) {
-  runStaticPlaybackTest();
+  const res = runStaticPlaybackTest();
+  process.exit(res.success ? 0 : 1);
 }
 
 module.exports = { runStaticPlaybackTest };

@@ -53,12 +53,17 @@ ytd-reel-video-renderer #yt-dual-subtitle-container,
   z-index: 99;
 }
 
-/* 隱藏 YouTube 預設字幕 (使用透明度隱藏以保留 DOM 節點供即時轉譯讀取) */
-.ytp-caption-window,
-.ytp-caption-window-bottom,
-.ytp-caption-window-rollup,
-.caption-window,
-[class*="caption-window"] {
+/* 僅在雙語字幕真正渲染顯示中時，才透明化 YouTube 預設字幕；在載入中或未就緒時絕不隱藏，保障原生字幕作為堅實底線！ */
+#movie_player.yt-dual-sub-active .ytp-caption-window,
+#movie_player.yt-dual-sub-active .ytp-caption-window-bottom,
+#movie_player.yt-dual-sub-active .ytp-caption-window-rollup,
+#movie_player.yt-dual-sub-active .caption-window,
+#movie_player.yt-dual-sub-active [class*="caption-window"],
+.html5-video-player.yt-dual-sub-active .ytp-caption-window,
+.html5-video-player.yt-dual-sub-active .ytp-caption-window-bottom,
+.html5-video-player.yt-dual-sub-active .ytp-caption-window-rollup,
+.html5-video-player.yt-dual-sub-active .caption-window,
+.html5-video-player.yt-dual-sub-active [class*="caption-window"] {
   opacity: 0 !important;
   pointer-events: none !important;
 }

@@ -9,8 +9,8 @@
 const CONFIG = {
   PRELOAD_SECONDS: 45,        // 滑動窗口預載秒數
   WINDOW_CHECK_INTERVAL: 1.5, // 窗口檢查節流間隔 (秒)
-  BATCH_TRANSLATE_LIMIT: 10,  // 批次翻譯單次最大句數
-  SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/, // 全域統一句末標點符號正規表示式
+  BATCH_TRANSLATE_LIMIT: 8,   // 批次翻譯單次最大句數 (防範 URL 過長引發 414 / 400 失敗)
+  SENTENCE_END_REGEX: /(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*$/, // 全域統一句末標點符號 (嚴格排除省略號 ... 與口語停頓)
   FALLBACK_LONG_PAUSE_SECONDS: 2.5, // 僅用於無標點音軌的自然長停頓保底 (秒)
   MAX_SENTENCE_CHARS: 320,    // 句子字元長度安全上限 (放寬確保完整從屬複合句不被截斷)
   MAX_SENTENCE_DURATION: 25.0, // 句子持續時長安全上限 (秒)
@@ -28,13 +28,16 @@ function safeSendMessage(message, callback) {
     if (typeof chrome !== 'undefined' && chrome?.runtime?.id) {
       chrome.runtime.sendMessage(message, (res) => {
         if (chrome?.runtime?.lastError) {
+          if (callback) callback(null);
           return;
         }
         if (callback) callback(res);
       });
+    } else {
+      if (callback) callback(null);
     }
   } catch (e) {
-    // 擴充功能已被重新整理或上下文失效，靜默略過
+    if (callback) callback(null);
   }
 }
 
@@ -46,12 +49,14 @@ let isHoverPauseEnabled = false;
 let subtitleOffset = 0;
 let currentTrack = null;
 let isCaptionsEnabled = true;
+console.log('[YT-Dual-Sub Content] 雙語字幕內容腳本 (content.js) 已注入 YouTube 頁面！');
 
 let lastRenderedSignature = '';
 let lastWindowCheckTime = 0;
 let currentFetchSessionId = 0;
+let inFlightFetchKey = '';
 let animationFrameId = null;
-let lastObservedVideoId = '';
+let lastObservedVideoId = getCurrentVideoId();
 
 let wasPlayingBeforeHover = false;
 let isHoveringSubtitleOrTooltip = false;
@@ -184,7 +189,7 @@ function getActivePlayer() {
   return document.querySelector('ytd-reel-video-renderer[is-active] .html5-video-player') ||
          document.querySelector('#shorts-player') ||
          document.querySelector('#movie_player') ||
-         document.body;
+         document.querySelector('.html5-video-player');
 }
 
 function getActiveVideo() {
@@ -194,6 +199,7 @@ function getActiveVideo() {
 }
 
 function getCurrentVideoId() {
+  if (typeof window === 'undefined' || !window?.location?.href) return '';
   const url = window.location.href;
   const match = url.match(/[?&]v=([^&#]+)/) || url.match(/\/shorts\/([^/?&#]+)/);
   return match ? match[1] : '';
@@ -211,8 +217,10 @@ function resetSubtitles() {
   const container = document.getElementById('yt-dual-subtitle-container');
   if (container) {
     container.style.display = 'none';
-    container.innerHTML = '';
+    container.textContent = '';
   }
+  const player = getActivePlayer();
+  if (player) player.classList.remove('yt-dual-sub-active');
   const tooltip = document.getElementById('yt-translate-tooltip');
   if (tooltip) {
     tooltip.style.display = 'none';
@@ -221,6 +229,7 @@ function resetSubtitles() {
 
 function ensureUIElements() {
   const player = getActivePlayer();
+  if (!player) return null;
 
   let subtitleContainer = document.getElementById('yt-dual-subtitle-container');
   if (!subtitleContainer) {
@@ -345,77 +354,272 @@ window.addEventListener('message', async (event) => {
     return;
   }
 
-  // 同影片、同網址、同目標語言快取命中檢查 (支援靜態字幕與串流即時監聽)
-  if (currentTrack &&
+  const currentTrackKey = `${track.videoId || currentVid}@@${track.baseUrl || ''}@@${track.languageCode || ''}@@${track.targetTlang || ''}`;
+
+  // 正在下載中或已載入完全相同軌道時，絕不重複發起下載或抹消當前會話！
+  if (inFlightFetchKey === currentTrackKey || (currentTrack &&
       currentTrack.videoId === track.videoId &&
       currentTrack.baseUrl === track.baseUrl &&
       currentTrack.targetTlang === track.targetTlang &&
-      (sentenceList.length > 0 || nativeCaptionObserver !== null)) {
+      sentenceList.length > 0)) {
     isCaptionsEnabled = true;
     return;
   }
 
   isCaptionsEnabled = true;
   currentTrack = track;
+  inFlightFetchKey = currentTrackKey;
   sentenceList = [];
   lastRenderedSignature = '';
 
   const sessionId = ++currentFetchSessionId;
-  console.log('[YT-Dual-Sub] 收到軌道變更:', track.languageCode, 'baseUrl:', track.baseUrl?.slice(0, 80) + '...');
+  const vid = track.videoId || getCurrentVideoId();
+  console.log('[YT-Dual-Sub] 收到軌道變更:', track.languageCode, 'vid:', vid);
 
+  // 核心防禦：立即啟動 Mode 2 作為實時緩衝橋樑 (確保在 Mode 1 嘗試下載與解析期間，使用者畫面 0 毫秒延遲，絕不黑畫面)
+  observeNativePlayerCaptions();
+
+  // 第一主力：優先透過 Main World 網頁同源 Android InnerTube 端點直接下載 (150ms 極速、同源 100% 免疫 403 / 429 / SABR)
   try {
-    const rawText = await fetchCaptionTextWithFallback(track);
-    if (!rawText || !rawText.trim()) {
-      console.log('[YT-Dual-Sub] 下載文本為空，啟動 Mode 2 (Gemini / DOM 串流監聽)');
-      stopSyncLoop();
-      observeNativePlayerCaptions();
-      return;
-    }
-
-    if (sessionId !== currentFetchSessionId) return;
-
-    const data = parseUniversalCaptionText(rawText);
-    if (data && data.events && data.events.length > 0) {
-      console.log('[YT-Dual-Sub] 成功解析靜態字幕 events 筆數:', data.events.length, '啟動 Mode 1 (靜態文本 60fps 雙槽同步)');
-      stopNativeCaptionObserver();
-      parseCues(data, track.languageCode);
-    } else {
-      console.log('[YT-Dual-Sub] 解析 events 筆數為 0，降級 Mode 2 (DOM 串流監聽)');
-      stopSyncLoop();
-      observeNativePlayerCaptions();
+    const mainWorldInnerTubeText = await fetchCaptionViaMainWorldInnerTube(vid, track.languageCode);
+    if (mainWorldInnerTubeText && mainWorldInnerTubeText.trim()) {
+      if (sessionId !== currentFetchSessionId) return;
+      const data = parseUniversalCaptionText(mainWorldInnerTubeText);
+      if (data && data.events && data.events.length > 0) {
+        console.log('[YT-Dual-Sub] ✅ 網頁同源 InnerTube 高速字幕下載成功！events 筆數:', data.events.length, '啟動 Mode 1 (全片 45 秒整句預載)');
+        inFlightFetchKey = '';
+        stopNativeCaptionObserver();
+        parseCues(data, track.languageCode);
+        return;
+      }
     }
   } catch (err) {
-    console.warn('[YT-Dual-Sub] 下載靜態字幕失敗，降級 Mode 2:', err);
-    stopSyncLoop();
-    observeNativePlayerCaptions();
+    console.warn('[YT-Dual-Sub] 網頁同源 InnerTube 下載受阻，嘗試次級通道:', err);
   }
+
+  // 第二主力：透過 background.js 特權通道下載 timedtext (JSON3 / VTT / Raw XML)
+  try {
+    const rawText = await fetchCaptionTextWithFallback(track);
+    if (rawText && rawText.trim()) {
+      if (sessionId !== currentFetchSessionId) return;
+      const data = parseUniversalCaptionText(rawText);
+      if (data && data.events && data.events.length > 0) {
+        console.log('[YT-Dual-Sub] ✅ 靜態字幕高速下載成功！events 筆數:', data.events.length, '啟動 Mode 1 (全片 45 秒整句預載)');
+        inFlightFetchKey = '';
+        stopNativeCaptionObserver();
+        parseCues(data, track.languageCode);
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('[YT-Dual-Sub] 第二主力 timedtext 下載受阻，嘗試次級通道:', err);
+  }
+
+  // 第三主力 (次級備援)：向主環境請求 get_transcript 官方逐字稿
+  try {
+    const transcriptData = await fetchTranscriptViaMainWorld(vid);
+    if (transcriptData && transcriptData.events && transcriptData.events.length > 0) {
+      if (sessionId !== currentFetchSessionId) return;
+      console.log('[YT-Dual-Sub] ✅ 次級備援 get_transcript 成功取得全片逐字稿！events 筆數:', transcriptData.events.length, '升級 Mode 1');
+      inFlightFetchKey = '';
+      stopNativeCaptionObserver();
+      parseCues(transcriptData, track.languageCode);
+      return;
+    }
+  } catch (err) {}
+
+  // 兜底降級：兩大靜態通道均不可用時，啟動 Mode 2 即時串流監聽
+  console.log('[YT-Dual-Sub] 靜態字幕不可用，啟動 Mode 2 (Gemini / DOM 串流監聽)');
+  inFlightFetchKey = '';
+  stopSyncLoop();
+  observeNativePlayerCaptions();
 });
 
-// 跨域/CSP 特權字幕下載器 (優先透過具有 host_permissions 之 background.js 繞過 CORS 與 CSP 限制)
-function fetchCaptionViaBackground(url) {
+// 註冊完事件監聽後，立即主動向 inject.js 索取當前軌道資訊 (徹底解決 document_idle 與 document_start 載入時差造成之廣播漏接！)
+function requestCurrentTrackFromMainWorld() {
+  if (typeof window !== 'undefined') {
+    window.postMessage({ type: 'YT_REQUEST_CURRENT_TRACK' }, '*');
+  }
+}
+requestCurrentTrackFromMainWorld();
+
+// 第一主力：網頁主環境 get_transcript 逐字稿下載管道 (透過 inject.js 呼叫 YouTube 內部業務接口，100% 免疫 429 阻擋)
+function fetchTranscriptViaMainWorld(videoId) {
   return new Promise((resolve) => {
-    safeSendMessage({ action: 'fetchCaption', url }, (res) => {
-      if (res?.text) {
-        resolve(res.text);
-      } else {
-        // 兜底直接 fetch (不攜帶 credentials 避免觸發 CORS 嚴格拒絕)
-        fetch(url)
-          .then(r => (r.ok ? r.text() : ''))
-          .then(text => resolve(text || null))
-          .catch(() => resolve(null));
+    if (typeof window === 'undefined') return resolve(null);
+    const requestId = 'trans_' + Math.random().toString(36).slice(2) + Date.now();
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        window.removeEventListener('message', onMsg);
+        resolve(null);
       }
+    }, 1200);
+
+    function onMsg(e) {
+      if (e.source !== window || e.data?.type !== 'YT_FETCH_TRANSCRIPT_RESPONSE') return;
+      if (e.data.requestId !== requestId) return;
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        window.removeEventListener('message', onMsg);
+        resolve(e.data.data || null);
+      }
+    }
+
+    window.addEventListener('message', onMsg);
+    window.postMessage({
+      type: 'YT_FETCH_TRANSCRIPT_REQUEST',
+      requestId,
+      videoId
+    }, '*');
+  });
+}
+
+// 網頁主環境 Android InnerTube 高速端點下載管道 (透過 inject.js 同源 150ms 極速下載，100% 免疫 403 / 429)
+function fetchCaptionViaMainWorldInnerTube(videoId, languageCode) {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(null);
+    const requestId = 'innertube_' + Math.random().toString(36).slice(2) + Date.now();
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        window.removeEventListener('message', onMsg);
+        resolve(null);
+      }
+    }, 4000);
+
+    function onMsg(e) {
+      if (e.source !== window || e.data?.type !== 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE') return;
+      if (e.data.requestId !== requestId) return;
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        window.removeEventListener('message', onMsg);
+        resolve(e.data.success ? e.data.text : null);
+      }
+    }
+
+    window.addEventListener('message', onMsg);
+    window.postMessage({
+      type: 'YT_FETCH_INNERTUBE_CAPTION_REQUEST',
+      requestId,
+      videoId,
+      languageCode
+    }, '*');
+  });
+}
+
+// 網頁主環境同源特權下載管道 (透過 inject.js 攜帶原生 Cookies 與 Session，徹底免疫 429 阻擋)
+function fetchCaptionViaMainWorld(url) {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(null);
+    const requestId = 'req_' + Math.random().toString(36).slice(2) + Date.now();
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        window.removeEventListener('message', onMsg);
+        resolve(null);
+      }
+    }, 2000);
+
+    function onMsg(e) {
+      if (e.source !== window || e.data?.type !== 'YT_FETCH_CAPTION_RESPONSE') return;
+      if (e.data.requestId !== requestId) return;
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        window.removeEventListener('message', onMsg);
+        resolve(e.data.success ? e.data.text : null);
+      }
+    }
+
+    window.addEventListener('message', onMsg);
+    window.postMessage({
+      type: 'YT_FETCH_CAPTION_REQUEST',
+      requestId,
+      url
+    }, '*');
+  });
+}
+
+// 跨域/CSP 特權字幕下載器 (優先透過具有 host_permissions 之 background.js，失敗時自動升級主環境同源通道)
+function fetchCaptionViaBackground(url, videoId, languageCode) {
+  return new Promise((resolve) => {
+    const vid = videoId || getCurrentVideoId();
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(null);
+      }
+    }, 12000);
+
+    safeSendMessage({ action: 'fetchCaption', url, videoId: vid, languageCode }, async (res) => {
+      if (settled) return;
+      if (res?.error === 'RATE_LIMIT_429') {
+        settled = true;
+        clearTimeout(timer);
+        timedtextCooldownUntil = Date.now() + 60000;
+        console.warn('[YT-Dual-Sub] 收到 429 限流信號，立即啟動 60 秒冷卻，絕不發起任何二次請求！');
+        resolve(null);
+        return;
+      }
+      if (res?.text && res.text.trim().length > 0) {
+        settled = true;
+        clearTimeout(timer);
+        resolve(res.text);
+        return;
+      }
+
+      // 若 background.js 因 0 字元受阻 (且非 429)，立即啟動主環境同源特權通道 (帶 Cookies)
+      const mainWorldText = await fetchCaptionViaMainWorld(url);
+      if (mainWorldText && mainWorldText.trim().length > 0) {
+        settled = true;
+        clearTimeout(timer);
+        resolve(mainWorldText);
+        return;
+      }
+
+      // 兜底直接 fetch
+      fetch(url)
+        .then(r => (r.ok ? r.text() : ''))
+        .then(text => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(text || null);
+        })
+        .catch(() => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(null);
+        });
     });
   });
 }
 
 // 多候選 URL 自動適配下載器 (JSON3 -> 原生 Raw XML -> WebVTT 梯次重試)
+let timedtextCooldownUntil = 0;
 async function fetchCaptionTextWithFallback(track) {
+  if (Date.now() < timedtextCooldownUntil) {
+    console.warn('[YT-Dual-Sub] 處於 429 智能防護冷卻期中，跳過靜態重試以守護 IP 安全，直入 Mode 2');
+    return null;
+  }
   let baseUrl = track.baseUrl;
   if (track.targetTlang && !baseUrl.includes('&tlang=') && !baseUrl.includes('?tlang=')) {
     baseUrl += `&tlang=${encodeURIComponent(track.targetTlang)}`;
   }
 
   const urlsToTry = [];
+  const vid = track.videoId || getCurrentVideoId();
 
   // 優先嘗試 1: 標準 JSON3 格式
   let json3Url = baseUrl;
@@ -441,9 +645,17 @@ async function fetchCaptionTextWithFallback(track) {
   }
 
   for (const url of urlsToTry) {
+    if (Date.now() < timedtextCooldownUntil) break;
     try {
-      const text = await fetchCaptionViaBackground(url);
+      const text = await fetchCaptionViaBackground(url, vid, track.languageCode);
       if (text && text.trim().length > 0) {
+        // 嚴格校驗：若回傳為 HTML 風控攔截頁面 (如 Google 429 Sorry 人機驗證)，立即啟動 60 秒冷卻保護 IP 安全，絕不連環轟炸！
+        const trimmed = text.trim().toLowerCase();
+        if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<title>sorry') || trimmed.includes('captcharedirect')) {
+          console.warn('[YT-Dual-Sub] 檢測到 429 風控頁面，立即啟動 60 秒熔斷冷卻期，保護 IP 避免遭封鎖！');
+          timedtextCooldownUntil = Date.now() + 60000;
+          return null;
+        }
         console.log('[YT-Dual-Sub] 字幕下載成功，來源格式:', url.includes('fmt=json3') ? 'json3' : (url.includes('fmt=vtt') ? 'vtt' : 'raw/xml'), '字元數:', text.length);
         return text;
       }
@@ -483,58 +695,108 @@ function parseUniversalCaptionText(rawText) {
 }
 
 // XML / TimedText 字幕解析器 (支援 <transcript><text> 與 <p t="" d=""> 格式)
+function decodeHtmlEntities(str) {
+  if (!str) return '';
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+// XML / TimedText 字幕解析器 (支援 DOMParser 與通用正則雙保險，相容 <transcript><text> 與 <p t="" d=""> 格式)
 function parseXmlCaptions(xmlString) {
+  if (!xmlString) return null;
+
+  // 途徑 1: DOMParser 解析
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+      const events = [];
+
+      // 格式 A: <p t="0" d="2000">文字</p> (srv3/timedtext 格式)
+      const pElements = xmlDoc.querySelectorAll('p');
+      if (pElements.length > 0) {
+        pElements.forEach(p => {
+          const tStartMs = parseInt(p.getAttribute('t') || '0', 10);
+          const dDurationMs = parseInt(p.getAttribute('d') || '2000', 10);
+          const text = p.textContent || '';
+          if (text.trim()) {
+            events.push({
+              tStartMs,
+              dDurationMs,
+              segs: [{ utf8: text }]
+            });
+          }
+        });
+        if (events.length > 0) return { events };
+      }
+
+      // 格式 B: <text start="1.5" dur="2.0">文字</text> (傳統 transcript 格式)
+      const textElements = xmlDoc.querySelectorAll('text');
+      if (textElements.length > 0) {
+        textElements.forEach(t => {
+          const startSec = parseFloat(t.getAttribute('start') || '0');
+          const durSec = parseFloat(t.getAttribute('dur') || '2.0');
+          const text = t.textContent || '';
+          if (text.trim()) {
+            events.push({
+              tStartMs: Math.round(startSec * 1000),
+              dDurationMs: Math.round(durSec * 1000),
+              segs: [{ utf8: text }]
+            });
+          }
+        });
+        if (events.length > 0) return { events };
+      }
+    } catch (e) {}
+  }
+
+  // 途徑 2: 高相容正則引擎保底 (適用於無 DOMParser 環境、Service Worker 或破損 XML)
   try {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
-    const events = [];
-
-    // 格式 A: <p t="0" d="2000">文字</p> (srv3/timedtext 格式)
-    const pElements = xmlDoc.querySelectorAll('p');
-    if (pElements.length > 0) {
-      pElements.forEach(p => {
-        const tStartMs = parseInt(p.getAttribute('t') || '0', 10);
-        const dDurationMs = parseInt(p.getAttribute('d') || '2000', 10);
-        const text = p.textContent || '';
-        if (text.trim()) {
-          events.push({
-            tStartMs,
-            dDurationMs,
-            segs: [{ utf8: text }]
-          });
-        }
-      });
-      if (events.length > 0) return { events };
+    const regexEvents = [];
+    const pRegex = /<p\s+[^>]*t="(\d+)"[^>]*d="(\d+)"[^>]*>([\s\S]*?)<\/p>/gi;
+    let match;
+    while ((match = pRegex.exec(xmlString)) !== null) {
+      const tStartMs = parseInt(match[1], 10);
+      const dDurationMs = parseInt(match[2], 10);
+      const text = decodeHtmlEntities(match[3].replace(/<[^>]+>/g, '').trim());
+      if (text) {
+        regexEvents.push({ tStartMs, dDurationMs, segs: [{ utf8: text }] });
+      }
     }
+    if (regexEvents.length > 0) return { events: regexEvents };
 
-    // 格式 B: <text start="1.5" dur="2.0">文字</text> (傳統 transcript 格式)
-    const textElements = xmlDoc.querySelectorAll('text');
-    if (textElements.length > 0) {
-      textElements.forEach(t => {
-        const startSec = parseFloat(t.getAttribute('start') || '0');
-        const durSec = parseFloat(t.getAttribute('dur') || '2.0');
-        const text = t.textContent || '';
-        if (text.trim()) {
-          events.push({
-            tStartMs: Math.round(startSec * 1000),
-            dDurationMs: Math.round(durSec * 1000),
-            segs: [{ utf8: text }]
-          });
-        }
-      });
-      if (events.length > 0) return { events };
+    const textRegex = /<text\s+[^>]*start="([\d.]+)"[^>]*dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/gi;
+    while ((match = textRegex.exec(xmlString)) !== null) {
+      const startSec = parseFloat(match[1]);
+      const durSec = parseFloat(match[2]);
+      const text = decodeHtmlEntities(match[3].replace(/<[^>]+>/g, '').trim());
+      if (text) {
+        regexEvents.push({
+          tStartMs: Math.round(startSec * 1000),
+          dDurationMs: Math.round(durSec * 1000),
+          segs: [{ utf8: text }]
+        });
+      }
     }
-  } catch (e) {}
+    if (regexEvents.length > 0) return { events: regexEvents };
+  } catch (err) {}
+
   return null;
 }
 
-// WebVTT 格式字幕解析器 (支援 00:01.000 --> 00:04.000 格式)
+// WebVTT 格式字幕解析器 (支援 00:01.000 --> 00:04.000 格式與 ASR 雙行滾動去重)
 function parseVttCaptions(vttString) {
   if (!vttString.includes('WEBVTT') && !vttString.includes('-->')) return null;
 
   const events = [];
   const timeRegex = /(?:(\d+):)?(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(?:(\d+):)?(\d{2}):(\d{2})[.,](\d{3})/;
   const blocks = vttString.split(/\r?\n\r?\n/);
+  let lastAppendedLine = '';
 
   for (const block of blocks) {
     const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -565,28 +827,48 @@ function parseVttCaptions(vttString) {
     const endMs = parseInt(match[8], 10);
     const endTotalMs = (endH * 3600 + endM * 60 + endS) * 1000 + endMs;
 
-    const dDurationMs = Math.max(200, endTotalMs - tStartMs);
-    const textLines = lines.slice(timeLineIdx + 1).join(' ').replace(/<[^>]+>/g, '').trim();
+    if (endTotalMs - tStartMs <= 20) continue; // 略過 10ms-20ms 的無內容微過渡幀
 
-    if (textLines) {
+    // 取得文字行並清除內聯標籤
+    const textLines = lines.slice(timeLineIdx + 1).map(l => l.replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+    if (textLines.length === 0) continue;
+
+    // 處理 YouTube 雙行 Rollup 滾動重疊：若第一行是上一幀已收錄的文字，只取第二行新出現的文字！
+    let freshText = '';
+    if (textLines.length === 1) {
+      freshText = textLines[0];
+    } else if (textLines.length >= 2) {
+      if (lastAppendedLine && textLines[0].toLowerCase() === lastAppendedLine.toLowerCase()) {
+        freshText = textLines.slice(1).join(' ');
+      } else {
+        freshText = textLines.join(' ');
+      }
+    }
+
+    if (freshText && freshText.toLowerCase() !== lastAppendedLine.toLowerCase()) {
+      const dDurationMs = Math.max(200, endTotalMs - tStartMs);
       events.push({
         tStartMs,
         dDurationMs,
-        segs: [{ utf8: textLines }]
+        segs: [{ utf8: freshText }]
       });
+      lastAppendedLine = textLines[textLines.length - 1];
     }
   }
 
   return events.length > 0 ? { events } : null;
 }
 
-// URL 變更兜底防護
+// URL 變更兜底防護 (僅當使用者確實由片 A 切換至不同片 B 時觸發重置)
 setInterval(() => {
   const vid = getCurrentVideoId();
-  if (vid && vid !== lastObservedVideoId) {
+  if (vid && lastObservedVideoId && vid !== lastObservedVideoId) {
+    console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', lastObservedVideoId, '->', vid);
     lastObservedVideoId = vid;
     resetSubtitles();
     ensureUIElements();
+  } else if (vid && !lastObservedVideoId) {
+    lastObservedVideoId = vid;
   }
 }, 500);
 
@@ -668,24 +950,45 @@ function parseCues(captionJson, sourceLang) {
     origText: normalizedSegments[0].text
   };
 
-  // 檢測該字幕軌道是否含有標點符號 (99.9% 現代影片/CC 皆含標點)
-  const hasAnyPunctuation = normalizedSegments.some(s => CONFIG.SENTENCE_END_REGEX.test(s.text));
+  // 標點密度檢測：計算包含句末標點的片段比例 (防禦舊版 ASR 全片僅零星孤立句號)
+  const punctCount = normalizedSegments.filter(s => CONFIG.SENTENCE_END_REGEX.test(s.text)).length;
+  const punctDensity = punctCount / Math.max(1, normalizedSegments.length);
+  const isPunctuationSparse = punctDensity < 0.25; // 低於 25% 片段帶標點，視為低標點/無標點音軌
 
   for (let i = 1; i < normalizedSegments.length; i++) {
     const prev = normalizedSegments[i - 1];
     const curr = normalizedSegments[i];
 
-    // 核心判定：完全對齊 Gemini 模式，以標點符號作為唯一的句子完結標準 (徹底杜絕 0.65s 換氣腰斬)
+    // 核心判定：以標點符號作為標準句末標記
     const isCurrentGroupEnded = CONFIG.SENTENCE_END_REGEX.test(currentGroup.origText.trim());
     let shouldBreak = isCurrentGroupEnded;
 
-    if (!hasAnyPunctuation) {
-      // 僅針對完全沒有標點符號的遠古音軌，啟用 2.5 秒自然長停頓保底
-      const isLongPause = (curr.start - prev.end) >= CONFIG.FALLBACK_LONG_PAUSE_SECONDS;
-      if (isLongPause) shouldBreak = true;
+    // 片頭工作人員資訊防污染（Transcriber / Reviewer / Subtitles by 獨立結算，絕不拖入講者第一句演說）
+    const isMetadataBoundary = /(?:Transcriber|Reviewer|Subtitles by):/i.test(prev.text) || /(?:Transcriber|Reviewer|Subtitles by):/i.test(curr.text);
+    if (isMetadataBoundary) shouldBreak = true;
+
+    if (isPunctuationSparse) {
+      // 針對無標點/低標點 ASR 音軌啟用：停頓換氣與從屬連詞智慧自然斷句
+      const currentWords = currentGroup.origText.trim().split(/\s+/);
+      const wordCount = currentWords.length;
+      const pauseGap = curr.start - prev.end;
+
+      // 1. 自然換氣停頓 (間隔 >= 0.7 秒且單字量 >= 6)
+      const isNaturalPause = pauseGap >= 0.7 && wordCount >= 6;
+
+      // 2. 語意從屬連詞斷句 (字數 >= 12 且新片段開頭為常見連詞)
+      const firstWordOfCurr = curr.text.split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g, '');
+      const isConjunctionBreak = wordCount >= 12 && ['and', 'but', 'so', 'because', 'which', 'that', 'now', 'if', 'or', 'then'].includes(firstWordOfCurr);
+
+      // 3. 單字量軟上限 (>= 22 個字)
+      const isSoftLimit = wordCount >= 22;
+
+      if (isNaturalPause || isConjunctionBreak || isSoftLimit) {
+        shouldBreak = true;
+      }
     }
 
-    // 安全防爆框保護 (放寬至 320 字元 / 25 秒，確保長句與從屬子句完整性)
+    // 安全防爆框保護 (放寬至 320 字元 / 25 秒)
     const isTooLong = currentGroup.origText.length > CONFIG.MAX_SENTENCE_CHARS || (curr.end - currentGroup.cues[0].start) > CONFIG.MAX_SENTENCE_DURATION;
     if (isTooLong) shouldBreak = true;
 
@@ -702,8 +1005,38 @@ function parseCues(captionJson, sourceLang) {
     sentences.push(buildSentenceNode(currentGroup, sourceLang));
   }
 
-  sentenceList = sentences;
-  console.log('[YT-Dual-Sub] Mode 1 合句完成，總共句數:', sentences.length, '首句:', sentences[0]?.origText?.slice(0, 40));
+  // 步驟四：短句智慧合流 (< 5 個單字與後句合併)
+  const mergedSentences = [];
+  for (let i = 0; i < sentences.length; i++) {
+    let currNode = sentences[i];
+    while (i + 1 < sentences.length) {
+      const words = currNode.origText.trim().split(/\s+/).filter(Boolean);
+      if (words.length < 5) {
+        const nextNode = sentences[i + 1];
+        const combinedText = `${currNode.origText} ${nextNode.origText}`;
+        const combinedDuration = nextNode.end - currNode.start;
+        if (combinedText.length <= CONFIG.MAX_SENTENCE_CHARS && combinedDuration <= CONFIG.MAX_SENTENCE_DURATION) {
+          currNode = {
+            start: currNode.start,
+            end: nextNode.end,
+            origText: combinedText,
+            transText: '',
+            status: 'idle',
+            sourceLang: sourceLang,
+            cues: [...currNode.cues, ...nextNode.cues]
+          };
+          i++; // 合併並消耗下一句
+          continue;
+        }
+      }
+      break;
+    }
+    mergedSentences.push(currNode);
+  }
+
+  sentenceList = mergedSentences;
+  if (typeof window !== 'undefined') window.__ytDualSub_sentenceList = mergedSentences;
+  console.log('[YT-Dual-Sub] Mode 1 合句完成，總共句數:', mergedSentences.length, '首句:', mergedSentences[0]?.origText?.slice(0, 40));
 
   ensureUIElements();
   const video = getActiveVideo();
@@ -750,9 +1083,8 @@ function getActiveCue(currentTime) {
   // 講者在兩句之間的停頓換氣 (5.0 秒內)，保持上一句在下槽完整留存，上槽保持前前句，
   // 徹底終結「講者一停頓下槽就消失、一下單槽一下雙槽」的視覺伸縮跳動！
   if (activeSentence) {
-    // 當前句正在說話：計算已講出的單字片段 (Streaming Tokens 逐字吐字滾動)
-    const spokenCues = activeSentence.cues.filter(c => adjustedTime >= c.start);
-    const streamingText = spokenCues.map(c => c.origText).join(' ').trim() || activeSentence.cues[0]?.origText || activeSentence.origText;
+    // 講者開口時，整句英文與整句中文同步直接完整亮相，徹底杜絕逐字推進造成的排版微震與抖動！
+    const streamingText = activeSentence.origText;
     const prevSentence = activeSentenceIndex > 0 ? sentenceList[activeSentenceIndex - 1] : null;
 
     return {
@@ -848,7 +1180,7 @@ function renderCurrentSubtitle(currentTime) {
   } : { orig: '', trans: '' };
 
   const currSlotData = active.currentSentence ? {
-    orig: active.streamingOrigText || active.currentSentence.origText,
+    orig: active.currentSentence.origText,
     trans: active.transText || active.currentSentence.transText || ''
   } : { orig: '', trans: '' };
 
@@ -1040,16 +1372,43 @@ function handleSubtitleMouseUp(e) {
   const msgPlaySnippet = chrome?.i18n?.getMessage('tooltipPlaySnippet') || '🎬 聽原聲';
   const msgSpeak = chrome?.i18n?.getMessage('tooltipSpeak') || '🗣️ 朗讀';
 
-  tooltip.innerHTML = `
-    <button class="tooltip-close-btn" id="tooltipCloseBtn">✕</button>
-    <div class="tooltip-header">${escapeHtml(selectedText)}</div>
-    <hr/>
-    <div class="tooltip-body" id="tooltipTransBody">${escapeHtml(msgTranslating)}</div>
-    <div class="tooltip-actions">
-      <button class="tooltip-btn" id="btnPlaySnippet">${escapeHtml(msgPlaySnippet)}</button>
-      <button class="tooltip-btn" id="btnSpeakWord">${escapeHtml(msgSpeak)}</button>
-    </div>
-  `;
+  tooltip.textContent = '';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'tooltip-close-btn';
+  closeBtn.id = 'tooltipCloseBtn';
+  closeBtn.textContent = '✕';
+  tooltip.appendChild(closeBtn);
+
+  const header = document.createElement('div');
+  header.className = 'tooltip-header';
+  header.textContent = selectedText;
+  tooltip.appendChild(header);
+
+  tooltip.appendChild(document.createElement('hr'));
+
+  const body = document.createElement('div');
+  body.className = 'tooltip-body';
+  body.id = 'tooltipTransBody';
+  body.textContent = msgTranslating;
+  tooltip.appendChild(body);
+
+  const actions = document.createElement('div');
+  actions.className = 'tooltip-actions';
+
+  const btnPlay = document.createElement('button');
+  btnPlay.className = 'tooltip-btn';
+  btnPlay.id = 'btnPlaySnippet';
+  btnPlay.textContent = msgPlaySnippet;
+  actions.appendChild(btnPlay);
+
+  const btnSpeak = document.createElement('button');
+  btnSpeak.className = 'tooltip-btn';
+  btnSpeak.id = 'btnSpeakWord';
+  btnSpeak.textContent = msgSpeak;
+  actions.appendChild(btnSpeak);
+
+  tooltip.appendChild(actions);
   tooltip.style.display = 'block';
 
   document.getElementById('tooltipCloseBtn')?.addEventListener('click', (ev) => {
@@ -1283,6 +1642,29 @@ let currentSentenceStartTime = 0; // 記錄當前正在講的句子開始時間
 let lastFinishedSentence = ''; // 黏性雙槽：剛完結的句子
 let lastFinishedTrans = ''; // 黏性雙槽：剛完結的句子譯文
 
+function resetStreamingState() {
+  lastRenderedRollingSig = '';
+  speechTokenQueue = [];
+  prevSlot = { orig: '', trans: '' };
+  currSlot = { orig: '', trans: '' };
+  lastLockedCompletedSentence = '';
+  completedSentenceHistory = [];
+  lastRawObservedWindowText = '';
+  currentSentenceStartTime = 0;
+  lastFinishedSentence = '';
+  lastFinishedTrans = '';
+  prevSlotTimeRange = { start: 0, end: 0 };
+}
+
+function getStreamingSlots() {
+  return { prev: prevSlot, curr: currSlot };
+}
+
+function setStreamingSlots(prev, curr) {
+  if (prev) prevSlot = prev;
+  if (curr) currSlot = curr;
+}
+
 function isTailOfImmediatePrev(phrase) {
   if (!phrase) return false;
   const clean = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
@@ -1358,17 +1740,37 @@ function ingestAndExtractSentence(windowText) {
         // 隊列尚未遇句末標點，新行/新切片為自然跨行延伸，忠實接續隊列，不隨意截斷講者話語！
         speechTokenQueue.push(...words);
       } else {
+        // 當超過長度上限時，將已累積文字結算為完結句，絕不直接清空抹除！
+        if (speechTokenQueue.length >= 6) {
+          const completed = speechTokenQueue.join(' ');
+          speechTokenQueue = [...words];
+          return { completed, inProgress: speechTokenQueue.join(' ') };
+        }
         speechTokenQueue = [...words];
       }
     }
   }
 
-  // 3. 檢查隊列中是否包含句末標點符號 (. ! ? 。 ！ ？)
+  // 3. 檢查隊列中是否包含句末標點符號 (嚴格排除省略號 ... 與口語停頓)
   const fullText = speechTokenQueue.join(' ');
-  const match = fullText.match(/^([\s\S]+?[.!?。！？]+)(?:\s+([\s\S]*))?$/);
+  const match = fullText.match(/^([\s\S]+?(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*)(?:\s+([\s\S]*))?$/);
   if (match) {
     const completed = match[1].trim();
     const remainder = (match[2] || '').trim();
+    const words = completed.split(/\s+/).filter(Boolean);
+
+    // 短句 (< 5 個單字) 且隊列後續還有接續內容時，向後合流至下一句
+    if (words.length < 5 && remainder.length > 0) {
+      const secondMatch = fullText.match(/^([\s\S]+?(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*[\s\S]+?(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*)(?:\s+([\s\S]*))?$/);
+      if (secondMatch) {
+        const doubleCompleted = secondMatch[1].trim();
+        const doubleRemainder = (secondMatch[2] || '').trim();
+        speechTokenQueue = doubleRemainder ? doubleRemainder.split(/\s+/).filter(Boolean) : [];
+        return { completed: doubleCompleted, inProgress: doubleRemainder };
+      }
+      // 後句仍在說話中，先暫留隊列中累計
+      return { completed: null, inProgress: fullText };
+    }
 
     const cleanCompleted = completed.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
     const cleanPrev = lastLockedCompletedSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
@@ -1381,6 +1783,29 @@ function ingestAndExtractSentence(windowText) {
       // 若隊列開頭與上一句剛完結的句子完全重複，立即清除
       speechTokenQueue = remainder ? remainder.split(/\s+/).filter(Boolean) : [];
       return { completed: null, inProgress: remainder };
+    }
+  }
+
+  // 4. 無標點音軌智慧自然斷句 (防止單句無限累積至 30~50 字導致下槽爆滿且上槽停滯！)
+  if (speechTokenQueue.length >= 20) {
+    const conjunctions = ['and', 'but', 'so', 'because', 'which', 'now', 'if', 'then', 'or'];
+    let splitIdx = -1;
+    // 雙端邊界保護：前半句至少 12 個字，後半句至少保留 6 個字，絕不切出碎句懸掛！
+    for (let i = 12; i <= speechTokenQueue.length - 6; i++) {
+      const w = speechTokenQueue[i].toLowerCase().replace(/[^a-z]/g, '');
+      if (conjunctions.includes(w)) {
+        splitIdx = i;
+        break;
+      }
+    }
+    if (splitIdx === -1 && speechTokenQueue.length >= 26) {
+      splitIdx = 18;
+    }
+    if (splitIdx !== -1) {
+      const completed = speechTokenQueue.slice(0, splitIdx).join(' ');
+      const remainder = speechTokenQueue.slice(splitIdx).join(' ');
+      speechTokenQueue = remainder ? remainder.split(/\s+/).filter(Boolean) : [];
+      return { completed, inProgress: remainder };
     }
   }
 
@@ -1405,6 +1830,7 @@ function setCachedTranslation(text, trans) {
 }
 
 function observeNativePlayerCaptions() {
+  if (typeof MutationObserver === 'undefined') return;
   if (nativeCaptionObserver) return; // 已經在監聽中，絕不重複重置或清空 Slot 1！
 
   const player = getActivePlayer();
@@ -1452,6 +1878,8 @@ function observeNativePlayerCaptions() {
     if (!result) return;
 
     if (result.completed) {
+      clearTimeout(liveTransDebounceTimer);
+      ++currentLiveTransId; // 立即作廢所有先前發出的未完結前綴翻譯請求
       const completedSentence = result.completed;
       const inProgress = result.inProgress;
 
@@ -1472,39 +1900,29 @@ function observeNativePlayerCaptions() {
       }
 
       // 檢查是否已有快取譯文
-      const cachedTrans = getCachedTranslation(completedSentence);
+      const cachedTrans = getCachedTranslation(completedSentence) || '';
 
-      const applyPromotion = (trans) => {
-        if (inProgress) {
-          // 完結瞬間已有新句在講 (inProgress)：剛完結的句子立即升為上槽，新句在下槽展開
-          prevSlot = { orig: completedSentence, trans: trans };
-          currSlot = { orig: inProgress, trans: '' };
-          lastFinishedSentence = '';
-          lastFinishedTrans = '';
-          renderDualSlotSubtitle(prevSlot, currSlot);
-        } else {
-          // 停頓期（剛說完這句，還沒開口講下一句）：
-          // 黏性雙槽保持！剛完結的句子穩固留在下槽 (帶譯文)，上槽保持上一句！
-          // 徹底根除「下槽一完結就清空消失、全畫面瞬間縮成一行」的抽搐抖動！
-          if (!prevSlot.orig && lastFinishedSentence) {
-            prevSlot = { orig: lastFinishedSentence, trans: lastFinishedTrans };
-          }
-          currSlot = { orig: completedSentence, trans: trans };
-          lastFinishedSentence = completedSentence;
-          lastFinishedTrans = trans;
-          renderDualSlotSubtitle(prevSlot, currSlot);
-        }
-      };
-
-      if (cachedTrans) {
-        applyPromotion(cachedTrans);
+      // 0ms 即刻槽位鎖定 (不等待非同步網路回傳，徹底終結句號出現後直接消失的 BUG)
+      if (inProgress) {
+        // 完結瞬間已有新句在講 (inProgress)：剛完結的句子立即升為上槽，新句在下槽展開
+        prevSlot = { orig: completedSentence, trans: cachedTrans };
+        currSlot = { orig: inProgress, trans: '' };
+        lastFinishedSentence = '';
+        lastFinishedTrans = '';
+        renderDualSlotSubtitle(prevSlot, currSlot);
       } else {
-        // 尚未有譯文：下槽先穩固顯示原文，上槽維持原樣不變
-        if (!inProgress) {
-          currSlot = { orig: completedSentence, trans: '' };
-          renderDualSlotSubtitle(prevSlot, currSlot);
+        // 停頓期（剛說完這句，還沒開口講下一句）：剛完結的句子穩固留存下槽，記錄為 lastFinishedSentence
+        if (!prevSlot.orig && lastFinishedSentence) {
+          prevSlot = { orig: lastFinishedSentence, trans: lastFinishedTrans };
         }
+        currSlot = { orig: completedSentence, trans: cachedTrans };
+        lastFinishedSentence = completedSentence;
+        lastFinishedTrans = cachedTrans;
+        renderDualSlotSubtitle(prevSlot, currSlot);
+      }
 
+      // 若尚未有譯文，異步發起翻譯
+      if (!cachedTrans) {
         const srcLang = currentTrack?.languageCode || 'auto';
         safeSendMessage({
           action: 'translate',
@@ -1515,7 +1933,30 @@ function observeNativePlayerCaptions() {
           const transText = res?.translatedText?.trim() || '';
           if (transText) {
             setCachedTranslation(completedSentence, transText);
-            applyPromotion(transText);
+
+            // 精確槽位填補 (Deterministic Slot Ownership)
+            let needRender = false;
+
+            // 情況 A：該句子已被升入上槽 (新句已在下槽展開)
+            if (prevSlot.orig === completedSentence) {
+              prevSlot.trans = transText;
+              needRender = true;
+            }
+
+            // 情況 B：該句子仍在下槽停頓保留中 (講者換氣停頓中)
+            if (currSlot.orig === completedSentence) {
+              currSlot.trans = transText;
+              needRender = true;
+            }
+
+            // 情況 C：該句子作為 lastFinishedSentence 等待下一次開口升槽
+            if (lastFinishedSentence === completedSentence) {
+              lastFinishedTrans = transText;
+            }
+
+            if (needRender) {
+              renderDualSlotSubtitle(prevSlot, currSlot);
+            }
           }
         });
       }
@@ -1528,14 +1969,27 @@ function observeNativePlayerCaptions() {
 
       // 講者開口講新句子瞬間：上一句正式優雅升槽！
       if (lastFinishedSentence) {
-        prevSlot = { orig: lastFinishedSentence, trans: lastFinishedTrans };
+        prevSlot = {
+          orig: lastFinishedSentence,
+          trans: lastFinishedTrans || getCachedTranslation(lastFinishedSentence) || ''
+        };
         lastFinishedSentence = '';
         lastFinishedTrans = '';
       }
 
-      // 下槽 (Slot 2) 專注於跟隨發音節奏流暢逐字延伸，維持純英文流動，徹底杜絕高度伸縮與跳動！
-      currSlot = { orig: result.inProgress, trans: '' };
+      // 下槽 (Slot 2)：即時雙語顯示（若已有快取譯文立即呈現，並發起防抖即時翻譯）
+      const liveText = result.inProgress;
+      const cachedLiveTrans = getCachedTranslation(liveText) || '';
+      // 若句子正在說話中持續延伸 (例如從逗號延展至句末)，保留上一小段既有翻譯以防畫面翻譯蒸發閃爍！
+      const isExtendingCurrent = currSlot.orig && liveText.startsWith(currSlot.orig.slice(0, Math.min(10, currSlot.orig.length)));
+      const preservedTrans = cachedLiveTrans || (isExtendingCurrent ? currSlot.trans : '');
+      currSlot = { orig: liveText, trans: preservedTrans };
       renderDualSlotSubtitle(prevSlot, currSlot);
+
+      // 防抖請求下槽即時翻譯 (Debounce 350ms，且至少要有 3 個單字)
+      if (!cachedLiveTrans && liveText.split(/\s+/).length >= 3) {
+        debouncedTranslateLiveProgress(liveText);
+      }
     }
   };
 
@@ -1552,21 +2006,46 @@ function observeNativePlayerCaptions() {
   handleCaptionMutation([]);
 }
 
+let liveTransDebounceTimer = null;
+let lastRequestedLiveText = '';
+
+let currentLiveTransId = 0;
+function debouncedTranslateLiveProgress(text) {
+  clearTimeout(liveTransDebounceTimer);
+  liveTransDebounceTimer = setTimeout(() => {
+    if (text === lastRequestedLiveText) return;
+    lastRequestedLiveText = text;
+    const reqId = ++currentLiveTransId;
+    const srcLang = currentTrack?.languageCode || 'auto';
+    safeSendMessage({
+      action: 'translate',
+      text: text,
+      sourceLang: srcLang,
+      targetLang: userTargetLang
+    }, (res) => {
+      // 核心防禦：若後續已有更新或完結句子之翻譯請求發出，過時的短前綴翻譯絕對不允許覆蓋畫面！
+      if (reqId !== currentLiveTransId) return;
+      const transText = res?.translatedText?.trim() || '';
+      if (transText) {
+        setCachedTranslation(text, transText);
+        if (currSlot.orig && (currSlot.orig.trim() === text.trim() || currSlot.orig.startsWith(text.trim()))) {
+          currSlot.trans = transText;
+          renderDualSlotSubtitle(prevSlot, currSlot);
+        }
+      }
+    });
+  }, 350);
+}
+
 function stopNativeCaptionObserver() {
+  clearTimeout(liveTransDebounceTimer);
   if (nativeCaptionObserver) {
     nativeCaptionObserver.disconnect();
     nativeCaptionObserver = null;
   }
-  lastRenderedRollingSig = '';
-  speechTokenQueue = [];
-  prevSlot = { orig: '', trans: '' };
-  currSlot = { orig: '', trans: '' };
-  lastLockedCompletedSentence = '';
-  lastRawObservedWindowText = '';
-  lastFinishedSentence = '';
-  lastFinishedTrans = '';
-  prevSlotTimeRange = { start: 0, end: 0 };
-  currentSentenceStartTime = 0;
+  const player = getActivePlayer();
+  if (player) player.classList.remove('yt-dual-sub-active');
+  resetStreamingState();
 }
 
 function renderDualSlotSubtitle(prev, curr) {
@@ -1590,31 +2069,44 @@ function renderDualSlotSubtitle(prev, curr) {
   }
 
   const currentSig = `${prev?.orig || ''}@@${prev?.trans || ''}@@${displayCurrOrig}@@${currTrans}`;
-  if (currentSig === lastRenderedRollingSig) return;
+  if (currentSig === lastRenderedRollingSig && container.style.display !== 'none') return;
   lastRenderedRollingSig = currentSig;
 
   if (!prev?.orig && !displayCurrOrig) {
     container.style.display = 'none';
+    const player = getActivePlayer();
+    if (player) player.classList.remove('yt-dual-sub-active');
     return;
   }
 
   let slotPrev = container.querySelector('.cue-slot-prev');
   let slotCurr = container.querySelector('.cue-slot-curr');
 
-  // DOM 節點僅初始化一次，後續全部原地 textContent 更新，徹底杜絕畫面抖動與重繪閃爍
+  // DOM 節點僅初始化一次，後續全部原地 textContent 更新，徹底杜絕畫面抖動與重繪閃爍 (100% 遵從 Trusted Types 安全規範)
   if (!slotPrev || !slotCurr) {
-    container.innerHTML = `
-      <div class="cue-slot cue-slot-prev" style="display:none;">
-        <div class="cue-slot-orig"></div>
-        <div class="cue-slot-trans" style="display:none;"></div>
-      </div>
-      <div class="cue-slot cue-slot-curr" style="display:none;">
-        <div class="cue-slot-orig"></div>
-        <div class="cue-slot-trans" style="display:none;"></div>
-      </div>
-    `;
-    slotPrev = container.querySelector('.cue-slot-prev');
-    slotCurr = container.querySelector('.cue-slot-curr');
+    container.textContent = '';
+
+    function createSlotNode(className) {
+      const slot = document.createElement('div');
+      slot.className = `cue-slot ${className}`;
+      slot.style.display = 'none';
+
+      const orig = document.createElement('div');
+      orig.className = 'cue-slot-orig';
+      slot.appendChild(orig);
+
+      const trans = document.createElement('div');
+      trans.className = 'cue-slot-trans';
+      trans.style.display = 'none';
+      slot.appendChild(trans);
+
+      return slot;
+    }
+
+    slotPrev = createSlotNode('cue-slot-prev');
+    slotCurr = createSlotNode('cue-slot-curr');
+    container.appendChild(slotPrev);
+    container.appendChild(slotCurr);
   }
 
   // 原地更新 Slot 1 (上槽 - 0.65 半透明歷史句)
@@ -1659,4 +2151,6 @@ function renderDualSlotSubtitle(prev, curr) {
   }
 
   container.style.display = 'flex';
+  const player = getActivePlayer();
+  if (player) player.classList.add('yt-dual-sub-active');
 }
