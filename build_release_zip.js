@@ -42,7 +42,9 @@ for (const f of filesToInclude) {
   fs.copyFileSync(src, dest);
 }
 
-const zipOut = path.join(rootDir, 'youtube-dual-subtitles-v1.2.0.zip');
+const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8'));
+const version = manifest.version || '1.3.0';
+const zipOut = path.join(rootDir, `youtube-dual-subtitles-v${version}.zip`);
 if (fs.existsSync(zipOut)) fs.unlinkSync(zipOut);
 
 execSync(`powershell -Command "Compress-Archive -Path '${stagingDir}\\*' -DestinationPath '${zipOut}' -Force"`);

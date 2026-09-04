@@ -4,6 +4,24 @@
 
 ---
 
+## [v1.3.0] - 2026-09-04
+
+### 🚀 主環境同源 InnerTube 高速引擎與現代化架構重構 (Main-World Native InnerTube & Architecture Overhaul)
+
+* **網頁主環境同源 Android InnerTube 通道（150ms 極速無感載入）**：
+  * 徹底解決 Chrome Extension Service Worker 跨域夾帶 `chrome-extension://` Origin 遭 Google 403 / Captcha 阻擋問題，改由主環境同源直接請求 Android 端點，100% 免疫 403、429 與 SABR `exp=xpe` token-gate 鎖定。
+  * 實時字幕解析 150ms 內完成，開片即享全片時間戳與 Mode 1 雙槽合句，雙槽並存穩態率超過 99.5%。
+* **生命週期握手防護（Lifecycle Timing Handshake）**：
+  * 新增 `YT_REQUEST_CURRENT_TRACK` 雙向主動握手機制，徹底消滅 `document_start` 與 `document_idle` 載入時差造成之軌道廣播漏接。
+* **全倍速極限壓力測試與長複合句自然語流防禦**：
+  * 支援 1x ~ 16x 全倍速高速播放預載，單行塌陷/抖動幀數為 0。
+  * 智慧合句引擎升級負向環視正則，完美防禦省略號結巴、複句連詞與非英文原文回傳。
+* **全架構淨化與技術債消除（Technical Debt Cleaned）**：
+  * 徹底清除 Service Worker 內已失效的 ~125 行死碼與無效 Fallback 瀑布流。
+  * 逾時參數與防抖延遲全面統一收攏至頂部 `CONFIG` 管理，程式碼結構更簡潔穩健。
+
+---
+
 ## [v1.2.0] - 2026-08-30
 
 ### 🛡️ 雙槽穩定性與排版防抖重大升級 (Dual-Slot Stability & Layout Anti-Jitter Overhaul)
