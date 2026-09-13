@@ -9,11 +9,34 @@ const CONFIG = {
   FETCH_TIMEOUT_MS: 2500 // 嚴格 2.5 秒超時保護，徹底根除 20 秒卡頓
 };
 
-// 1. 高可靠性 Google 翻譯專屬 API 端點清單 (去除會引發 Cookie 授權重定向與網路懸掛的無效端點)
+// 1. 高可靠性 Google 翻譯專屬 API 端點清單 (多網域分散負載，徹底免疫單一網域 429 限流)
 const ENDPOINTS = [
   {
     name: 'googleapis-gtx-array',
     buildUrl: (sl, tl, q) => `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(q)}`,
+    parse: (data) => {
+      if (Array.isArray(data?.[0])) {
+        return data[0].map(item => item?.[0] || '').join('');
+      }
+      return Array.isArray(data) ? data.join('') : String(data || '');
+    }
+  },
+  {
+    name: 'clients5-dict-chrome-ex',
+    buildUrl: (sl, tl, q) => `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(q)}`,
+    parse: (data) => {
+      if (Array.isArray(data?.[0])) {
+        return data[0][0] || '';
+      }
+      if (Array.isArray(data)) {
+        return typeof data[0] === 'string' ? data.join('\n') : (data[0]?.[0] || '');
+      }
+      return String(data || '');
+    }
+  },
+  {
+    name: 'translate-google-gtx',
+    buildUrl: (sl, tl, q) => `https://translate.google.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(q)}`,
     parse: (data) => {
       if (Array.isArray(data?.[0])) {
         return data[0].map(item => item?.[0] || '').join('');
@@ -29,16 +52,6 @@ const ENDPOINTS = [
         return data.sentences.map(s => s?.trans || '').join('');
       }
       return '';
-    }
-  },
-  {
-    name: 'googleapis-gtx-simple',
-    buildUrl: (sl, tl, q) => `https://translate.googleapis.com/translate_a/t?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(q)}`,
-    parse: (data) => {
-      if (Array.isArray(data)) {
-        return typeof data[0] === 'string' ? data.join('\n') : (data[0]?.[0] || '');
-      }
-      return String(data || '');
     }
   }
 ];

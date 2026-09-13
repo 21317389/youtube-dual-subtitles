@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "YouTube Dual Subtitles & Quick Translate",
+    "message": "YouTube Dual Subtitles & Bilingual Translate",
     "description": "The name of the extension"
   },
   "extDesc": {
-    "message": "Dual-track YouTube dual subtitles with sentence-driven streaming, 60fps zero-delay sync, and instant word lookup with audio replay.",
+    "message": "Display dual subtitles & bilingual captions on YouTube for any language! Real-time hover translation, audio replay & easy learning.",
     "description": "The description of the extension"
   },
   "popupTitle": {

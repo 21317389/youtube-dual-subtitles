@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "YouTube 双语字幕与实时划词翻译",
+    "message": "YouTube 双语字幕与实时翻译 - 双字幕多语学习",
     "description": "扩展名称"
   },
   "extDesc": {
-    "message": "支持传统CC与Gemini实时流双轨分流、句级双槽双语字幕、60fps零延迟同步与划词查词原声重播",
+    "message": "最强 YouTube 双语字幕与双字幕工具！支持全球多国语言（英/日/韩/西等）双语对照、实时鼠标划词翻译、原声切片重播与跟读练习，是观看外语视频、跨国资讯获取与多语学习的最佳利器。",
     "description": "扩展简短描述"
   },
   "popupTitle": {

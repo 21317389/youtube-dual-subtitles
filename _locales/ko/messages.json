@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "YouTube 듀얼 자막 & 실시간 단어 번역",
+    "message": "YouTube 이중 자막 & 동시 자막 - 다국어 실시간 번역",
     "description": "확장 프로그램 이름"
   },
   "extDesc": {
-    "message": "기존 CC 및 Gemini 실시간 스트리밍 지원 듀얼 자막, 60fps 무지연 동기화, 단어 선택 번역 및 음성 재생.",
+    "message": "YouTube 다국어 이중 자막 및 동시 자막 확장 프로그램! 영어, 일본어 등 모든 언어 실시간 단어 번역, 원음 다시 듣기 및 외국어 학습 지원.",
     "description": "확장 프로그램 설명"
   },
   "popupTitle": {

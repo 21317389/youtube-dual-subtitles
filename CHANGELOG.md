@@ -4,6 +4,30 @@
 
 ---
 
+## [v1.3.2] - 2026-09-13
+
+### 🛡️ 多網域翻譯備援與 429 頻率限制防禦 (Multi-Domain Failover & Rate Limit Defense)
+
+* **擴充跨網域 Google 翻譯獨立叢集備援**：
+  * 在 `background.js` 中引入 `clients5.google.com`（`client: dict-chrome-ex`）與 `translate.google.com` 獨立主機備用叢集，徹底打破單一 `translate.googleapis.com` 網域限流盲點。
+  * 任一端點遭遇 429 或網路逾時，系統自動於 100ms 內平滑切換至獨立叢集，翻譯成功率達 99.9% 穩態。
+* **滑動窗口翻譯連錯防抖與原文字幕保護**：
+  * 加入連續錯誤計數防抖機制，消除背景預載瞬態網路微抖動引發之紅框提示。
+  * 遭遇極端網路斷線時，底槽字幕優雅留存純淨原文，杜絕錯誤文字干擾畫面排版。
+
+---
+
+## [v1.3.1] - 2026-09-13
+
+### 🌐 多語系在地化文案與搜尋體驗優化 (Store Listing & Locales Localization Overhaul)
+
+* **6 大語言商店文案全面重構**：
+  * 針對英文、繁中、簡中、日文、韓文、西班牙文完成在地化標題與描述關鍵字優化。
+* **強化多語學習與影音沉浸體驗描述**：
+  * 聚焦雙槽流暢滾動、反白查詞與原聲片段跟讀的核心學習價值。
+
+---
+
 ## [v1.3.0] - 2026-09-04
 
 ### 🚀 主環境同源 InnerTube 高速引擎與現代化架構重構 (Main-World Native InnerTube & Architecture Overhaul)

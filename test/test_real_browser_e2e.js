@@ -87,6 +87,7 @@ async function runRealBrowserE2ETest() {
         await new Promise(r => setTimeout(r, 1000));
       }
     } catch (e) {}
+    await new Promise(r => setTimeout(r, 1000));
 
     console.log('[E2E Step 5] 注入真實 styles.css 樣式表...');
     await page.addStyleTag({ content: stylesCss });
@@ -163,9 +164,20 @@ async function runRealBrowserE2ETest() {
     let captured = null;
     let pollCount = 0;
 
-    while (pollCount < 20) {
+    while (pollCount < 30) {
       await new Promise(r => setTimeout(r, 1000));
       pollCount++;
+
+      // 自動略過 YouTube 廣告與快進
+      await page.evaluate(() => {
+        const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-ad-skip-button-slot button, .ytp-ad-skip-button-text');
+        if (skipBtn) skipBtn.click();
+        const player = document.getElementById('movie_player');
+        if (player?.classList?.contains('ad-showing')) {
+          const video = document.querySelector('video');
+          if (video && video.duration) video.currentTime = video.duration;
+        }
+      });
 
       captured = await page.evaluate(() => {
         const cont = document.getElementById('yt-dual-subtitle-container');

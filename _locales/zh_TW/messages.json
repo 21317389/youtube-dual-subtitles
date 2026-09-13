@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "YouTube 雙語字幕與即時選詞翻譯",
+    "message": "YouTube 雙語字幕與即時翻譯 - 雙字幕多語學習",
     "description": "擴充功能名稱"
   },
   "extDesc": {
-    "message": "支援傳統CC與Gemini即時串流雙軌分流、句級雙槽雙語字幕、60fps零延遲同步與反白查詞原聲重播",
+    "message": "最強 YouTube 雙語字幕與雙字幕工具！支援全球多國語言（英/日/韓/西等）雙語對照、即時滑鼠選詞翻譯、原聲切片重播與跟讀練習，是觀看外語影片、跨國資訊汲取與多語學習的最佳利器。",
     "description": "擴充功能簡短描述"
   },
   "popupTitle": {

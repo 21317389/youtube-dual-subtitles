@@ -1204,6 +1204,8 @@ function prioritizeCurrentSentence(currentTime) {
   }
 }
 
+let consecutiveTranslateErrors = 0;
+
 function checkAndTriggerSlidingWindow(currentTime) {
   const adjustedTime = currentTime + subtitleOffset;
   const windowEnd = adjustedTime + CONFIG.PRELOAD_SECONDS;
@@ -1231,6 +1233,7 @@ function checkAndTriggerSlidingWindow(currentTime) {
     targetLang: userTargetLang
   }, (res) => {
     if (res?.translatedText) {
+      consecutiveTranslateErrors = 0;
       const lines = res.translatedText.split('\n');
 
       if (lines.length === pendingSentences.length) {
@@ -1257,19 +1260,23 @@ function checkAndTriggerSlidingWindow(currentTime) {
       const video = getActiveVideo();
       if (video) renderCurrentSubtitle(video.currentTime);
     } else {
-      // 翻譯失敗或所有端點受阻：顯示 Warning Toast 並保護原文字幕正常顯示
-      showWarningToast('⚠️ 翻譯服務暫時受限 (429/網路異常)，已自動保留原文字幕，稍後將自動重試');
+      // 累計連續失敗次數，避免單次背景預載瞬態網路抖動干擾使用者
+      consecutiveTranslateErrors++;
+      if (consecutiveTranslateErrors >= 2) {
+        showWarningToast('⚠️ 翻譯服務暫時受限 (429/網路異常)，已自動保留原文字幕，稍後將自動重試');
+      }
+
       pendingSentences.forEach(s => {
         s.status = 'error';
         s.transText = '⚠️ 翻譯暫時受限 (稍後重試)';
       });
 
-      // 延遲 6 秒後自動恢復為 idle 嘗試重新獲取
+      // 延遲 4 秒後自動恢復為 idle 嘗試重新獲取
       setTimeout(() => {
         pendingSentences.forEach(s => {
           if (s.status === 'error') s.status = 'idle';
         });
-      }, 6000);
+      }, 4000);
 
       lastRenderedSignature = '';
       const video = getActiveVideo();

@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "YouTube デュアル字幕 & 単語翻訳",
+    "message": "YouTube デュアル字幕 & 同時字幕 - 多言語翻訳学習",
     "description": "拡張機能の名前"
   },
   "extDesc": {
-    "message": "従来のCCとGeminiリアルタイム音声ストリームに対応したデュアル字幕、60fps同期、単語選択翻訳と音声再生。",
+    "message": "YouTube 多言語デュアル字幕＆同時字幕！英語・韓国語などあらゆる言語の字幕に対応、単語ホバー翻訳、動画原音再生、シャドーイング学習をサポート。",
     "description": "拡張機能の説明"
   },
   "popupTitle": {
