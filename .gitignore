@@ -31,3 +31,21 @@ node_modules/
 package-lock.json
 test/screenshots/
 test_data/
+
+# Analytics & Private Credentials
+client_secrets.json
+edge_automation_profile/
+dashboard_data/
+*.csv
+build/
+dist/
+*.spec
+test_profile_temp/
+download_dashboard.py
+export_ga4.py
+sync_all_analytics.py
+test_live_extension.py
+test_telemetry.js
+*.bat
+
+

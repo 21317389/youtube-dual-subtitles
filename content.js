@@ -57,6 +57,18 @@ let currentTrack = null;
 let isCaptionsEnabled = true;
 console.log('[YT-Dual-Sub Content] 雙語字幕內容腳本 (content.js) 已注入 YouTube 頁面！');
 
+// 遙測防重覆觸發標記 (每部影片只記錄一次關鍵里程碑)
+let hasTrackedVideoView = false;
+let hasTrackedSubtitleSuccess = false;
+
+function trackEvent(eventName, params = {}) {
+  safeSendMessage({
+    action: 'telemetry_event',
+    eventName,
+    params
+  });
+}
+
 let lastRenderedSignature = '';
 let lastWindowCheckTime = 0;
 let currentFetchSessionId = 0;
@@ -853,10 +865,17 @@ setInterval(() => {
   if (vid && lastObservedVideoId && vid !== lastObservedVideoId) {
     console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', lastObservedVideoId, '->', vid);
     lastObservedVideoId = vid;
+    hasTrackedSubtitleSuccess = false; // 切換影片時重設字幕啟用標記
+    trackEvent('youtube_video_detected', { video_id: vid });
     resetSubtitles();
     ensureUIElements();
   } else if (vid && !lastObservedVideoId) {
     lastObservedVideoId = vid;
+    hasTrackedSubtitleSuccess = false;
+    trackEvent('youtube_video_detected', { video_id: vid });
+  } else if (vid && !hasTrackedVideoView) {
+    hasTrackedVideoView = true;
+    trackEvent('youtube_video_detected', { video_id: vid });
   }
 }, 500);
 
@@ -2072,6 +2091,15 @@ function renderDualSlotSubtitle(prev, curr) {
     const player = getActivePlayer();
     if (player) player.classList.remove('yt-dual-sub-active');
     return;
+  }
+
+  // 🎯 北極星啟用指標：當雙語字幕首次在畫面上成功渲染時回報
+  if (!hasTrackedSubtitleSuccess && (currTrans || prev?.trans)) {
+    hasTrackedSubtitleSuccess = true;
+    trackEvent('subtitle_render_success', {
+      target_lang: userTargetLang || 'zh-TW',
+      video_id: getCurrentVideoId() || 'unknown'
+    });
   }
 
   let slotPrev = container.querySelector('.cue-slot-prev');

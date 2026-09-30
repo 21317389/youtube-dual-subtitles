@@ -165,6 +165,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === 'telemetry_event') {
+    sendGA4Event(request.eventName, request.params || {});
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (request.action !== 'translate') return;
 
   const { text, sourceLang = 'auto', targetLang = 'zh-TW' } = request;
@@ -188,3 +194,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   return true;
 });
+
+// ==========================================
+// 4. GA4 輕量開源遙測引擎 (不含私密金鑰，100% 開源安全)
+// ==========================================
+const GA_MEASUREMENT_ID = 'G-041L0X1KC1';
+
+async function getOrCreateClientId() {
+  const result = await chrome.storage.local.get('ga_client_id');
+  if (result.ga_client_id) return result.ga_client_id;
+  const newId = `${Math.floor(Math.random() * 2147483647)}.${Math.floor(Date.now() / 1000)}`;
+  await chrome.storage.local.set({ ga_client_id: newId });
+  return newId;
+}
+
+async function sendGA4Event(eventName, params = {}) {
+  try {
+    const clientId = await getOrCreateClientId();
+    const payload = new URLSearchParams({
+      v: '2',
+      tid: GA_MEASUREMENT_ID,
+      cid: clientId,
+      en: eventName,
+      _s: '1'
+    });
+
+    // 附帶自訂參數
+    for (const [key, value] of Object.entries(params)) {
+      payload.append(`ep.${key}`, String(value));
+    }
+
+    await fetch(`https://www.google-analytics.com/g/collect?${payload.toString()}`, {
+      method: 'POST',
+      mode: 'no-cors'
+    });
+  } catch (err) {
+    // 遙測失敗不影響主要功能
+  }
+}
+
+// 監聽初次安裝 / 更新事件
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    sendGA4Event('extension_installed', {
+      version: chrome.runtime.getManifest().version
+    });
+  }
+});
+
