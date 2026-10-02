@@ -94,5 +94,29 @@
   "tooltipNoDef": {
     "message": "No se encontró definición",
     "description": "Sin definición"
+  },
+  "whatsNewTitle": {
+    "message": "✨ Novedades de la versión",
+    "description": "Título de novedades"
+  },
+  "whatsNewGotIt": {
+    "message": "Entendido",
+    "description": "Botón cerrar novedades"
+  },
+  "whatsNewItem1": {
+    "message": "🎯 Sincronización inteligente con CC: Los subtítulos dobles ahora solo aparecen cuando activas el botón CC de YouTube.",
+    "description": "Novedad 1"
+  },
+  "whatsNewItem2": {
+    "message": "🔄 Restauración de CC nativo: Al apagar el interruptor superior, vuelves al instante a los subtítulos originales de YouTube.",
+    "description": "Novedad 2"
+  },
+  "whatsNewFooterBtn": {
+    "message": "✨ Novedades",
+    "description": "Botón inferior de novedades"
+  },
+  "rateStoreBtn": {
+    "message": "Calificar 5★",
+    "description": "Botón de calificar en la tienda"
   }
 }

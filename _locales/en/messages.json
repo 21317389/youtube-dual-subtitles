@@ -94,5 +94,29 @@
   "tooltipNoDef": {
     "message": "No definition found",
     "description": "Tooltip no definition found"
+  },
+  "whatsNewTitle": {
+    "message": "✨ What's New",
+    "description": "What's new card title"
+  },
+  "whatsNewGotIt": {
+    "message": "Got it",
+    "description": "Dismiss what's new button"
+  },
+  "whatsNewItem1": {
+    "message": "🎯 Smart CC Sync: Dual subtitles now appear only when YouTube's CC button is ON — zero interruption on casual videos!",
+    "description": "What's new item 1"
+  },
+  "whatsNewItem2": {
+    "message": "🔄 Native CC Restore: Turning off the switch above immediately restores YouTube's original CC captions.",
+    "description": "What's new item 2"
+  },
+  "whatsNewFooterBtn": {
+    "message": "✨ What's New",
+    "description": "Footer toggle what's new button"
+  },
+  "rateStoreBtn": {
+    "message": "Rate 5 Stars",
+    "description": "Rate on Chrome Web Store button"
   }
 }

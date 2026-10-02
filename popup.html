@@ -9,33 +9,92 @@
       padding: 0;
     }
     body {
-      width: 280px;
-      padding: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #1e1e1e;
-      color: #f0f0f0;
+      width: 396px;
+      padding: 16px 18px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+      background-color: #18181b;
+      color: #f4f4f5;
+      position: relative;
+      overflow-x: hidden;
     }
+
+    /* 頂部導覽列：標題 + 雙功能鈕 + 總開關 嚴格對齊左右邊界 */
     .header-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #333;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2e2e34;
+      width: 100%;
     }
     h2 {
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .header-actions {
       display: flex;
       align-items: center;
       gap: 6px;
+      margin-left: auto;
+      margin-right: 2px;
+      flex-shrink: 0;
     }
-    /* 總開關 Switch 樣式 */
+    .header-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 25px;
+      padding: 0 8px;
+      background-color: #27272a;
+      color: #d4d4d8;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .header-btn:hover,
+    .header-btn.active {
+      background-color: #3f3f46;
+      border-color: #52525b;
+      color: #ffffff;
+    }
+    .btn-icon {
+      font-size: 11px;
+      line-height: 1;
+    }
+    .new-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #ef4444;
+      flex-shrink: 0;
+    }
+
+    /* 總開關 Switch 樣式 (獨立 class，不受表單 label 影響) */
     .switch {
       position: relative;
-      display: inline-block;
-      width: 42px;
+      display: inline-flex;
+      align-items: center;
+      width: 40px;
       height: 22px;
+      flex-shrink: 0;
+      margin: 0;
+      cursor: pointer;
     }
     .switch input {
       opacity: 0;
@@ -46,8 +105,8 @@
       position: absolute;
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #444;
-      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      background-color: #3f3f46;
+      transition: .22s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 22px;
     }
     .slider:before {
@@ -57,17 +116,83 @@
       width: 16px;
       left: 3px;
       bottom: 3px;
-      background-color: white;
-      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      background-color: #ffffff;
+      transition: .22s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
     }
     input:checked + .slider {
       background-color: #22c55e;
     }
     input:checked + .slider:before {
-      transform: translateX(20px);
+      transform: translateX(18px);
     }
+
+    /* ✨ 懸浮式更新重點卡片 (Absolute 浮層，展開/收起 0 跳動感) */
+    .whats-new-card {
+      display: none;
+      position: absolute;
+      top: 50px;
+      left: 18px;
+      right: 18px;
+      z-index: 100;
+      background: #232329;
+      border: 1px solid #52525b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #f4f4f5;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.8);
+      animation: popFade 0.15s ease-out;
+    }
+    @keyframes popFade {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .whats-new-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #383842;
+    }
+    .whats-new-title {
+      font-weight: 600;
+      color: #fde047;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .whats-new-close {
+      background: #32323a;
+      color: #e4e4e7;
+      border: 1px solid #4b4b57;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .whats-new-close:hover {
+      background: #4fc3f7;
+      color: #000;
+      border-color: #4fc3f7;
+    }
+    .whats-new-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .whats-new-list li {
+      font-size: 11.5px;
+      color: #e4e4e7;
+    }
+
+    /* 主設定區塊 */
     .settings-content {
       transition: opacity 0.2s ease;
     }
@@ -79,105 +204,148 @@
     .form-group {
       margin-bottom: 12px;
     }
-    label {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .field-label {
+      display: block;
       font-size: 12px;
-      color: #aaa;
+      font-weight: 500;
+      color: #a1a1aa;
       margin-bottom: 6px;
     }
     select {
       width: 100%;
       padding: 8px 10px;
-      background-color: #2d2d2d;
-      color: #fff;
-      border: 1px solid #444;
-      border-radius: 6px;
+      background-color: #27272a;
+      color: #ffffff;
+      border: 1px solid #3f3f46;
+      border-radius: 7px;
       font-size: 13px;
       outline: none;
       cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    select:hover {
+      border-color: #52525b;
     }
     select:focus {
-      border-color: #ff0000;
+      border-color: #4fc3f7;
     }
+
+    /* 對稱式時間軸微調控制器 */
     .offset-controls {
+      display: grid;
+      grid-template-columns: 1fr 72px 1fr auto;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .offset-btn {
+      height: 32px;
+      padding: 0 10px;
+      background: #27272a;
+      color: #e4e4e7;
+      border: 1px solid #3f3f46;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .offset-btn:hover {
+      background: #3f3f46;
+      border-color: #52525b;
+    }
+    .offset-value {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1f1f23;
+      border: 1px solid #2e2e34;
+      border-radius: 7px;
+      font-weight: 700;
+      color: #fde047;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 懸停暫停勾選列 (修正靠左緊湊對齊，不再左右分裂) */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+      margin-bottom: 12px;
+      padding: 8px 10px;
+      background: #222226;
+      border: 1px solid #2e2e34;
+      border-radius: 7px;
+      font-size: 12.5px;
+      color: #e4e4e7;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .checkbox-group:hover {
+      background: #27272a;
+      border-color: #3f3f46;
+    }
+    .checkbox-group input {
+      cursor: pointer;
+      accent-color: #22c55e;
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    /* 快捷鍵說明卡 */
+    .hotkey-card {
+      padding: 10px 12px;
+      background: #222226;
+      border: 1px solid #2e2e34;
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: #a1a1aa;
+      line-height: 1.7;
+    }
+    .hotkey-title {
+      font-weight: 600;
+      color: #38bdf8;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+    }
+    .hotkey-row {
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    .offset-btn {
-      padding: 6px 10px;
-      background: #333;
-      color: #eee;
-      border: 1px solid #444;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-      transition: background 0.2s;
-    }
-    .offset-btn:hover {
-      background: #444;
-    }
-    .offset-value {
-      flex: 1;
-      text-align: center;
-      font-weight: bold;
-      color: #ffe600;
-      font-size: 13px;
-    }
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: #ccc;
-      cursor: pointer;
-    }
-    .checkbox-group input {
-      cursor: pointer;
-      accent-color: #ff0000;
-      width: 14px;
-      height: 14px;
-    }
-    .hotkey-card {
-      margin-top: 12px;
-      padding: 10px;
-      background: #282828;
-      border: 1px solid #383838;
-      border-radius: 6px;
-      font-size: 11.5px;
-      color: #bbb;
-      line-height: 1.6;
-    }
-    .hotkey-title {
-      font-weight: 600;
-      color: #4fc3f7;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
     kbd {
-      background: #3a3a3a;
-      border: 1px solid #555;
-      border-radius: 3px;
-      padding: 1px 5px;
-      font-family: monospace;
-      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      background: #323238;
+      border: 1px solid #4b4b55;
+      border-radius: 4px;
+      padding: 0 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #ffffff;
       font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
     }
     .status {
-      font-size: 12px;
-      color: #4caf50;
+      font-size: 11.5px;
+      color: #4ade80;
       text-align: right;
-      height: 16px;
+      height: 14px;
       margin-top: 6px;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.25s ease;
     }
     .status.show {
       opacity: 1;
@@ -186,16 +354,40 @@
 </head>
 <body>
   <div class="header-row">
-    <h2 data-i18n="popupTitle">🎬 雙語字幕設定</h2>
+    <h2 data-i18n="popupTitle">YouTube 雙語字幕</h2>
+    <div class="header-actions">
+      <button id="whatsNewToggleBtn" class="header-btn" type="button">
+        <span id="footerNewDot" class="new-dot" style="display: none;"></span>
+        <span data-i18n="whatsNewFooterBtn">✨ 更新重點</span>
+      </button>
+      <a id="rateStoreBtn" class="header-btn" href="https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig/reviews" target="_blank" rel="noopener noreferrer">
+        <span class="btn-icon">⭐</span>
+        <span data-i18n="rateStoreBtn">五星好評</span>
+      </a>
+    </div>
     <label class="switch" data-i18n-title="masterToggle" title="啟用/停用擴充功能">
       <input type="checkbox" id="extensionEnabled" checked>
       <span class="slider"></span>
     </label>
   </div>
 
+  <!-- ✨ 懸浮式更新重點小卡片 (點擊上方「✨ 更新重點」展開，不擠壓下方排版、零跳動感) -->
+  <div id="whatsNewCard" class="whats-new-card">
+    <div class="whats-new-header">
+      <div class="whats-new-title">
+        <span data-i18n="whatsNewTitle">✨ 本次更新重點</span>
+      </div>
+      <button id="whatsNewCloseBtn" class="whats-new-close" type="button" data-i18n="whatsNewGotIt">知道了</button>
+    </div>
+    <ul class="whats-new-list">
+      <li data-i18n="whatsNewItem1">🎯 智慧連動 YouTube CC：現在起僅在開啟 YouTube「CC 字幕」時顯示雙語字幕，一般觀看零打擾！</li>
+      <li data-i18n="whatsNewItem2">🔄 原生字幕無縫切換：關閉上方總開關時，立即恢復 YouTube 原始 CC 字幕。</li>
+    </ul>
+  </div>
+
   <div id="settingsContent" class="settings-content">
     <div class="form-group">
-      <label for="targetLang" data-i18n="targetLangLabel">目標翻譯語言</label>
+      <label class="field-label" for="targetLang" data-i18n="targetLangLabel">目標翻譯語言</label>
       <select id="targetLang">
         <option value="zh-TW">繁體中文 (Traditional Chinese)</option>
         <option value="zh-CN">簡體中文 (Simplified Chinese)</option>
@@ -211,7 +403,7 @@
     </div>
 
     <div class="form-group">
-      <label for="uiSize" data-i18n="uiSizeLabel">字幕與選詞視窗大小</label>
+      <label class="field-label" for="uiSize" data-i18n="uiSizeLabel">字幕與視窗大小</label>
       <select id="uiSize">
         <option value="small" data-i18n="sizeSmall">小型 (85%)</option>
         <option value="medium" data-i18n="sizeMedium">標準 (100% - 預設)</option>
@@ -221,14 +413,14 @@
     </div>
 
     <div class="form-group">
-      <label for="offsetValue">
-        <span data-i18n="syncOffsetLabel">字幕時間軸微調 (秒)</span>
+      <label class="field-label" for="offsetDisplay">
+        <span data-i18n="syncOffsetLabel">時間軸微調 (秒)</span>
       </label>
       <div class="offset-controls">
-        <button id="offsetMinus" class="offset-btn" data-i18n="btnEarlier">-0.2s</button>
+        <button id="offsetMinus" class="offset-btn" type="button" data-i18n="btnEarlier">提前 0.2s</button>
         <span id="offsetDisplay" class="offset-value">0.0s</span>
-        <button id="offsetPlus" class="offset-btn" data-i18n="btnLater">+0.2s</button>
-        <button id="offsetReset" class="offset-btn" data-i18n="btnReset">歸零</button>
+        <button id="offsetPlus" class="offset-btn" type="button" data-i18n="btnLater">延後 0.2s</button>
+        <button id="offsetReset" class="offset-btn" type="button" data-i18n="btnReset">歸零</button>
       </div>
     </div>
 
@@ -239,13 +431,13 @@
 
     <div class="hotkey-card">
       <div class="hotkey-title" data-i18n="shortcutsTitle">⚡ 鍵盤跟讀快捷鍵</div>
-      <div><kbd>R</kbd> <span data-i18n="shortcutR">重播當前句子影片原聲</span></div>
-      <div><kbd>A</kbd> <span data-i18n="shortcutA">跳至上一句字幕</span></div>
-      <div><kbd>D</kbd> <span data-i18n="shortcutD">跳至下一句字幕</span></div>
+      <div class="hotkey-row"><kbd>R</kbd> <span data-i18n="shortcutR">重播當前句子影片原聲</span></div>
+      <div class="hotkey-row"><kbd>A</kbd> <span data-i18n="shortcutA">跳至上一句字幕</span></div>
+      <div class="hotkey-row"><kbd>D</kbd> <span data-i18n="shortcutD">跳至下一句字幕</span></div>
     </div>
   </div>
 
-  <div id="statusMessage" class="status" data-i18n="savedToast">✓ 設定已儲存</div>
+  <div id="statusMessage" class="status" data-i18n="savedToast">設定已儲存 ✓</div>
   <script src="popup.js"></script>
 </body>
 </html>

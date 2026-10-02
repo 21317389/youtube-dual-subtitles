@@ -94,5 +94,29 @@
   "tooltipNoDef": {
     "message": "단어 정의를 찾을 수 없습니다",
     "description": "정의 없음"
+  },
+  "whatsNewTitle": {
+    "message": "✨ 업데이트 주요 내용",
+    "description": "업데이트 제목"
+  },
+  "whatsNewGotIt": {
+    "message": "확인",
+    "description": "닫기 버튼"
+  },
+  "whatsNewItem1": {
+    "message": "🎯 스마트 CC 연동: 이제 YouTube 'CC 자막'이 켜져 있을 때만 이중 자막이 표시되어 일반 시청을 방해하지 않습니다!",
+    "description": "업데이트 항목 1"
+  },
+  "whatsNewItem2": {
+    "message": "🔄 기본 자막 즉시 복원: 상단 스위치를 끄면 즉시 YouTube 기본 CC 자막으로 복원됩니다.",
+    "description": "업데이트 항목 2"
+  },
+  "whatsNewFooterBtn": {
+    "message": "✨ 업데이트 내용",
+    "description": "하단 업데이트 보기 버튼"
+  },
+  "rateStoreBtn": {
+    "message": "별점 5점 평가",
+    "description": "스토어 평가 버튼"
   }
 }

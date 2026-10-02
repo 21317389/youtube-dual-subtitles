@@ -311,17 +311,34 @@ async function sendGA4Event(eventName, params = {}) {
   }
 }
 
-// 啟動時立即綁定卸載問卷網址 (確保既有更新用戶與新安裝用戶皆生效)
+async function syncWhatsNewBadge() {
+  try {
+    const currentVersion = chrome.runtime?.getManifest?.()?.version || '1.4.0';
+    const stored = await storageLocalGet('dismissedWhatsNewVersion');
+    if (stored?.dismissedWhatsNewVersion !== currentVersion) {
+      chrome.action?.setBadgeText?.({ text: 'NEW' });
+      chrome.action?.setBadgeBackgroundColor?.({ color: '#ef4444' });
+    } else {
+      chrome.action?.setBadgeText?.({ text: '' });
+    }
+  } catch (e) {}
+}
+
+// 啟動時立即綁定卸載問卷網址與更新紅點狀態 (確保既有更新用戶與新安裝用戶皆生效)
 configureUninstallSurveyUrl();
+syncWhatsNewBadge();
 
 // 監聽初次安裝 / 更新事件
 chrome.runtime?.onInstalled?.addListener((details) => {
   configureUninstallSurveyUrl();
+  syncWhatsNewBadge();
+  const currentVersion = chrome.runtime?.getManifest?.()?.version || 'unknown';
   if (details.reason === 'install') {
-    sendGA4Event('extension_installed', {
-      version: chrome.runtime?.getManifest?.()?.version || 'unknown'
-    });
+    sendGA4Event('extension_installed', { version: currentVersion });
+  } else if (details.reason === 'update') {
+    sendGA4Event('extension_updated', { version: currentVersion });
   }
 });
+
 
 

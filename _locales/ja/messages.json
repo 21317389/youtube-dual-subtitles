@@ -94,5 +94,29 @@
   "tooltipNoDef": {
     "message": "定義が見つかりません",
     "description": "定義なし"
+  },
+  "whatsNewTitle": {
+    "message": "✨ アップデート内容",
+    "description": "アップデート見出し"
+  },
+  "whatsNewGotIt": {
+    "message": "確認",
+    "description": "閉じるボタン"
+  },
+  "whatsNewItem1": {
+    "message": "🎯 YouTube CC 連動：YouTube の「CC 字幕」が ON の時のみ二ヶ国語字幕を表示し、通常視聴を邪魔しません！",
+    "description": "更新項目 1"
+  },
+  "whatsNewItem2": {
+    "message": "🔄 標準字幕へ即座に復帰：上のスイッチを OFF にすると、YouTube 標準の CC 字幕がそのまま表示されます。",
+    "description": "更新項目 2"
+  },
+  "whatsNewFooterBtn": {
+    "message": "✨ 更新内容",
+    "description": "フッターの更新内容ボタン"
+  },
+  "rateStoreBtn": {
+    "message": "評価する",
+    "description": "ストアで評価するボタン"
   }
 }

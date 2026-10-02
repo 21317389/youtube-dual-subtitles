@@ -94,5 +94,29 @@
   "tooltipNoDef": {
     "message": "查无释义",
     "description": "无释义"
+  },
+  "whatsNewTitle": {
+    "message": "✨ 本次更新重点",
+    "description": "更新重点标题"
+  },
+  "whatsNewGotIt": {
+    "message": "知道了",
+    "description": "关闭更新重点按钮"
+  },
+  "whatsNewItem1": {
+    "message": "🎯 智能联动 YouTube CC：现在起仅在开启 YouTube「CC 字幕」时显示双语字幕，日常观看零打扰！",
+    "description": "更新项目 1"
+  },
+  "whatsNewItem2": {
+    "message": "🔄 原生字幕无缝切换：关闭上方总开关时，立即恢复 YouTube 原始 CC 字幕。",
+    "description": "更新项目 2"
+  },
+  "whatsNewFooterBtn": {
+    "message": "✨ 更新重点",
+    "description": "底部查看更新按钮"
+  },
+  "rateStoreBtn": {
+    "message": "五星好评",
+    "description": "前往商店评价按钮"
   }
 }
