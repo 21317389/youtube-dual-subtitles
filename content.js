@@ -54,7 +54,7 @@ let userUiSize = 'medium';
 let isHoverPauseEnabled = false;
 let subtitleOffset = 0;
 let currentTrack = null;
-let isCaptionsEnabled = true;
+let isCaptionsEnabled = false;
 console.log('[YT-Dual-Sub Content] 雙語字幕內容腳本 (content.js) 已注入 YouTube 頁面！');
 
 // 遙測防重覆觸發標記 (每部影片只記錄一次關鍵里程碑)
@@ -114,6 +114,18 @@ try {
       isHoverPauseEnabled = !!items.hoverPause;
       subtitleOffset = parseFloat(items.subtitleOffset) || 0;
       applySubtitleSize(userUiSize);
+      if (!isExtensionEnabled) {
+        ++currentFetchSessionId;
+        inFlightFetchKey = '';
+        stopNativeCaptionObserver();
+        stopSyncLoop();
+        const container = document.getElementById('yt-dual-subtitle-container');
+        if (container) container.style.display = 'none';
+        const tooltip = document.getElementById('yt-translate-tooltip');
+        if (tooltip) tooltip.style.display = 'none';
+        const player = getActivePlayer();
+        if (player) player.classList.remove('yt-dual-sub-active');
+      }
     });
   }
 } catch (e) {}
@@ -141,17 +153,32 @@ try {
         isExtensionEnabled = !!changes.extensionEnabled.newValue;
         const container = document.getElementById('yt-dual-subtitle-container');
         const tooltip = document.getElementById('yt-translate-tooltip');
+        const player = getActivePlayer();
         if (!isExtensionEnabled) {
+          // 關閉插件功能時：立即隱藏雙語字幕、移除 yt-dual-sub-active 遮罩，完整恢復 YouTube 原始 CC 字幕
+          ++currentFetchSessionId;
+          inFlightFetchKey = '';
+          lastRenderedSignature = '';
+          lastRenderedRollingSig = '';
+          stopNativeCaptionObserver();
+          stopSyncLoop();
           if (container) container.style.display = 'none';
           if (tooltip) tooltip.style.display = 'none';
-          stopSyncLoop();
+          if (player) player.classList.remove('yt-dual-sub-active');
         } else {
+          // 開啟插件功能時：重新索取當前軌道，僅在 YouTube CC 也開啟時才渲染雙語字幕
+          lastRenderedSignature = '';
+          lastRenderedRollingSig = '';
           ensureUIElements();
-          const video = getActiveVideo();
-          if (video) {
-            renderCurrentSubtitle(video.currentTime);
-            startSyncLoop();
+          if (isCaptionsEnabled && sentenceList.length > 0) {
+            const video = getActiveVideo();
+            if (video) {
+              checkAndTriggerSlidingWindow(video.currentTime);
+              renderCurrentSubtitle(video.currentTime);
+              startSyncLoop();
+            }
           }
+          requestCurrentTrackFromMainWorld();
         }
       }
 
@@ -225,12 +252,15 @@ function getCurrentVideoId() {
 
 function resetSubtitles() {
   ++currentFetchSessionId;
+  inFlightFetchKey = '';
+  isCaptionsEnabled = false;
   clearInterval(snippetPauseTimer);
   stopNativeCaptionObserver();
   stopSyncLoop();
   sentenceList = [];
   currentTrack = null;
   lastRenderedSignature = '';
+  lastRenderedRollingSig = '';
 
   const container = document.getElementById('yt-dual-subtitle-container');
   if (container) {
@@ -360,15 +390,32 @@ window.addEventListener('message', async (event) => {
   if (videoId && currentVid && videoId !== currentVid) return;
 
   const container = document.getElementById('yt-dual-subtitle-container');
+  const tooltip = document.getElementById('yt-translate-tooltip');
+  const player = getActivePlayer();
 
+  // 使用者未開啟或主動關閉 YouTube CC 字幕時：立即終止雙語字幕與在途請求，尊重使用者關閉行為
   if (!enabled || !track) {
+    ++currentFetchSessionId;
+    inFlightFetchKey = '';
     isCaptionsEnabled = false;
-    sentenceList = [];
     lastRenderedSignature = '';
     lastRenderedRollingSig = '';
     stopNativeCaptionObserver();
     stopSyncLoop();
     if (container) container.style.display = 'none';
+    if (tooltip) tooltip.style.display = 'none';
+    if (player) player.classList.remove('yt-dual-sub-active');
+    return;
+  }
+
+  isCaptionsEnabled = true;
+
+  // 若使用者關閉了插件開關：保留 YouTube 原生 CC 顯示，不啟動雙語字幕攔截或下載
+  if (!isExtensionEnabled) {
+    inFlightFetchKey = '';
+    if (container) container.style.display = 'none';
+    if (tooltip) tooltip.style.display = 'none';
+    if (player) player.classList.remove('yt-dual-sub-active');
     return;
   }
 
@@ -380,11 +427,18 @@ window.addEventListener('message', async (event) => {
       currentTrack.baseUrl === track.baseUrl &&
       currentTrack.targetTlang === track.targetTlang &&
       sentenceList.length > 0)) {
-    isCaptionsEnabled = true;
+    if (sentenceList.length > 0) {
+      ensureUIElements();
+      const video = getActiveVideo();
+      if (video) {
+        checkAndTriggerSlidingWindow(video.currentTime);
+        renderCurrentSubtitle(video.currentTime);
+        startSyncLoop();
+      }
+    }
     return;
   }
 
-  isCaptionsEnabled = true;
   currentTrack = track;
   inFlightFetchKey = currentTrackKey;
   sentenceList = [];
@@ -865,17 +919,19 @@ setInterval(() => {
   if (vid && lastObservedVideoId && vid !== lastObservedVideoId) {
     console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', lastObservedVideoId, '->', vid);
     lastObservedVideoId = vid;
-    hasTrackedSubtitleSuccess = false; // 切換影片時重設字幕啟用標記
-    trackEvent('youtube_video_detected', { video_id: vid });
+    if (typeof hasTrackedVideoView !== 'undefined') hasTrackedVideoView = true;
+    if (typeof hasTrackedSubtitleSuccess !== 'undefined') hasTrackedSubtitleSuccess = false; // 切換影片時重設字幕啟用標記
+    if (typeof trackEvent === 'function') trackEvent('youtube_video_detected', { video_id: vid });
     resetSubtitles();
     ensureUIElements();
   } else if (vid && !lastObservedVideoId) {
     lastObservedVideoId = vid;
-    hasTrackedSubtitleSuccess = false;
-    trackEvent('youtube_video_detected', { video_id: vid });
-  } else if (vid && !hasTrackedVideoView) {
+    if (typeof hasTrackedVideoView !== 'undefined') hasTrackedVideoView = true;
+    if (typeof hasTrackedSubtitleSuccess !== 'undefined') hasTrackedSubtitleSuccess = false;
+    if (typeof trackEvent === 'function') trackEvent('youtube_video_detected', { video_id: vid });
+  } else if (vid && typeof hasTrackedVideoView !== 'undefined' && !hasTrackedVideoView) {
     hasTrackedVideoView = true;
-    trackEvent('youtube_video_detected', { video_id: vid });
+    if (typeof trackEvent === 'function') trackEvent('youtube_video_detected', { video_id: vid });
   }
 }, 500);
 
@@ -1047,7 +1103,7 @@ function parseCues(captionJson, sourceLang) {
 
   ensureUIElements();
   const video = getActiveVideo();
-  if (video) {
+  if (video && isExtensionEnabled && isCaptionsEnabled) {
     prioritizeCurrentSentence(video.currentTime);
     checkAndTriggerSlidingWindow(video.currentTime);
     renderCurrentSubtitle(video.currentTime);
@@ -1136,8 +1192,9 @@ function onTimeUpdate() {
   const player = getActivePlayer();
   const container = document.getElementById('yt-dual-subtitle-container');
 
-  if (!isExtensionEnabled) {
+  if (!isExtensionEnabled || !isCaptionsEnabled) {
     if (container) container.style.display = 'none';
+    if (player) player.classList.remove('yt-dual-sub-active');
     lastRenderedSignature = '';
     lastRenderedRollingSig = '';
     return;
@@ -1146,12 +1203,13 @@ function onTimeUpdate() {
   // 廣告狀態避讓
   if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {
     if (container) container.style.display = 'none';
+    if (player) player.classList.remove('yt-dual-sub-active');
     lastRenderedSignature = '';
     lastRenderedRollingSig = '';
     return;
   }
 
-  if (!isCaptionsEnabled || sentenceList.length === 0) return;
+  if (sentenceList.length === 0) return;
 
   const video = getActiveVideo();
   if (!video) return;
@@ -1169,6 +1227,15 @@ function renderCurrentSubtitle(currentTime) {
   const container = document.getElementById('yt-dual-subtitle-container');
   if (!container) return;
 
+  if (!isExtensionEnabled || !isCaptionsEnabled) {
+    container.style.display = 'none';
+    const player = getActivePlayer();
+    if (player) player.classList.remove('yt-dual-sub-active');
+    lastRenderedSignature = '';
+    lastRenderedRollingSig = '';
+    return;
+  }
+
   const active = getActiveCue(currentTime);
 
   if (!active) {
@@ -1177,6 +1244,8 @@ function renderCurrentSubtitle(currentTime) {
       lastRenderedSignature = '';
       lastRenderedRollingSig = '';
     }
+    const player = getActivePlayer();
+    if (player) player.classList.remove('yt-dual-sub-active');
     return;
   }
 
@@ -1845,6 +1914,7 @@ function setCachedTranslation(text, trans) {
 
 function observeNativePlayerCaptions() {
   if (typeof MutationObserver === 'undefined') return;
+  if (!isExtensionEnabled || !isCaptionsEnabled) return;
   if (nativeCaptionObserver) return; // 已經在監聽中，絕不重複重置或清空 Slot 1！
 
   const player = getActivePlayer();
@@ -1854,7 +1924,7 @@ function observeNativePlayerCaptions() {
   stopSyncLoop(); // 避免與 60fps 幀循環競爭
 
   const handleCaptionMutation = (mutationsList) => {
-    if (!isExtensionEnabled) return;
+    if (!isExtensionEnabled || !isCaptionsEnabled) return;
 
     // 嚴格過濾：若變更來自我們自己的雙語字幕容器或 Tooltip，直接忽略 (防止無窮遞迴與 CPU 飆高)
     if (mutationsList && mutationsList.length > 0) {
@@ -2063,8 +2133,13 @@ function stopNativeCaptionObserver() {
 }
 
 function renderDualSlotSubtitle(prev, curr) {
-  if (!isExtensionEnabled) return;
   const container = document.getElementById('yt-dual-subtitle-container');
+  if (!isExtensionEnabled || !isCaptionsEnabled) {
+    if (container) container.style.display = 'none';
+    const player = getActivePlayer();
+    if (player) player.classList.remove('yt-dual-sub-active');
+    return;
+  }
   if (!container) return;
 
   const currOrig = curr?.orig || '';
@@ -2094,12 +2169,14 @@ function renderDualSlotSubtitle(prev, curr) {
   }
 
   // 🎯 北極星啟用指標：當雙語字幕首次在畫面上成功渲染時回報
-  if (!hasTrackedSubtitleSuccess && (currTrans || prev?.trans)) {
+  if (typeof hasTrackedSubtitleSuccess !== 'undefined' && !hasTrackedSubtitleSuccess && (currTrans || prev?.trans)) {
     hasTrackedSubtitleSuccess = true;
-    trackEvent('subtitle_render_success', {
-      target_lang: userTargetLang || 'zh-TW',
-      video_id: getCurrentVideoId() || 'unknown'
-    });
+    if (typeof trackEvent === 'function') {
+      trackEvent('subtitle_render_success', {
+        target_lang: userTargetLang || 'zh-TW',
+        video_id: getCurrentVideoId() || 'unknown'
+      });
+    }
   }
 
   let slotPrev = container.querySelector('.cue-slot-prev');

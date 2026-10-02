@@ -234,10 +234,10 @@ async function sendGA4Event(eventName, params = {}) {
 }
 
 // 監聽初次安裝 / 更新事件
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime?.onInstalled?.addListener((details) => {
   if (details.reason === 'install') {
     sendGA4Event('extension_installed', {
-      version: chrome.runtime.getManifest().version
+      version: chrome.runtime?.getManifest?.()?.version || 'unknown'
     });
   }
 });

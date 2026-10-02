@@ -46,6 +46,17 @@
         };
       }
 
+      if (typeof player.unloadModule === 'function') {
+        const originalUnloadModule = player.unloadModule;
+        player.unloadModule = function (module) {
+          const result = originalUnloadModule.apply(this, arguments);
+          if (module === 'captions') {
+            handleTrackChange(null);
+          }
+          return result;
+        };
+      }
+
       if (typeof player.addEventListener === 'function') {
         player.addEventListener('onCaptionsTrackListChanged', notifyCurrentTrack);
         player.addEventListener('onStateChange', (state) => {
@@ -61,7 +72,7 @@
     notifyCurrentTrack();
   }
 
-  // 4. 廣播當前軌道資訊
+  // 4. 廣播當前軌道資訊（完全尊重使用者 CC 開關狀態，絕不強制自動開啟字幕）
   let lastNotifyTrackTime = 0;
   function notifyCurrentTrack(force = false) {
     const now = Date.now();
@@ -76,23 +87,9 @@
       (currentVid === window.ytInitialPlayerResponse?.videoDetails?.videoId ? window.ytInitialPlayerResponse : null);
 
     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
-    let activeTrack = player.getOption?.('captions', 'track');
-
-    // 自動開啟字幕：若影片有可用字幕軌道，但目前尚未開啟字幕，主動為使用者喚起字幕！
-    if ((!activeTrack || Object.keys(activeTrack).length === 0 || !activeTrack.languageCode) && tracks.length > 0) {
-      const defaultTrack = tracks.find(t => t.languageCode === 'en' || t.isDefault) || tracks[0];
-      if (defaultTrack && typeof player.setOption === 'function') {
-        player.loadModule?.('captions');
-        player.setOption('captions', 'track', defaultTrack);
-        activeTrack = player.getOption?.('captions', 'track') || defaultTrack;
-      }
-      try {
-        const ccBtn = player.querySelector?.('.ytp-subtitles-button') || document.querySelector('.ytp-subtitles-button');
-        if (ccBtn && ccBtn.getAttribute('aria-pressed') !== 'true') {
-          ccBtn.click();
-        }
-      } catch (e) {}
-    }
+    const ccBtn = player.querySelector?.('.ytp-subtitles-button');
+    const isCcBtnOff = ccBtn && typeof ccBtn.getAttribute === 'function' && ccBtn.getAttribute('aria-pressed') === 'false';
+    const activeTrack = isCcBtnOff ? null : player.getOption?.('captions', 'track');
 
     console.log('[YT-Dual-Sub MainWorld] notifyCurrentTrack:', activeTrack?.languageCode || 'none', '可選軌道數:', tracks.length);
     handleTrackChange(activeTrack, tracks, currentVid);
@@ -373,6 +370,24 @@
       setTimeout(triggerImmediateAndPolledInit, 100);
     }
   });
+
+  // 監聽使用者手動點擊 CC 字幕按鈕、齒輪選單或按下 C 快捷鍵，即時同步開關狀態
+  document.addEventListener('click', (e) => {
+    const target = e?.target;
+    if (target && typeof target.closest === 'function') {
+      if (target.closest('.ytp-subtitles-button') || target.closest('.ytp-menuitem')) {
+        setTimeout(() => notifyCurrentTrack(true), 50);
+        setTimeout(() => notifyCurrentTrack(true), 200);
+      }
+    }
+  }, true);
+
+  document.addEventListener('keydown', (e) => {
+    if (e?.key && e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      setTimeout(() => notifyCurrentTrack(true), 50);
+      setTimeout(() => notifyCurrentTrack(true), 200);
+    }
+  }, true);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initPlayerHook);
