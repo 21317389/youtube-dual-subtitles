@@ -270,8 +270,17 @@ async function getOrCreateClientId() {
   return newId;
 }
 
+function isProductionExtension() {
+  try {
+    return Boolean(chrome?.runtime?.getManifest?.()?.update_url);
+  } catch (e) {
+    return false;
+  }
+}
+
 async function configureUninstallSurveyUrl() {
   try {
+    if (!isProductionExtension()) return;
     if (typeof chrome === 'undefined' || typeof chrome?.runtime?.setUninstallURL !== 'function') return;
     const cid = await getOrCreateClientId();
     const version = chrome.runtime?.getManifest?.()?.version || 'unknown';
@@ -285,6 +294,9 @@ async function configureUninstallSurveyUrl() {
 
 async function sendGA4Event(eventName, params = {}) {
   try {
+    // 僅在 Chrome Web Store 正式安裝環境 (具備 update_url) 發送 GA4 遙測，避免本機開發與 E2E 測試污染數據
+    if (!isProductionExtension()) return;
+
     const clientId = await getOrCreateClientId();
     const payload = new URLSearchParams({
       v: '2',
