@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Dual Subtitles - Feedback</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --card: #1a1a1a;
+      --border: rgba(255, 255, 255, 0.12);
+      --accent: #4fc3f7;
+      --gold: #ffe600;
+      --text: #f1f1f1;
+      --muted: #aaaaaa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 26px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #000;
+      background: var(--gold);
+      padding: 3px 9px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 8px 0;
+      line-height: 1.4;
+    }
+    p.sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    label.option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    label.option:hover {
+      border-color: rgba(79, 195, 247, 0.5);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    label.option input[type="radio"] {
+      accent-color: var(--accent);
+      transform: scale(1.1);
+    }
+    textarea {
+      width: 100%;
+      min-height: 72px;
+      background: #121212;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 16px;
+      font-family: inherit;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    button.submit-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button.submit-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .thank-you {
+      display: none;
+      text-align: center;
+      padding: 20px 10px;
+    }
+    .thank-you h2 {
+      color: var(--accent);
+      margin: 0 0 10px 0;
+      font-size: 20px;
+    }
+    .thank-you p {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 18px 0;
+    }
+    .links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      margin: 0 8px;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="surveyForm">
+      <span class="badge">YouTube Dual Subtitles</span>
+      <h1 id="titleText">很遺憾看到您離開，可以告訴我們原因嗎？</h1>
+      <p class="sub" id="subText">只需勾選 1 個選項（完全匿名），這能直接幫助我們修正問題：</p>
+
+      <div class="options" id="optionsContainer">
+        <label class="option">
+          <input type="radio" name="reason" value="no_subtitles" />
+          <span data-i18n="opt_no_subtitles">找不到雙語字幕 / 字幕沒有顯示出來</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="reason" value="auto_cc" />
+          <span data-i18n="opt_auto_cc">看一般/母語影片時自動跳出字幕，覺得被干擾</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="reason" value="slow_error" />
+          <span data-i18n="opt_slow_error">翻譯速度太慢、卡頓或出現翻譯失敗</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="reason" value="ui_style" />
+          <span data-i18n="opt_ui_style">字幕排版、字體大小或位置不符合習慣</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="reason" value="alternative" />
+          <span data-i18n="opt_alternative">已經找到其他替代的雙語字幕工具</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="reason" value="other" />
+          <span data-i18n="opt_other">其他原因</span>
+        </label>
+      </div>
+
+      <textarea id="commentInput" placeholder="（選填）補充說明遇到的情況或影片網址..."></textarea>
+      <button class="submit-btn" id="submitBtn" disabled>送出回饋</button>
+    </div>
+
+    <div class="thank-you" id="thankYouBox">
+      <h2 id="thanksTitle">感謝您的真實回饋！</h2>
+      <p id="thanksSub">我們已收到您的原因並會持續改進產品體驗。</p>
+      <div class="links">
+        <a href="https://github.com/21317389/youtube-dual-subtitles/issues" target="_blank" rel="noopener">GitHub Issues</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GA_MEASUREMENT_ID = 'G-041L0X1KC1';
+    const params = new URLSearchParams(window.location.search);
+    const clientId = params.get('cid') || `${Math.floor(Math.random() * 2147483647)}.${Math.floor(Date.now() / 1000)}`;
+    const extVersion = params.get('v') || 'unknown';
+    const rawLang = (params.get('lang') || navigator.language || 'en').toLowerCase();
+    const sessionId = String(Math.floor(Date.now() / 1000));
+
+    const I18N = {
+      'zh-tw': {
+        title: '很遺憾看到您離開，可以告訴我們原因嗎？',
+        sub: '只需勾選 1 個選項（完全匿名），這能直接幫助我們修正問題：',
+        opt_no_subtitles: '找不到雙語字幕 / 字幕沒有顯示出來',
+        opt_auto_cc: '看一般/母語影片時自動跳出字幕，覺得被干擾',
+        opt_slow_error: '翻譯速度太慢、卡頓或出現翻譯失敗',
+        opt_ui_style: '字幕排版、字體大小或位置不符合習慣',
+        opt_alternative: '已經找到其他替代的雙語字幕工具',
+        opt_other: '其他原因',
+        placeholder: '（選填）補充說明遇到的情況或影片網址...',
+        submit: '送出回饋',
+        thanksTitle: '感謝您的真實回饋！',
+        thanksSub: '我們已收到您的原因並會持續改進產品體驗。'
+      },
+      'zh-cn': {
+        title: '很遗憾看到您离开，可以告诉我们原因吗？',
+        sub: '只需勾选 1 个选项（完全匿名），这能直接帮助我们修复问题：',
+        opt_no_subtitles: '找不到双语字幕 / 字幕没有显示出来',
+        opt_auto_cc: '看一般/母语视频时自动跳出字幕，觉得被干扰',
+        opt_slow_error: '翻译速度太慢、卡顿或出现翻译失败',
+        opt_ui_style: '字幕排版、字体大小或位置不符合习惯',
+        opt_alternative: '已经找到其他替代的双语字幕工具',
+        opt_other: '其他原因',
+        placeholder: '（选填）补充说明遇到的情况或视频链接...',
+        submit: '提交反馈',
+        thanksTitle: '感谢您的真实反馈！',
+        thanksSub: '我们已收到您的反馈并会持续改进产品体验。'
+      },
+      'en': {
+        title: 'Sorry to see you go — what went wrong?',
+        sub: 'Pick 1 quick option (100% anonymous) to help us fix the issue:',
+        opt_no_subtitles: 'Subtitles did not show up / not working',
+        opt_auto_cc: 'Popped up automatically on videos where I did not want subtitles',
+        opt_slow_error: 'Translation was too slow, laggy, or failed',
+        opt_ui_style: 'Did not like the subtitle layout, font size, or position',
+        opt_alternative: 'Found another dual-subtitle extension',
+        opt_other: 'Other reason',
+        placeholder: '(Optional) Tell us more or share a video URL...',
+        submit: 'Submit Feedback',
+        thanksTitle: 'Thank you for your feedback!',
+        thanksSub: 'Your response has been recorded to help us improve.'
+      },
+      'ja': {
+        title: 'ご利用ありがとうございました。アンインストールの理由を教えていただけますか？',
+        sub: '改善のため、当てはまるものを1つ選択してください（完全匿名）：',
+        opt_no_subtitles: '二ヶ国語字幕が表示されない・動作しない',
+        opt_auto_cc: '字幕が不要な動画でも自動的に表示されて邪魔だった',
+        opt_slow_error: '翻訳が遅い、カクつく、または翻訳エラーが出る',
+        opt_ui_style: '字幕のレイアウト、文字サイズ、位置が合わなかった',
+        opt_alternative: '他の二ヶ国語字幕ツールを見つけた',
+        opt_other: 'その他の理由',
+        placeholder: '（任意）具体的な状況や動画のURLがあればご記入ください...',
+        submit: 'フィードバックを送信',
+        thanksTitle: '貴重なご意見をありがとうございます！',
+        thanksSub: 'いただいた内容は今後の改善に役立てさせていただきます。'
+      },
+      'ko': {
+        title: '아쉽게도 떠나시네요. 삭제하시는 이유를 알려주시겠어요?',
+        sub: '문제 해결을 위해 항목을 1개만 선택해 주세요 (100% 익명):',
+        opt_no_subtitles: '이중 자막이 표시되지 않거나 작동하지 않음',
+        opt_auto_cc: '자막이 필요 없는 영상에서도 자동으로 켜져서 불편함',
+        opt_slow_error: '번역 속도가 너무 느리거나 오류가 발생함',
+        opt_ui_style: '자막 디자인, 글자 크기 또는 위치가 마음에 들지 않음',
+        opt_alternative: '다른 이중 자막 확장 프로그램을 찾음',
+        opt_other: '기타 이유',
+        placeholder: '(선택 사항) 자세한 상황이나 영상 URL을 알려주세요...',
+        submit: '피드백 보내기',
+        thanksTitle: '소중한 피드백 감사합니다!',
+        thanksSub: '보내주신 의견을 바탕으로 더 나은 서비스를 만들겠습니다.'
+      },
+      'es': {
+        title: 'Lamentamos que te vayas — ¿qué salió mal?',
+        sub: 'Elige 1 opción rápida (100% anónimo) para ayudarnos a solucionarlo:',
+        opt_no_subtitles: 'Los subtítulos no aparecieron / no funcionaron',
+        opt_auto_cc: 'Se activaban automáticamente en videos donde no quería subtítulos',
+        opt_slow_error: 'La traducción era muy lenta o fallaba',
+        opt_ui_style: 'No me gustó el diseño, tamaño o posición de los subtítulos',
+        opt_alternative: 'Encontré otra extensión de subtítulos bilingües',
+        opt_other: 'Otra razón',
+        placeholder: '(Opcional) Cuéntanos más detalles o comparte la URL del video...',
+        submit: 'Enviar comentarios',
+        thanksTitle: '¡Gracias por tus comentarios!',
+        thanksSub: 'Hemos registrado tu respuesta para seguir mejorando.'
+      }
+    };
+
+    function pickLocaleDict(lang) {
+      if (lang.startsWith('zh-tw') || lang.startsWith('zh-hk') || lang.startsWith('zh-mo') || lang === 'zh_tw') return I18N['zh-tw'];
+      if (lang.startsWith('zh')) return I18N['zh-cn'];
+      if (lang.startsWith('ja')) return I18N['ja'];
+      if (lang.startsWith('ko')) return I18N['ko'];
+      if (lang.startsWith('es')) return I18N['es'];
+      return I18N['en'];
+    }
+
+    const dict = pickLocaleDict(rawLang);
+
+    document.getElementById('titleText').textContent = dict.title;
+    document.getElementById('subText').textContent = dict.sub;
+    document.getElementById('commentInput').placeholder = dict.placeholder;
+    document.getElementById('submitBtn').textContent = dict.submit;
+    document.getElementById('thanksTitle').textContent = dict.thanksTitle;
+    document.getElementById('thanksSub').textContent = dict.thanksSub;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k]) el.textContent = dict[k];
+    });
+
+    function sendGA4(eventName, extraParams = {}) {
+      try {
+        const q = new URLSearchParams({
+          v: '2',
+          tid: GA_MEASUREMENT_ID,
+          cid: clientId,
+          sid: sessionId,
+          seg: '1',
+          _et: '100',
+          _s: '1',
+          en: eventName
+        });
+        for (const [k, val] of Object.entries(extraParams)) {
+          if (val !== undefined && val !== '') {
+            q.append(`ep.${k}`, String(val).slice(0, 100));
+          }
+        }
+        const url = `https://www.google-analytics.com/g/collect?${q.toString()}`;
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(url);
+        } else {
+          fetch(url, { method: 'POST', mode: 'no-cors', keepalive: true });
+        }
+      } catch (e) {}
+    }
+
+    // 頁面開啟瞬間即刻記錄真實解除安裝事件
+    sendGA4('extension_uninstalled', { version: extVersion, ui_lang: rawLang });
+
+    const radios = document.querySelectorAll('input[name="reason"]');
+    const submitBtn = document.getElementById('submitBtn');
+    radios.forEach(r => {
+      r.addEventListener('change', () => {
+        submitBtn.disabled = false;
+      });
+    });
+
+    submitBtn.addEventListener('click', () => {
+      const checked = document.querySelector('input[name="reason"]:checked');
+      if (!checked) return;
+      const reason = checked.value;
+      const comment = document.getElementById('commentInput').value.trim();
+
+      // 同時發送獨立事件名稱 (讓 export_ga4.py 直接在 ga4_events.csv 顯示各原因數量) 與帶參數總事件
+      sendGA4(`uninstall_reason_${reason}`, {
+        reason,
+        comment,
+        version: extVersion,
+        ui_lang: rawLang
+      });
+      sendGA4('uninstall_feedback', {
+        reason,
+        comment,
+        version: extVersion,
+        ui_lang: rawLang
+      });
+
+      document.getElementById('surveyForm').style.display = 'none';
+      document.getElementById('thankYouBox').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

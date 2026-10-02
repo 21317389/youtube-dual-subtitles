@@ -57,9 +57,24 @@ let currentTrack = null;
 let isCaptionsEnabled = false;
 console.log('[YT-Dual-Sub Content] 雙語字幕內容腳本 (content.js) 已注入 YouTube 頁面！');
 
-// 遙測防重覆觸發標記 (每部影片只記錄一次關鍵里程碑)
+// 遙測防重覆觸發標記 (每部影片只記錄一次關鍵里程碑與失敗診斷，絕不重複轟炸)
 let hasTrackedVideoView = false;
 let hasTrackedSubtitleSuccess = false;
+let hasTrackedRateLimit429 = false;
+let hasTrackedMode2Fallback = false;
+let hasTrackedTranslateError = false;
+
+function resetVideoTelemetryFlags() {
+  hasTrackedSubtitleSuccess = false;
+  hasTrackedRateLimit429 = false;
+  hasTrackedMode2Fallback = false;
+  hasTrackedTranslateError = false;
+}
+
+function isShortsPage() {
+  if (typeof window === 'undefined' || !window?.location?.href) return false;
+  return /\/shorts\//.test(window.location.href);
+}
 
 function trackEvent(eventName, params = {}) {
   safeSendMessage({
@@ -502,6 +517,10 @@ window.addEventListener('message', async (event) => {
 
   // 兜底降級：兩大靜態通道均不可用時，啟動 Mode 2 即時串流監聽
   console.log('[YT-Dual-Sub] 靜態字幕不可用，啟動 Mode 2 (Gemini / DOM 串流監聽)');
+  if (typeof hasTrackedMode2Fallback !== 'undefined' && !hasTrackedMode2Fallback && typeof trackEvent === 'function') {
+    hasTrackedMode2Fallback = true;
+    trackEvent('fallback_mode2_activated', { video_id: vid || 'unknown', lang: track.languageCode || 'unknown' });
+  }
   inFlightFetchKey = '';
   stopSyncLoop();
   observeNativePlayerCaptions();
@@ -640,6 +659,10 @@ function fetchCaptionViaBackground(url, videoId, languageCode) {
         clearTimeout(timer);
         timedtextCooldownUntil = Date.now() + CONFIG.RATE_LIMIT_COOLDOWN_MS;
         console.warn('[YT-Dual-Sub] 收到 429 限流信號，立即啟動冷卻，絕不發起任何二次請求！');
+        if (typeof hasTrackedRateLimit429 !== 'undefined' && !hasTrackedRateLimit429 && typeof trackEvent === 'function') {
+          hasTrackedRateLimit429 = true;
+          trackEvent('fail_rate_limit_429', { video_id: vid || 'unknown' });
+        }
         resolve(null);
         return;
       }
@@ -708,6 +731,10 @@ async function fetchCaptionTextWithFallback(track) {
         if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<title>sorry') || trimmed.includes('captcharedirect')) {
           console.warn('[YT-Dual-Sub] 檢測到 429 風控頁面，立即啟動 60 秒熔斷冷卻期，保護 IP 避免遭封鎖！');
           timedtextCooldownUntil = Date.now() + 60000;
+          if (typeof hasTrackedRateLimit429 !== 'undefined' && !hasTrackedRateLimit429 && typeof trackEvent === 'function') {
+            hasTrackedRateLimit429 = true;
+            trackEvent('fail_rate_limit_429', { video_id: vid || 'unknown' });
+          }
           return null;
         }
         console.log('[YT-Dual-Sub] 字幕下載成功，來源格式:', url.includes('fmt=json3') ? 'json3' : (url.includes('fmt=vtt') ? 'vtt' : 'raw/xml'), '字元數:', text.length);
@@ -916,22 +943,23 @@ function parseVttCaptions(vttString) {
 // URL 變更兜底防護 (僅當使用者確實由片 A 切換至不同片 B 時觸發重置)
 setInterval(() => {
   const vid = getCurrentVideoId();
+  const detectEventName = (typeof isShortsPage === 'function' && isShortsPage()) ? 'youtube_shorts_detected' : 'youtube_video_detected';
   if (vid && lastObservedVideoId && vid !== lastObservedVideoId) {
     console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', lastObservedVideoId, '->', vid);
     lastObservedVideoId = vid;
     if (typeof hasTrackedVideoView !== 'undefined') hasTrackedVideoView = true;
-    if (typeof hasTrackedSubtitleSuccess !== 'undefined') hasTrackedSubtitleSuccess = false; // 切換影片時重設字幕啟用標記
-    if (typeof trackEvent === 'function') trackEvent('youtube_video_detected', { video_id: vid });
+    if (typeof resetVideoTelemetryFlags === 'function') resetVideoTelemetryFlags();
+    if (typeof trackEvent === 'function') trackEvent(detectEventName, { video_id: vid });
     resetSubtitles();
     ensureUIElements();
   } else if (vid && !lastObservedVideoId) {
     lastObservedVideoId = vid;
     if (typeof hasTrackedVideoView !== 'undefined') hasTrackedVideoView = true;
-    if (typeof hasTrackedSubtitleSuccess !== 'undefined') hasTrackedSubtitleSuccess = false;
-    if (typeof trackEvent === 'function') trackEvent('youtube_video_detected', { video_id: vid });
+    if (typeof resetVideoTelemetryFlags === 'function') resetVideoTelemetryFlags();
+    if (typeof trackEvent === 'function') trackEvent(detectEventName, { video_id: vid });
   } else if (vid && typeof hasTrackedVideoView !== 'undefined' && !hasTrackedVideoView) {
     hasTrackedVideoView = true;
-    if (typeof trackEvent === 'function') trackEvent('youtube_video_detected', { video_id: vid });
+    if (typeof trackEvent === 'function') trackEvent(detectEventName, { video_id: vid });
   }
 }, 500);
 
@@ -1352,6 +1380,10 @@ function checkAndTriggerSlidingWindow(currentTime) {
       consecutiveTranslateErrors++;
       if (consecutiveTranslateErrors >= 2) {
         showWarningToast('⚠️ 翻譯服務暫時受限 (429/網路異常)，已自動保留原文字幕，稍後將自動重試');
+        if (typeof hasTrackedTranslateError !== 'undefined' && !hasTrackedTranslateError && typeof trackEvent === 'function') {
+          hasTrackedTranslateError = true;
+          trackEvent('fail_translate_error', { video_id: getCurrentVideoId() || 'unknown', target_lang: userTargetLang || 'zh-TW' });
+        }
       }
 
       pendingSentences.forEach(s => {

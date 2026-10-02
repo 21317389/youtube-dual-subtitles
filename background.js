@@ -196,16 +196,91 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // ==========================================
-// 4. GA4 輕量開源遙測引擎 (不含私密金鑰，100% 開源安全)
+// 4. GA4 輕量開源遙測引擎与卸載原因問卷 (不含私密金鑰，100% 開源安全)
 // ==========================================
 const GA_MEASUREMENT_ID = 'G-041L0X1KC1';
+const UNINSTALL_SURVEY_BASE_URL = 'https://21317389.github.io/youtube-dual-subtitles/uninstall.html';
+const GA_SESSION_ID = String(Math.floor(Date.now() / 1000));
+
+function storageLocalGet(key) {
+  return new Promise((resolve) => {
+    try {
+      if (typeof chrome === 'undefined' || !chrome?.storage?.local?.get) return resolve({});
+      let settled = false;
+      const maybePromise = chrome.storage.local.get(key, (res) => {
+        if (!settled) {
+          settled = true;
+          resolve(res || {});
+        }
+      });
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise.then((res) => {
+          if (!settled) {
+            settled = true;
+            resolve(res || {});
+          }
+        }).catch(() => {
+          if (!settled) {
+            settled = true;
+            resolve({});
+          }
+        });
+      }
+    } catch (e) {
+      resolve({});
+    }
+  });
+}
+
+function storageLocalSet(obj) {
+  return new Promise((resolve) => {
+    try {
+      if (typeof chrome === 'undefined' || !chrome?.storage?.local?.set) return resolve();
+      let settled = false;
+      const maybePromise = chrome.storage.local.set(obj, () => {
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
+      });
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise.then(() => {
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+        }).catch(() => {
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+        });
+      }
+    } catch (e) {
+      resolve();
+    }
+  });
+}
 
 async function getOrCreateClientId() {
-  const result = await chrome.storage.local.get('ga_client_id');
-  if (result.ga_client_id) return result.ga_client_id;
+  const result = await storageLocalGet('ga_client_id');
+  if (result && result.ga_client_id) return result.ga_client_id;
   const newId = `${Math.floor(Math.random() * 2147483647)}.${Math.floor(Date.now() / 1000)}`;
-  await chrome.storage.local.set({ ga_client_id: newId });
+  await storageLocalSet({ ga_client_id: newId });
   return newId;
+}
+
+async function configureUninstallSurveyUrl() {
+  try {
+    if (typeof chrome === 'undefined' || typeof chrome?.runtime?.setUninstallURL !== 'function') return;
+    const cid = await getOrCreateClientId();
+    const version = chrome.runtime?.getManifest?.()?.version || 'unknown';
+    const uiLang = chrome.i18n?.getUILanguage?.() || 'zh-TW';
+    const surveyUrl = `${UNINSTALL_SURVEY_BASE_URL}?cid=${encodeURIComponent(cid)}&v=${encodeURIComponent(version)}&lang=${encodeURIComponent(uiLang)}`;
+    chrome.runtime.setUninstallURL(surveyUrl);
+  } catch (e) {
+    // 忽略環境不支援錯誤
+  }
 }
 
 async function sendGA4Event(eventName, params = {}) {
@@ -215,6 +290,9 @@ async function sendGA4Event(eventName, params = {}) {
       v: '2',
       tid: GA_MEASUREMENT_ID,
       cid: clientId,
+      sid: GA_SESSION_ID,
+      seg: '1',
+      _et: '100',
       en: eventName,
       _s: '1'
     });
@@ -233,12 +311,17 @@ async function sendGA4Event(eventName, params = {}) {
   }
 }
 
+// 啟動時立即綁定卸載問卷網址 (確保既有更新用戶與新安裝用戶皆生效)
+configureUninstallSurveyUrl();
+
 // 監聽初次安裝 / 更新事件
 chrome.runtime?.onInstalled?.addListener((details) => {
+  configureUninstallSurveyUrl();
   if (details.reason === 'install') {
     sendGA4Event('extension_installed', {
       version: chrome.runtime?.getManifest?.()?.version || 'unknown'
     });
   }
 });
+
 
