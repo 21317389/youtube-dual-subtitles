@@ -13,7 +13,7 @@
   ```
 * **版本號 (Version)**：
   ```text
-  1.3.1
+  1.4.1
   ```
 * **分類 (Category)**：
   ```text
@@ -49,6 +49,8 @@ Display dual subtitles & bilingual captions on YouTube for any language! Real-ti
 看 YouTube 外語影片沒有在地字幕？想對照原文看懂各國生肉影片、同時提升外語能力嗎？
 本擴充功能專為全球影音閱聽者與多語言學習者打造！無論是看歐美演講、日文動漫/VTuber、韓綜韓劇，還是法西德語各國頻道，皆能一鍵開啟流暢高畫質的雙語對照字幕！
 
+正在尋找免費、免註冊、免填 API Key 的「YouTube 雙語字幕擴充功能推薦」，或是覺得傳統翻譯外掛（如沉浸式翻譯、Language Reactor）在觀看 YouTube 自動字幕 (ASR) 時容易跳行閃爍、介面過於複雜嗎？本工具提供最純淨、輕量且專為 YouTube 量身打造的雙語字幕體驗！
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ 為什麼這款雙語字幕更好用？
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -57,41 +59,45 @@ Display dual subtitles & bilingual captions on YouTube for any language! Real-ti
 • 傳統自動字幕常常瘋狂跳行、閃爍，讓人看得眼花撩亂。
 • 我們為即時語音打造全新雙槽引擎：上方固定上一句完整語句，下方即時逐字延伸，排版穩定清晰，享受如同專業電視字幕的舒適觀影體驗！
 
-⚡ 2. 零秒延遲同步（隨拉隨到）
+🎯 2. 智慧連動 YouTube 原生 CC（日常觀影零打擾）
+• 尊重您的觀影習慣！預設不強開字幕，僅在您開啟 YouTube 右下角「CC 字幕」時才顯示雙語字幕，看母語或音樂影片絕不干擾。
+• 隨時點擊右上角插件開關關閉，即可一秒恢復 YouTube 原始單語 CC 字幕！
+
+⚡ 3. 零秒延遲同步（隨拉隨到）
 • 採用 60fps 高精度動畫幀比對，徹底消除傳統字幕慢半拍（250ms延遲）的脫節感。
 • 拖曳進度條秒速同步，畫面與字幕永遠分毫不差。
 
-🧠 3. 智慧整句聚合與噪聲清洗
+🧠 4. 智慧整句聚合與噪聲清洗
 • 自動將破碎零散的單詞重組成語意通順的完整長句。
 • 全面過濾 [Music]、[Laughter]、[Applause]、>>（笑聲、掌聲、無效發音）等雜訊，畫面極致純淨。
 
-🔍 4. 任意選詞翻譯 & 影片原聲重播（超強語言學習）
-• 滑鼠反白字幕上的任意生詞或片語，立即彈出精美字典釋義與音標。
+🔍 5. 任意選詞翻譯 & 影片原聲重播（超強語言學習）
+• 滑鼠反白字幕上的任意生詞或片語，立即彈出精美字典釋義。
 • 點擊「🎬 聽原聲」：播放器自動倒轉並精準截取影片中講者「講出該單詞」的真實原聲重播，練聽力最道地！
 • 點擊「🗣️ 朗讀」：支援多國語言標準語音合成發音。
 
-⚡ 5. 鍵盤跟讀快捷鍵 (Shadowing)
+⚡ 6. 鍵盤跟讀快捷鍵 (Shadowing)
 • 【R】鍵：重播當前整句影片原聲（播放完畢自動暫停，影子跟讀超方便！）。
 • 【A】鍵：跳至上一句字幕開頭。
 • 【D】鍵：跳至下一句字幕開頭。
 
-📱 6. 完美相容 YouTube Shorts 短影音
+📱 7. 完美相容 YouTube Shorts 短影音
 自動識別 Shorts 垂直畫面，智慧調整字幕高度，絕不遮擋影片標題與右側按鈕。
 
-🔒 7. 100% 隱私無痕，安心使用
-完全不收集任何個人資料、Cookie 或瀏覽紀錄。純本地運算，輕巧無負擔。
+🔒 8. 100% 免費、免 API Key、隱私無痕
+完全免費，免註冊帳號、免設定 API Key，不收集任何個人資料、Cookie 或瀏覽紀錄。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ❓ 常見問題 FAQ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Q1：如何開啟雙語字幕？
-A1：安裝後播放任何 YouTube 影片，只要開啟右下角的內建「CC」字幕按鈕，雙語字幕便會自動啟動！
+Q1：如何開啟或關閉雙語字幕？
+A1：播放 YouTube 影片時，開啟右下角的內建「CC」字幕按鈕（出現紅線），雙語字幕便會自動啟動！若想看回原本的 YouTube 單語字幕，只需將插件頂部開關關閉即可。
 
 Q2：支援哪些語言的翻譯？
-A2：支援繁體中文、簡體中文、英文、日文、韓文、西班牙文、法文、德文等多國語言互譯，點擊右上角外掛圖示即可自由切換目標語言。
+A2：支援繁體中文、簡體中文、英文、日文、韓文、西班牙文、法文、德文、越南文、泰文等多國語言互譯，點擊右上角外掛圖示即可自由切換目標語言。
 
-Q3：需要付費或註冊帳號嗎？
-A3：完全免費，無需註冊，安裝即可立即使用！
+Q3：與沉浸式翻譯或 Language Reactor 有什麼不同？
+A3：本工具 100% 專注於 YouTube 雙語字幕與原聲跟讀，解決了自動字幕 (ASR) 逐字滾動時的跳行閃爍問題，且完全免費、免註冊、不改動 YouTube 原本介面。
 ```
 
 ---
@@ -103,6 +109,8 @@ A3：完全免費，無需註冊，安裝即可立即使用！
 Enjoy YouTube videos in any language with seamless dual subtitles and instant vocabulary translation!
 Built for global video viewers and language learners! Whether you are watching English speeches, Japanese anime/VTubers, Korean variety shows, or French/Spanish tutorials, enjoy smooth, high-definition bilingual subtitles with a single click!
 
+Looking for the best free YouTube dual subtitles extension without accounts or API keys, or a lightweight, flicker-free alternative to Language Reactor and Immersive Translate for YouTube? You're in the right place!
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ Why Choose YouTube Dual Subtitles?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -111,41 +119,45 @@ Built for global video viewers and language learners! Whether you are watching E
 • Traditional auto-generated subtitles jump and jitter rapidly, causing eye strain.
 • Our custom dual-slot engine keeps the layout rock-solid: the upper slot holds the previous complete sentence, while the lower slot smoothly streams spoken words in real time. Enjoy a comfortable viewing experience just like TV broadcast captions!
 
-⚡ 2. 60fps Zero-Delay Synchronization (Instant Seeking)
+🎯 2. Smart Native CC Sync (Zero Interruption on Casual Videos)
+• Never forces captions on videos where you don't want them! Dual subtitles appear only when YouTube's native "CC" button is turned ON.
+• Toggle the extension switch OFF anytime to immediately restore YouTube's original single-language captions.
+
+⚡ 3. 60fps Zero-Delay Synchronization (Instant Seeking)
 • Powered by 60fps high-precision requestAnimationFrame synchronization, completely eliminating the sluggish 250ms subtitle lag of traditional extensions.
 • Scrubbing through the timeline is instant — subtitles always match the video frame-by-frame.
 
-🧠 3. Smart Sentence Merging & Noise Purging
+🧠 4. Smart Sentence Merging & Noise Purging
 • Automatically aggregates fragmented speech tokens into coherent, grammatically complete sentences.
 • Automatically cleans out [Music], [Laughter], [Applause], and >> speaker markers for a distraction-free screen.
 
-🔍 4. Hover Word Lookup & Original Voice Replay (Powerful Learning Tool)
-• Highlight any word or phrase on subtitles to immediately reveal a glassmorphic dictionary definition and phonetic symbols.
+🔍 5. Hover Word Lookup & Original Voice Replay (Powerful Learning Tool)
+• Highlight any word or phrase on subtitles to immediately reveal a glassmorphic dictionary definition.
 • Click "🎬 Play Snippet": The video automatically rewinds and precisely replays the speaker's original voice slice for authentic listening practice!
 • Click "🗣️ Speak": Reads words aloud with standard TTS audio synthesis.
 
-⚡ 5. Shadowing Keyboard Shortcuts
+⚡ 6. Shadowing Keyboard Shortcuts
 • [R]: Replay current sentence audio (automatically pauses at the end of the sentence for easy shadowing!).
 • [A]: Jump to the start of the previous subtitle.
 • [D]: Jump to the start of the next subtitle.
 
-📱 6. Fully Compatible with YouTube Shorts
+📱 7. Fully Compatible with YouTube Shorts
 Automatically detects Shorts vertical layout and dynamically positions subtitles to avoid blocking titles or interaction buttons.
 
-🔒 7. 100% Privacy & Security Guaranteed
-Zero data tracking. We do not collect cookies, browsing history, or personal data. Purely local execution with Manifest V3 compliance.
+🔒 8. 100% Free, No API Key Required & Privacy Guaranteed
+Zero personal data tracking. We do not collect cookies, browsing history, or personal data. Purely local execution with Manifest V3 compliance.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ❓ Frequently Asked Questions (FAQ)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Q1: How do I enable dual subtitles?
-A1: Play any YouTube video and click the native "CC" button (or press 'C') at the bottom right. The dual subtitles will activate automatically!
+Q1: How do I enable or disable dual subtitles?
+A1: Play any YouTube video and click the native "CC" button (or press 'C') at the bottom right. Turn off the extension toggle anytime to revert to native YouTube captions.
 
 Q2: Which languages are supported?
-A2: Supports mutual translation between English, Traditional/Simplified Chinese, Japanese, Korean, Spanish, French, German, and more. Click the extension icon in the toolbar to change your target language at any time.
+A2: Supports mutual translation between English, Traditional/Simplified Chinese, Japanese, Korean, Spanish, French, German, Vietnamese, Thai, and more.
 
-Q3: Is it free to use? Do I need to create an account?
-A3: It is completely free with no registration required. Install and enjoy immediately!
+Q3: Is it free? How does it compare to Language Reactor or Immersive Translate?
+A3: It is 100% free with no account or API key required, purpose-built specifically for flicker-free YouTube auto-captions (ASR) and audio snippet shadowing.
 ```
 
 ---

@@ -4,6 +4,22 @@
 
 ---
 
+## [v1.4.1] - 2026-10-02
+
+### 🎯 尊重原生 CC 開關、Popup 懸浮更新卡片與留存診斷升級 (Smart CC Sync, Popup Redesign & Retention Diagnostics)
+
+* **停止無差別強開 CC，完美尊重使用者觀影選擇**：
+  * 移除 `inject.js` 內自動強制呼叫 `loadModule('captions')` 與強制選軌的邏輯。
+  * 現在起僅在使用者同時開啟 YouTube 原生「CC 字幕」按鈕與擴充功能總開關時才渲染雙語字幕；當關閉擴充功能開關時，立即移除遮罩並無縫恢復 YouTube 原生單語 CC 字幕。
+* **Popup 設定面板美學重構與零跳動懸浮更新卡片**：
+  * 將面板升級為 `396px` 嚴格網格對齊設計，頂部標題與開關之間整合「✨ 更新重點」與「⭐ 五星好評」一致化功能鈕。
+  * 點擊「✨ 更新重點」以 `position: absolute` 懸浮浮層展開，視窗高度零跳動；支援 6 國語系（繁中/簡中/英/日/韓/西）。
+* **6 國語系卸載原因問卷與失敗診斷遙測**：
+  * 新增 `uninstall.html` 靜態 6 語系卸載回饋問卷並綁定 `chrome.runtime.setUninstallURL`。
+  * 補齊 GA4 Measurement Protocol Session 參數（`sid`, `seg=1`, `_et=100`）、區分一般影片（`youtube_video_detected`）與 Shorts（`youtube_shorts_detected`），並新增單片去重的失敗診斷事件（`fail_rate_limit_429`、`fallback_mode2_activated`、`fail_translate_error`）。
+
+---
+
 ## [v1.3.2] - 2026-09-13
 
 ### 🛡️ 多網域翻譯備援與 429 頻率限制防禦 (Multi-Domain Failover & Rate Limit Defense)

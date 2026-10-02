@@ -5,15 +5,32 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig"><img src="https://img.shields.io/badge/Chrome_Web_Store-免費一鍵安裝-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store" /></a>
   <img src="https://img.shields.io/badge/Manifest-V3-blue?style=for-the-badge&logo=google-chrome" alt="Manifest V3" />
-  <img src="https://img.shields.io/badge/Chrome-Extension-red?style=for-the-badge&logo=googlechrome" alt="Chrome Extension" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
   <img src="https://img.shields.io/badge/Zero-Dependencies-orange?style=for-the-badge" alt="Zero Dependencies" />
 </p>
 
+<p align="center">
+  👉 <b><a href="https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig">點此前往 Chrome 線上應用程式商店免費安裝 (Chrome / Edge / Brave 皆相容)</a></b>
+</p>
+
 一款專為語言學習者、影音內容創作者與跨國資訊汲取者打造的 **高純淨、零延遲、雙軌智慧分流 YouTube 雙語字幕與即時選詞翻譯 Chrome 擴充功能**。
 
-基於最新 **Chrome Manifest V3** 規範開發，具備 60fps 動畫幀同步、句級對稱雙槽即時滾動、智慧標點斷句、滑動窗口動態翻譯、多端點超時輪替、原聲片段重播與熱鍵操控等全方位學習功能。
+如果你正在尋找 **免費、免註冊、免填 API Key** 的 **YouTube 雙語字幕擴充功能推薦**，或是覺得傳統翻譯外掛（如沉浸式翻譯、Language Reactor）在觀看 YouTube 自動產生字幕（ASR）時容易跳行閃爍、介面過於臃腫，本工具提供最輕量、專為 YouTube 觀影與外語聽力跟讀（Shadowing）量身打造的純淨替代方案。
+
+---
+
+## 📊 為什麼選擇本工具？（YouTube 雙語字幕擴充功能對比）
+
+| 比較項目 | 本擴充功能 (YouTube Dual Subtitles) | 一般網頁翻譯外掛 (如沉浸式翻譯等) | 傳統重型學習外掛 (如 Language Reactor) |
+| :--- | :--- | :--- | :--- |
+| **定位與輕量度** | **專精 YouTube 觀影與跟讀，極致輕量零干擾** | 全網頁通用翻譯，腳本體積較龐大 | 功能繁雜，常改動 YouTube 播放器原生版面 |
+| **自動字幕 (ASR) 防跳行** | **獨家「雙槽句級鎖定」引擎，上槽鎖定前句、下槽平穩延伸** | 常隨 YouTube 逐字滾動而頻繁重繪閃爍 | 部分支援，但無標點音軌易斷句破碎 |
+| **母語/日常影片不干擾** | **智慧連動 YouTube 原生 `CC` 按鈕，未開 CC 絕不強彈字幕** | 常無差別自動注入或覆蓋原生字幕 | 常強制接管播放器字幕開關 |
+| **反白查詞 + 原聲切片重播** | **內建反白字典 + 一鍵倒帶重播講者「該句真實原聲」** | 僅文字翻譯，無影片原聲切片重播 | 需開啟側邊欄或進階付費版 |
+| **YouTube Shorts 支援** | **原生支援 Shorts 短影音垂直排版自適應** | 常遮擋 Shorts 標題或無法觸發 | 不完全支援 Shorts 短影音 |
+| **費用與帳號門檻** | **100% 免費開源、免註冊帳號、免自備 API Key** | 進階模型需付費訂閱或自備 API Key | 進階詞庫與功能需付費訂閱 Pro |
 
 ---
 
@@ -22,6 +39,8 @@
 * 🌟 **雙軌智慧自動分流（Dual-Track Smart Routing）**：
   * **軌道一（傳統靜態字幕）**：批次全句預翻譯、60fps 二分搜尋幀循環極速同步，隨點隨跳進度條零延遲。
   * **軌道二（Gemini ASR 即時串流）**：首創「句級對稱雙槽滾動引擎」——上槽永久鎖定上一句完結長句（英+中），下槽實時逐字吐字延伸，句末第 0ms 同步推升，0 競態、0 覆蓋縮水、0 粘連重複。
+* 🎯 **尊重使用者習慣（與 YouTube 原生 CC 智慧連動）**：
+  * 預設不強開字幕！僅在您主動開啟 YouTube 播放器右下角「CC 字幕」且插件總開關開啟時才渲染雙語字幕；關閉插件總開關時，立即無縫恢復 YouTube 原始 CC 字幕。
 * ⚡ **60fps 動畫幀同步（Zero-Delay Sync）**：
   * 拋棄低頻的 `video.timeupdate`，採用 `requestAnimationFrame` 迴圈以 16.6ms 精度即時比對，徹底消除傳統擴充功能 250ms 的字幕落後延遲。
 * 🧠 **智慧合句與段內標點拆解（Smart Sentence Merging）**：
@@ -54,10 +73,11 @@
 3. 擴充功能將會**自動識別影片類型**：
    * **傳統影片**：自動載入全片字幕並啟用批次高速翻譯。
    * **即時 ASR / Gemini 串流影片**：自動啟動「句級雙槽雙語滾動引擎」。
+4. 若想暫時看回 YouTube 原始單語字幕，只需點擊右上角插件圖示關閉總開關，畫面即刻恢復原生 CC 字幕。
 
 ### 2. 閱讀雙槽字幕
-* **上槽 (Slot 1)**：上一句已講完的**完整長句**（英文 + 繁體中文譯文，搭配 0.65 半透明黑膠囊底色背景，層次分明）。
-* **下槽 (Slot 2)**：講者**當前正在講的句子**（英文字幕在同一個膠囊內實時逐字吐字延伸，遇到句末標點符號完結時平滑推升至上槽）。
+* **上槽 (Slot 1)**：上一句已講完的**完整長句**（原文 + 目標語言譯文，搭配 0.65 半透明黑膠囊底色背景，層次分明）。
+* **下槽 (Slot 2)**：講者**當前正在講的句子**（原文在同一個膠囊內實時逐字吐字延伸，遇到句末標點符號完結時平滑推升至上槽）。
 
 ### 3. 反白查詞與聽原聲發音
 1. 用滑鼠直接在字幕上**反白選取任意生詞或片語**。
@@ -67,15 +87,15 @@
 
 ### 4. 設定面板操作
 點擊瀏覽器右上角擴充功能圖示，可自訂：
-* **啟用雙語字幕**：總開關（iOS 風格平滑切換）。
-* **目標翻譯語言**：支援繁體中文 (zh-TW)、簡體中文 (zh-CN)、日文 (ja)、韓文 (ko)、西班牙文 (es) 等多國語言。
+* **啟用雙語字幕**：總開關（iOS 風格平滑切換，關閉時自動還原 YouTube 原生 CC）。
+* **目標翻譯語言**：支援繁體中文 (zh-TW)、簡體中文 (zh-CN)、英文 (en)、日文 (ja)、韓文 (ko)、西班牙文 (es)、法文 (fr)、德文 (de)、越南文 (vi)、泰文 (th)。
 * **字幕字級**：小型 (85%)、標準 (100%)、大型 (115%)、特大 (130%)，字幕與查詞浮窗即時按比例縮放。
 
 ---
 
 ## ⚡ 鍵盤快捷鍵 (Shortcuts Cheatsheet)
 
-在播放 YouTube 影片時，可直接透過以下熱鍵實現極速跟讀與聽力訓練：
+在播放 YouTube 影片時，可直接透過以下熱鍵實現極速跟讀（Shadowing）與聽力訓練：
 
 | 快捷鍵 | 功能描述 |
 | :---: | :--- |
@@ -89,19 +109,28 @@
 
 ## 📥 安裝指南 (Installation)
 
-### 方式一：透過開發者模式載入（本地安裝）
+### 方式一：Chrome 線上應用程式商店一鍵安裝（推薦）
+* 👉 **[前往 Chrome Web Store 免費安裝 YouTube 雙語字幕與即時翻譯](https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig)**（支援 Google Chrome、Microsoft Edge、Brave、Arc 等所有 Chromium 核心瀏覽器）。
 
-1. 點擊本專案右上角 `Code` -> `Download ZIP` 並解壓縮（或使用 `git clone`）。
-2. 開啟 Google Chrome 瀏覽器，在網址列輸入：
-   ```text
-   chrome://extensions/
-   ```
+### 方式二：透過開發者模式載入（本地開源版安裝）
+
+1. 點擊本專案右上角 `Code` -> `Download ZIP` 並解壓縮（或使用 `git clone https://github.com/21317389/youtube-dual-subtitles.git`）。
+2. 開啟 Chrome 瀏覽器，在網址列輸入 `chrome://extensions/`。
 3. 開啟右上角的 **「開發者模式 (Developer mode)」**。
-4. 點擊左上角的 **「載入未封裝項目 (Load unpacked)」**。
-5. 選擇本專案資料夾即可完成安裝！
+4. 點擊左上角的 **「載入未封裝項目 (Load unpacked)」**，選擇本專案資料夾即可完成安裝！
 
-### 方式二：Chrome Web Store（即將上架）
-* 審查通過後將在此提供官方商店一鍵安裝連結。
+---
+
+## ❓ 常見問題與選型指南 (FAQ)
+
+### Q1：為什麼開啟插件後沒有看到雙語字幕？
+為避免在您觀看母語或日常娛樂影片時強行彈出字幕造成干擾，本插件採**「尊重原生 CC 開關」**設計：請先點擊 YouTube 影片右下角的 **「CC 字幕」按鈕**（底部出現紅線），雙語字幕便會立即啟動。
+
+### Q2：看英文 TED 演講、日文 VTuber、韓綜或國外技術教學影片時，自動字幕 (ASR) 會不會一直跳行？
+不會。我們針對 YouTube 自動語音辨識（ASR）設計了「智慧標點合句」與「雙槽對稱鎖定」，將原本碎裂的單字重組為完整句子，並將前一句固定於上槽、當前句於下槽延伸，解決傳統雙語字幕外掛頻繁閃爍跳行的痛點。
+
+### Q3：這款工具可以作為沉浸式翻譯 (Immersive Translate) 或 Language Reactor 的替代方案嗎？
+可以。若您的核心需求是**「在 YouTube 上順暢看雙語字幕、反白查單字、重播原聲練聽力」**，且不希望瀏覽器被注入過多全網頁腳本、不想註冊帳號或設定 API Key，本擴充功能是專為 YouTube 最佳化的超輕量免費替代方案。
 
 ---
 
@@ -134,3 +163,4 @@ flowchart TD
 ## 📄 開源授權 (License)
 
 本專案採用 [MIT License](LICENSE) 開源授權，歡迎自由學習、修改或提交 PR 共同改進！
+
