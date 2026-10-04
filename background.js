@@ -78,9 +78,13 @@ function persistCache() {
 }
 
 function setCache(key, value) {
-  if (translationCache.size >= CONFIG.MAX_CACHE_SIZE) {
+  if (translationCache.has(key)) {
+    translationCache.delete(key);
+  } else if (translationCache.size >= CONFIG.MAX_CACHE_SIZE) {
     const oldestKey = translationCache.keys().next().value;
-    translationCache.delete(oldestKey);
+    if (oldestKey !== undefined) {
+      translationCache.delete(oldestKey);
+    }
   }
   translationCache.set(key, value);
   persistCache();
@@ -176,9 +180,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { text, sourceLang = 'auto', targetLang = 'zh-TW' } = request;
   const cacheKey = `${sourceLang}->${targetLang}:${text}`;
 
-  // 本地快取命中直接瞬時回傳 (0ms)
+  // 本地快取命中直接瞬時回傳 (0ms)，並依據 LRU 原則重排 Map insertion order 刷新存取順序
   if (translationCache.has(cacheKey)) {
-    sendResponse({ translatedText: translationCache.get(cacheKey) });
+    const cachedVal = translationCache.get(cacheKey);
+    translationCache.delete(cacheKey);
+    translationCache.set(cacheKey, cachedVal);
+    sendResponse({ translatedText: cachedVal });
     return true;
   }
 
@@ -309,8 +316,13 @@ async function sendGA4Event(eventName, params = {}) {
       _s: '1'
     });
 
-    // 附帶自訂參數
-    for (const [key, value] of Object.entries(params)) {
+    // 附帶自訂參數 (隱私防線：嚴格遵守零個人資料與無觀看歷史原則，徹底剔除 video_id 等識別資訊)
+    const sanitizedParams = { ...params };
+    delete sanitizedParams.video_id;
+    delete sanitizedParams.videoId;
+    delete sanitizedParams.url;
+
+    for (const [key, value] of Object.entries(sanitizedParams)) {
       payload.append(`ep.${key}`, String(value));
     }
 

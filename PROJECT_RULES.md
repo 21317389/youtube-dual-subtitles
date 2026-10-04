@@ -46,8 +46,8 @@
      `inject.js` 中的 `notifyCurrentTrack` 必須具備去重鎖與防抖閥值，同一軌道在短時間內嚴禁重複廣播。
   2. **單一請求在線互斥鎖（Single In-Flight Lock）**：
      `content.js` 處理 `YT_CAPTION_TRACK_CHANGED` 時，必須以 `currentTrackKey` 嚴格鎖定。當同一部影片的字幕下載仍在進行中時，絕對不允許發起第二個重複請求。
-  3. **嚴禁輪詢轟炸（No Redundant Polling Chains）**：
-     嚴禁在 `content.js` 或 `inject.js` 中串聯 `setTimeout(..., 200)`、`setTimeout(..., 600)`、`setTimeout(..., 1200)` 連續索取軌道。握手索取只能在生命週期初期發起一次。
+  3. **嚴禁無窮輪詢轟炸與重複索取（No Redundant / Unbounded Polling）**：
+     嚴禁發起無結束條件的輪詢迴圈（Unbounded polling loop）或未防抖的重複索取。握手索取在生命週期初期發起；若遇 YouTube 動態播放器延遲初始化（如 Shorts / SPA 換片），僅允許受 `lastBroadcastedTrackKey` 去重保護與 100ms 閾值防抖之有限階梯通知（100ms / 350ms / 800ms Bounded Ready Ladder），嚴禁無去重、無防抖之連鎖輪詢。
   4. **429 智能冷卻與即刻熔斷（Smart 429 Backoff）**：
      一旦檢測到任何字幕端點回傳 HTTP 429 或含有 `<title>Sorry...</title>`，系統必須立即啟動本地 60 秒冷卻期，禁止在冷卻期間繼續對該端點重試發送，直接安全降級至 Mode 2，嚴禁對 Google 伺服器進行自殺式重試轟炸！
 

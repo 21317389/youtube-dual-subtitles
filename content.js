@@ -47,6 +47,20 @@ function safeSendMessage(message, callback) {
   }
 }
 
+let SessionStateClass = null;
+if (typeof require !== 'undefined') {
+  try {
+    SessionStateClass = require('./src/core/session-state').SessionState;
+  } catch (e1) {
+    try {
+      SessionStateClass = require('../src/core/session-state').SessionState;
+    } catch (e2) {}
+  }
+}
+
+// 實例化中央會話狀態機 (集中管理 40+ 個全域狀態與生命週期躍遷)
+const session = SessionStateClass ? new SessionStateClass() : null;
+
 let isExtensionEnabled = true;
 let sentenceList = [];
 let userTargetLang = 'zh-TW';
@@ -65,6 +79,7 @@ let hasTrackedMode2Fallback = false;
 let hasTrackedTranslateError = false;
 
 function resetVideoTelemetryFlags() {
+  if (typeof session !== 'undefined' && session) session.resetTelemetry();
   hasTrackedSubtitleSuccess = false;
   hasTrackedRateLimit429 = false;
   hasTrackedMode2Fallback = false;
@@ -146,6 +161,21 @@ try {
 } catch (e) {}
 
 function applySubtitleSize(size) {
+  if (typeof require !== 'undefined') {
+    try {
+      const renderer = require('./src/ui/subtitle-renderer');
+      if (typeof renderer?.applySubtitleSize === 'function') {
+        return renderer.applySubtitleSize(size, CONFIG.UI_SIZE_MAP, document);
+      }
+    } catch (e1) {
+      try {
+        const renderer = require('../src/ui/subtitle-renderer');
+        if (typeof renderer?.applySubtitleSize === 'function') {
+          return renderer.applySubtitleSize(size, CONFIG.UI_SIZE_MAP, document);
+        }
+      } catch (e2) {}
+    }
+  }
   const conf = CONFIG.UI_SIZE_MAP[size] || CONFIG.UI_SIZE_MAP.medium;
   const root = document.documentElement;
   root.style.setProperty('--cue-orig-size', conf.orig);
@@ -266,6 +296,7 @@ function getCurrentVideoId() {
 }
 
 function resetSubtitles() {
+  if (typeof session !== 'undefined' && session) session.resetSubtitles();
   ++currentFetchSessionId;
   inFlightFetchKey = '';
   isCaptionsEnabled = false;
@@ -296,9 +327,26 @@ function ensureUIElements() {
 
   let subtitleContainer = document.getElementById('yt-dual-subtitle-container');
   if (!subtitleContainer) {
-    subtitleContainer = document.createElement('div');
-    subtitleContainer.id = 'yt-dual-subtitle-container';
-    player.appendChild(subtitleContainer);
+    if (typeof require !== 'undefined') {
+      try {
+        const renderer = require('./src/ui/subtitle-renderer');
+        if (typeof renderer?.ensureSubtitleContainer === 'function') {
+          subtitleContainer = renderer.ensureSubtitleContainer(player, document);
+        }
+      } catch (e1) {
+        try {
+          const renderer = require('../src/ui/subtitle-renderer');
+          if (typeof renderer?.ensureSubtitleContainer === 'function') {
+            subtitleContainer = renderer.ensureSubtitleContainer(player, document);
+          }
+        } catch (e2) {}
+      }
+    }
+    if (!subtitleContainer) {
+      subtitleContainer = document.createElement('div');
+      subtitleContainer.id = 'yt-dual-subtitle-container';
+      player.appendChild(subtitleContainer);
+    }
   } else if (subtitleContainer.parentElement !== player) {
     player.appendChild(subtitleContainer);
   }
@@ -306,10 +354,27 @@ function ensureUIElements() {
 
   let tooltip = document.getElementById('yt-translate-tooltip');
   if (!tooltip) {
-    tooltip = document.createElement('div');
-    tooltip.id = 'yt-translate-tooltip';
-    tooltip.style.display = 'none';
-    player.appendChild(tooltip);
+    if (typeof require !== 'undefined') {
+      try {
+        const tooltipCtrl = require('./src/ui/tooltip-controller');
+        if (typeof tooltipCtrl?.ensureTooltipElement === 'function') {
+          tooltip = tooltipCtrl.ensureTooltipElement(player, document);
+        }
+      } catch (e1) {
+        try {
+          const tooltipCtrl = require('../src/ui/tooltip-controller');
+          if (typeof tooltipCtrl?.ensureTooltipElement === 'function') {
+            tooltip = tooltipCtrl.ensureTooltipElement(player, document);
+          }
+        } catch (e2) {}
+      }
+    }
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'yt-translate-tooltip';
+      tooltip.style.display = 'none';
+      player.appendChild(tooltip);
+    }
   } else if (tooltip.parentElement !== player) {
     player.appendChild(tooltip);
   }
@@ -344,14 +409,19 @@ function bindVideoEvents() {
 }
 
 function handleUserSeek() {
-  clearInterval(snippetPauseTimer);
   const video = getActiveVideo();
+  if (typeof session !== 'undefined' && session) session.resetSeek(video ? video.currentTime : 0);
+  clearInterval(snippetPauseTimer);
   if (video) {
     prioritizeCurrentSentence(video.currentTime);
     checkAndTriggerSlidingWindow(video.currentTime);
   }
 
   // 跨模式 Seek 安全防護：重置即時語音隊列與暫存，防止前段瞬態殘留詞 (如 "We") 污染新時間點的字幕！
+  if (typeof getStreamingExtractor === 'function') {
+    const extractor = getStreamingExtractor();
+    if (extractor) extractor.reset();
+  }
   speechTokenQueue = [];
   lastLockedCompletedSentence = '';
   lastRawObservedWindowText = '';
@@ -519,7 +589,7 @@ window.addEventListener('message', async (event) => {
   console.log('[YT-Dual-Sub] 靜態字幕不可用，啟動 Mode 2 (Gemini / DOM 串流監聽)');
   if (typeof hasTrackedMode2Fallback !== 'undefined' && !hasTrackedMode2Fallback && typeof trackEvent === 'function') {
     hasTrackedMode2Fallback = true;
-    trackEvent('fallback_mode2_activated', { video_id: vid || 'unknown', lang: track.languageCode || 'unknown' });
+    trackEvent('fallback_mode2_activated', { lang: track.languageCode || 'unknown' });
   }
   inFlightFetchKey = '';
   stopSyncLoop();
@@ -661,7 +731,7 @@ function fetchCaptionViaBackground(url, videoId, languageCode) {
         console.warn('[YT-Dual-Sub] 收到 429 限流信號，立即啟動冷卻，絕不發起任何二次請求！');
         if (typeof hasTrackedRateLimit429 !== 'undefined' && !hasTrackedRateLimit429 && typeof trackEvent === 'function') {
           hasTrackedRateLimit429 = true;
-          trackEvent('fail_rate_limit_429', { video_id: vid || 'unknown' });
+          trackEvent('fail_rate_limit_429', { error_category: 'rate_limit_429' });
         }
         resolve(null);
         return;
@@ -733,7 +803,7 @@ async function fetchCaptionTextWithFallback(track) {
           timedtextCooldownUntil = Date.now() + 60000;
           if (typeof hasTrackedRateLimit429 !== 'undefined' && !hasTrackedRateLimit429 && typeof trackEvent === 'function') {
             hasTrackedRateLimit429 = true;
-            trackEvent('fail_rate_limit_429', { video_id: vid || 'unknown' });
+            trackEvent('fail_rate_limit_429', { error_category: 'rate_limit_429' });
           }
           return null;
         }
@@ -946,28 +1016,40 @@ setInterval(() => {
   const detectEventName = (typeof isShortsPage === 'function' && isShortsPage()) ? 'youtube_shorts_detected' : 'youtube_video_detected';
   if (vid && lastObservedVideoId && vid !== lastObservedVideoId) {
     console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', lastObservedVideoId, '->', vid);
+    if (typeof session !== 'undefined' && session) session.resetVideoNavigation(vid);
     lastObservedVideoId = vid;
     if (typeof hasTrackedVideoView !== 'undefined') hasTrackedVideoView = true;
     if (typeof resetVideoTelemetryFlags === 'function') resetVideoTelemetryFlags();
-    if (typeof trackEvent === 'function') trackEvent(detectEventName, { video_id: vid });
+    if (typeof trackEvent === 'function') trackEvent(detectEventName);
     resetSubtitles();
     ensureUIElements();
   } else if (vid && !lastObservedVideoId) {
     lastObservedVideoId = vid;
     if (typeof hasTrackedVideoView !== 'undefined') hasTrackedVideoView = true;
     if (typeof resetVideoTelemetryFlags === 'function') resetVideoTelemetryFlags();
-    if (typeof trackEvent === 'function') trackEvent(detectEventName, { video_id: vid });
+    if (typeof trackEvent === 'function') trackEvent(detectEventName);
   } else if (vid && typeof hasTrackedVideoView !== 'undefined' && !hasTrackedVideoView) {
     hasTrackedVideoView = true;
-    if (typeof trackEvent === 'function') trackEvent(detectEventName, { video_id: vid });
+    if (typeof trackEvent === 'function') trackEvent(detectEventName);
   }
 }, 500);
 
 // ==========================================
 // 6. 智慧合句引擎 (Smart Sentence Merging)
 // ==========================================
-// 音效與背景噪音標籤過濾器 (去除 >>, >>>, [Laughter], [Chuckles], [Music], [Applause], ♪, [音樂] 等無效音訊註釋)
+// 音效與背景噪音標籤過濾器 (優先橋接至 src/core/sentence-policy.js 核心政策庫)
 function cleanSubtitleNoise(text) {
+  if (typeof require !== 'undefined') {
+    try {
+      const policy = require('./src/core/sentence-policy');
+      if (typeof policy?.cleanSubtitleNoise === 'function') return policy.cleanSubtitleNoise(text);
+    } catch (e1) {
+      try {
+        const policy = require('../src/core/sentence-policy');
+        if (typeof policy?.cleanSubtitleNoise === 'function') return policy.cleanSubtitleNoise(text);
+      } catch (e2) {}
+    }
+  }
   if (!text) return '';
   return text
     .replace(/(?:&gt;|>){1,3}/g, '') // 去除 YouTube 原生笑聲/講者切換標記 (>>, >>>, &gt;&gt;)
@@ -1382,7 +1464,7 @@ function checkAndTriggerSlidingWindow(currentTime) {
         showWarningToast('⚠️ 翻譯服務暫時受限 (429/網路異常)，已自動保留原文字幕，稍後將自動重試');
         if (typeof hasTrackedTranslateError !== 'undefined' && !hasTrackedTranslateError && typeof trackEvent === 'function') {
           hasTrackedTranslateError = true;
-          trackEvent('fail_translate_error', { video_id: getCurrentVideoId() || 'unknown', target_lang: userTargetLang || 'zh-TW' });
+          trackEvent('fail_translate_error', { target_lang: userTargetLang || 'zh-TW' });
         }
       }
 
@@ -1419,9 +1501,26 @@ function showWarningToast(message) {
 
   let toast = document.getElementById('yt-dual-warning-toast');
   if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'yt-dual-warning-toast';
-    player.appendChild(toast);
+    if (typeof require !== 'undefined') {
+      try {
+        const tooltipCtrl = require('./src/ui/tooltip-controller');
+        if (typeof tooltipCtrl?.ensureToastElement === 'function') {
+          toast = tooltipCtrl.ensureToastElement(player, document);
+        }
+      } catch (e1) {
+        try {
+          const tooltipCtrl = require('../src/ui/tooltip-controller');
+          if (typeof tooltipCtrl?.ensureToastElement === 'function') {
+            toast = tooltipCtrl.ensureToastElement(player, document);
+          }
+        } catch (e2) {}
+      }
+    }
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'yt-dual-warning-toast';
+      player.appendChild(toast);
+    }
   } else if (toast.parentElement !== player) {
     player.appendChild(toast);
   }
@@ -1544,18 +1643,36 @@ function handleSubtitleMouseUp(e) {
   const tooltipWidth = tooltip.offsetWidth || 230;
   const tooltipHeight = tooltip.offsetHeight || 100;
 
-  let left = rect.left - playerRect.left;
-  let top = rect.bottom - playerRect.top + 8;
-
-  const maxLeft = playerRect.width - tooltipWidth - 12;
-  left = Math.max(10, Math.min(left, maxLeft));
-
-  if (top + tooltipHeight > playerRect.height - 10) {
-    top = Math.max(10, (rect.top - playerRect.top) - tooltipHeight - 8);
+  let pos = null;
+  if (typeof require !== 'undefined') {
+    try {
+      const calcPos = require('./src/ui/tooltip-controller').calculateTooltipPosition;
+      if (typeof calcPos === 'function') {
+        pos = calcPos(rect, playerRect, tooltipWidth, tooltipHeight);
+      }
+    } catch (e1) {
+      try {
+        const calcPos = require('../src/ui/tooltip-controller').calculateTooltipPosition;
+        if (typeof calcPos === 'function') {
+          pos = calcPos(rect, playerRect, tooltipWidth, tooltipHeight);
+        }
+      } catch (e2) {}
+    }
   }
 
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
+  if (!pos) {
+    let left = rect.left - playerRect.left;
+    let top = rect.bottom - playerRect.top + 8;
+    const maxLeft = playerRect.width - tooltipWidth - 12;
+    left = Math.max(10, Math.min(left, maxLeft));
+    if (top + tooltipHeight > playerRect.height - 10) {
+      top = Math.max(10, (rect.top - playerRect.top) - tooltipHeight - 8);
+    }
+    pos = { left, top };
+  }
+
+  tooltip.style.left = `${pos.left}px`;
+  tooltip.style.top = `${pos.top}px`;
 
   safeSendMessage({
     action: 'translate',
@@ -1582,6 +1699,26 @@ function playVideoSnippet(start, end) {
   const video = getActiveVideo();
   if (!video) return;
 
+  if (typeof require !== 'undefined') {
+    try {
+      const tooltipCtrl = require('./src/ui/tooltip-controller');
+      if (typeof tooltipCtrl?.playVideoSnippet === 'function') {
+        const state = { timer: snippetPauseTimer };
+        snippetPauseTimer = tooltipCtrl.playVideoSnippet(video, start, end, state);
+        return;
+      }
+    } catch (e1) {
+      try {
+        const tooltipCtrl = require('../src/ui/tooltip-controller');
+        if (typeof tooltipCtrl?.playVideoSnippet === 'function') {
+          const state = { timer: snippetPauseTimer };
+          snippetPauseTimer = tooltipCtrl.playVideoSnippet(video, start, end, state);
+          return;
+        }
+      } catch (e2) {}
+    }
+  }
+
   clearInterval(snippetPauseTimer);
   video.currentTime = Math.max(0, start - 0.05);
   video.play().catch(() => {});
@@ -1595,10 +1732,26 @@ function playVideoSnippet(start, end) {
 }
 
 function speakSelectedWord(text) {
+  const lang = currentTrack?.languageCode || 'en-US';
+  if (typeof require !== 'undefined') {
+    try {
+      const tooltipCtrl = require('./src/ui/tooltip-controller');
+      if (typeof tooltipCtrl?.speakSelectedWord === 'function') {
+        return tooltipCtrl.speakSelectedWord(text, lang, window.speechSynthesis);
+      }
+    } catch (e1) {
+      try {
+        const tooltipCtrl = require('../src/ui/tooltip-controller');
+        if (typeof tooltipCtrl?.speakSelectedWord === 'function') {
+          return tooltipCtrl.speakSelectedWord(text, lang, window.speechSynthesis);
+        }
+      } catch (e2) {}
+    }
+  }
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = currentTrack?.languageCode || 'en-US';
+  utterance.lang = lang;
   utterance.rate = 0.95;
   window.speechSynthesis.speak(utterance);
 }
@@ -1679,47 +1832,53 @@ function jumpToSentence(direction) {
 // ==========================================
 // 12. 懸停與全域點擊事件
 // ==========================================
+function onSubtitleOrTooltipMouseEnter() {
+  if (!isHoverPauseEnabled) return;
+  const video = getActiveVideo();
+  if (!video) return;
+
+  clearTimeout(hoverResumeTimer);
+  if (!isHoveringSubtitleOrTooltip) {
+    isHoveringSubtitleOrTooltip = true;
+    wasPlayingBeforeHover = !video.paused && !video.ended;
+    if (wasPlayingBeforeHover) video.pause();
+  }
+}
+
+function onSubtitleOrTooltipMouseLeave(e) {
+  if (!isHoverPauseEnabled) return;
+  const subtitleEl = document.getElementById('yt-dual-subtitle-container');
+  const tooltipEl = document.getElementById('yt-translate-tooltip');
+  const nextTarget = e.relatedTarget;
+  if (
+    (subtitleEl && subtitleEl.contains(nextTarget)) ||
+    (tooltipEl && tooltipEl.contains(nextTarget))
+  ) {
+    return;
+  }
+
+  clearTimeout(hoverResumeTimer);
+  hoverResumeTimer = setTimeout(() => {
+    if (window.getSelection().toString().trim().length > 0) return;
+    isHoveringSubtitleOrTooltip = false;
+    const video = getActiveVideo();
+    if (video && wasPlayingBeforeHover) {
+      video.play().catch(() => {});
+      wasPlayingBeforeHover = false;
+    }
+  }, 150);
+}
+
 function bindHoverPauseEvents(subtitleEl, tooltipEl) {
   const video = getActiveVideo();
   if (!video) return;
 
-  const handleMouseEnter = () => {
-    if (!isHoverPauseEnabled) return;
-    clearTimeout(hoverResumeTimer);
-    if (!isHoveringSubtitleOrTooltip) {
-      isHoveringSubtitleOrTooltip = true;
-      wasPlayingBeforeHover = !video.paused && !video.ended;
-      if (wasPlayingBeforeHover) video.pause();
-    }
-  };
-
-  const handleMouseLeave = (e) => {
-    if (!isHoverPauseEnabled) return;
-    const nextTarget = e.relatedTarget;
-    if (
-      (subtitleEl && subtitleEl.contains(nextTarget)) ||
-      (tooltipEl && tooltipEl.contains(nextTarget))
-    ) {
-      return;
-    }
-
-    clearTimeout(hoverResumeTimer);
-    hoverResumeTimer = setTimeout(() => {
-      if (window.getSelection().toString().trim().length > 0) return;
-      isHoveringSubtitleOrTooltip = false;
-      if (wasPlayingBeforeHover) {
-        video.play().catch(() => {});
-        wasPlayingBeforeHover = false;
-      }
-    }, 150);
-  };
-
   [subtitleEl, tooltipEl].forEach(element => {
     if (!element) return;
-    element.removeEventListener('mouseenter', handleMouseEnter);
-    element.removeEventListener('mouseleave', handleMouseLeave);
-    element.addEventListener('mouseenter', handleMouseEnter);
-    element.addEventListener('mouseleave', handleMouseLeave);
+    element.removeEventListener('mouseenter', onSubtitleOrTooltipMouseEnter);
+    element.removeEventListener('mouseleave', onSubtitleOrTooltipMouseLeave);
+    element.addEventListener('mouseenter', onSubtitleOrTooltipMouseEnter);
+    element.addEventListener('mouseleave', onSubtitleOrTooltipMouseLeave);
   });
 }
 
@@ -1758,7 +1917,12 @@ let lastFinishedSentence = ''; // 黏性雙槽：剛完結的句子
 let lastFinishedTrans = ''; // 黏性雙槽：剛完結的句子譯文
 
 function resetStreamingState() {
+  if (typeof session !== 'undefined' && session) session.resetStreaming();
   lastRenderedRollingSig = '';
+  if (typeof getStreamingExtractor === 'function') {
+    const extractor = getStreamingExtractor();
+    if (extractor) extractor.reset();
+  }
   speechTokenQueue = [];
   prevSlot = { orig: '', trans: '' };
   currSlot = { orig: '', trans: '' };
@@ -1781,6 +1945,23 @@ function setStreamingSlots(prev, curr) {
 }
 
 function isTailOfImmediatePrev(phrase) {
+  if (typeof require !== 'undefined') {
+    try {
+      const { isTailOfImmediatePrev: policyCheck } = require('./src/core/sentence-policy');
+      if (typeof policyCheck === 'function') {
+        const targets = [lastLockedCompletedSentence, ...completedSentenceHistory].filter(Boolean);
+        return policyCheck(phrase, targets);
+      }
+    } catch (e1) {
+      try {
+        const { isTailOfImmediatePrev: policyCheck } = require('../src/core/sentence-policy');
+        if (typeof policyCheck === 'function') {
+          const targets = [lastLockedCompletedSentence, ...completedSentenceHistory].filter(Boolean);
+          return policyCheck(phrase, targets);
+        }
+      } catch (e2) {}
+    }
+  }
   if (!phrase) return false;
   const clean = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
   if (!clean) return false;
@@ -1793,7 +1974,43 @@ function isTailOfImmediatePrev(phrase) {
   return false;
 }
 
+let streamingExtractor = null;
+
+function getStreamingExtractor() {
+  if (!streamingExtractor) {
+    let ExtractorClass = null;
+    if (typeof require !== 'undefined') {
+      try {
+        ExtractorClass = require('./src/core/streaming-sentence-extractor').StreamingSentenceExtractor;
+      } catch (e1) {
+        try {
+          ExtractorClass = require('../src/core/streaming-sentence-extractor').StreamingSentenceExtractor;
+        } catch (e2) {}
+      }
+    }
+    if (ExtractorClass) {
+      const maxChars = typeof CONFIG !== 'undefined' && CONFIG?.MAX_SENTENCE_CHARS ? CONFIG.MAX_SENTENCE_CHARS : 320;
+      streamingExtractor = new ExtractorClass({
+        maxSentenceChars: maxChars
+      });
+    }
+  }
+  return streamingExtractor;
+}
+
 function ingestAndExtractSentence(windowText) {
+  const extractor = getStreamingExtractor();
+  if (extractor) {
+    if (lastLockedCompletedSentence && extractor.lastLockedCompletedSentence !== lastLockedCompletedSentence) {
+      extractor.recordLockedCompleted(lastLockedCompletedSentence);
+    }
+    const result = extractor.ingest(windowText);
+    speechTokenQueue = extractor.speechTokenQueue;
+    lastLockedCompletedSentence = extractor.lastLockedCompletedSentence;
+    completedSentenceHistory = extractor.completedSentenceHistory;
+    return result;
+  }
+
   let words = windowText.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return null;
 
@@ -1929,19 +2146,33 @@ function ingestAndExtractSentence(windowText) {
 
 const translationCache = new Map();
 
+function getMode2CacheKey(text) {
+  const sourceLang = currentTrack?.languageCode || 'auto';
+  const targetLang = userTargetLang || 'zh-TW';
+  return `${sourceLang}->${targetLang}:${text}`;
+}
+
 function getCachedTranslation(text) {
   if (!text) return '';
-  if (translationCache.has(text)) return translationCache.get(text);
+  const key = getMode2CacheKey(text);
+  if (translationCache.has(key)) return translationCache.get(key);
   const stripped = text.replace(/[.?!。？！]["'”’)]*$/, '').trim();
-  if (stripped && translationCache.has(stripped)) return translationCache.get(stripped);
+  if (stripped) {
+    const strippedKey = getMode2CacheKey(stripped);
+    if (translationCache.has(strippedKey)) return translationCache.get(strippedKey);
+  }
   return '';
 }
 
 function setCachedTranslation(text, trans) {
   if (!text || !trans) return;
-  translationCache.set(text, trans);
+  const key = getMode2CacheKey(text);
+  translationCache.set(key, trans);
   const stripped = text.replace(/[.?!。？！]["'”’)]*$/, '').trim();
-  if (stripped) translationCache.set(stripped, trans);
+  if (stripped) {
+    const strippedKey = getMode2CacheKey(stripped);
+    translationCache.set(strippedKey, trans);
+  }
 }
 
 function observeNativePlayerCaptions() {
@@ -2010,6 +2241,8 @@ function observeNativePlayerCaptions() {
 
       // 零延遲同步鎖定已完結句子，並納入歷史庫
       lastLockedCompletedSentence = completedSentence;
+      const extractor = getStreamingExtractor();
+      if (extractor) extractor.recordLockedCompleted(completedSentence);
       if (!completedSentenceHistory.includes(completedSentence)) {
         completedSentenceHistory.push(completedSentence);
         if (completedSentenceHistory.length > 10) completedSentenceHistory.shift();
@@ -2169,10 +2402,66 @@ function renderDualSlotSubtitle(prev, curr) {
   if (!isExtensionEnabled || !isCaptionsEnabled) {
     if (container) container.style.display = 'none';
     const player = getActivePlayer();
-    if (player) player.classList.remove('yt-dual-sub-active');
+    if (player && player.classList) player.classList.remove('yt-dual-sub-active');
     return;
   }
   if (!container) return;
+
+  if (typeof require !== 'undefined') {
+    try {
+      const renderer = require('./src/ui/subtitle-renderer');
+      if (typeof renderer?.renderDualSlotSubtitle === 'function') {
+        const player = getActivePlayer();
+        const currTrans = curr?.trans || '';
+        renderer.renderDualSlotSubtitle(container, prev, curr, {
+          isExtensionEnabled,
+          isCaptionsEnabled,
+          player,
+          lastRenderedSig: lastRenderedRollingSig,
+          onSignatureChange: (sig) => { lastRenderedRollingSig = sig; },
+          onFirstRenderSuccess: () => {
+            if (typeof hasTrackedSubtitleSuccess !== 'undefined' && !hasTrackedSubtitleSuccess && (currTrans || prev?.trans)) {
+              hasTrackedSubtitleSuccess = true;
+              if (typeof trackEvent === 'function') {
+                trackEvent('subtitle_render_success', {
+                  target_lang: userTargetLang || 'zh-TW',
+                  mode: (typeof sentenceList !== 'undefined' && sentenceList.length > 0) ? 'mode1_static' : 'mode2_rolling'
+                });
+              }
+            }
+          }
+        });
+        return;
+      }
+    } catch (e1) {
+      try {
+        const renderer = require('../src/ui/subtitle-renderer');
+        if (typeof renderer?.renderDualSlotSubtitle === 'function') {
+          const player = getActivePlayer();
+          const currTrans = curr?.trans || '';
+          renderer.renderDualSlotSubtitle(container, prev, curr, {
+            isExtensionEnabled,
+            isCaptionsEnabled,
+            player,
+            lastRenderedSig: lastRenderedRollingSig,
+            onSignatureChange: (sig) => { lastRenderedRollingSig = sig; },
+            onFirstRenderSuccess: () => {
+              if (typeof hasTrackedSubtitleSuccess !== 'undefined' && !hasTrackedSubtitleSuccess && (currTrans || prev?.trans)) {
+                hasTrackedSubtitleSuccess = true;
+                if (typeof trackEvent === 'function') {
+                  trackEvent('subtitle_render_success', {
+                    target_lang: userTargetLang || 'zh-TW',
+                    mode: (typeof sentenceList !== 'undefined' && sentenceList.length > 0) ? 'mode1_static' : 'mode2_rolling'
+                  });
+                }
+              }
+            }
+          });
+          return;
+        }
+      } catch (e2) {}
+    }
+  }
 
   const currOrig = curr?.orig || '';
   const currTrans = curr?.trans || '';
@@ -2206,7 +2495,7 @@ function renderDualSlotSubtitle(prev, curr) {
     if (typeof trackEvent === 'function') {
       trackEvent('subtitle_render_success', {
         target_lang: userTargetLang || 'zh-TW',
-        video_id: getCurrentVideoId() || 'unknown'
+        mode: sentenceList.length > 0 ? 'mode1_static' : 'mode2_rolling'
       });
     }
   }

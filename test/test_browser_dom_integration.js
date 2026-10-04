@@ -1,15 +1,17 @@
 /**
- * test_real_browser_e2e.js
+ * test_browser_dom_integration.js
  * 
- * 真實 Google Chrome 實機端到端 (E2E) 自動化測試
+ * 真實 Google Chrome 實機 DOM 與樣式整合測試 (Browser DOM Integration Test)
  * 
- * 核心驗證：
- *   1. 使用系統已安裝之真實 Google Chrome (非虛擬環境)
- *   2. 直連真實 YouTube 實體影片 https://www.youtube.com/watch?v=K7qz54nsWf0
- *   3. 注入真實 styles.css、inject.js 與 content.js
- *   4. 透過即時 Google Translate API 獲取繁體中文翻譯
- *   5. 驗證 TrustedHTML 相容性與 Mode 1 / 雙槽完整合句渲染
- *   6. 自動截圖保存為驗收憑據
+ * 注意：
+ *   本測試透過 Puppeteer 在真實 Chrome 連線 YouTube，並以 page.evaluate() 注入腳本
+ *   與 Mock chrome.runtime 訊息通道。主要用於驗證：
+ *   1. 真實 YouTube 播放器 DOM、CSS 樣式排版與 TrustedHTML 相容性
+ *   2. Google Translate 即時端點網路通訊與雙槽字幕上屏渲染
+ *   3. 實機截圖存證
+ *   
+ *   ⚠️ 本測試不涵蓋 Chrome Extension MV3 Manifest 載入排程、Isolated World 與
+ *   Service Worker 背景生命週期競爭（Extension Lifecycle 競爭請參考 test_lifecycle_handshake.js）。
  */
 
 const fs = require('fs');
@@ -31,9 +33,9 @@ function getChromeExecutablePath() {
   return null;
 }
 
-async function runRealBrowserE2ETest() {
+async function runBrowserDomIntegrationTest() {
   console.log('========================================================');
-  console.log('🌐 啟動【真實 Google Chrome 實機端到端 (E2E) 驗收測試】');
+  console.log('🌐 啟動【真實 Chrome DOM 與樣式渲染整合測試 (Browser Integration)】');
   console.log('========================================================\n');
 
   const chromePath = getChromeExecutablePath();
@@ -248,10 +250,13 @@ async function runRealBrowserE2ETest() {
 }
 
 if (require.main === module) {
-  runRealBrowserE2ETest().catch((err) => {
-    console.error('\n❌ 真實瀏覽器 E2E 測試失敗:', err.message);
+  runBrowserDomIntegrationTest().catch((err) => {
+    console.error('\n❌ 真實瀏覽器 DOM 整合測試失敗:', err.message);
     process.exit(1);
   });
 }
 
-module.exports = { runRealBrowserE2ETest };
+module.exports = {
+  runBrowserDomIntegrationTest,
+  runRealBrowserE2ETest: runBrowserDomIntegrationTest
+};

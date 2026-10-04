@@ -1,12 +1,14 @@
 {
   "name": "youtube-dual-subtitles",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "YouTube Bilingual Dual Subtitles Chrome Extension",
   "scripts": {
     "test": "node test/run_all_tests.js",
-    "test:e2e": "node test/test_real_browser_e2e.js"
+    "test:integration": "node test/test_browser_dom_integration.js",
+    "test:e2e": "node test/test_browser_dom_integration.js"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "puppeteer-core": "^23.11.1"
   }
 }

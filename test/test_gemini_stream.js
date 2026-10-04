@@ -14,20 +14,8 @@ const path = require('path');
 
 const fixturePath = path.join(__dirname, 'fixtures', 'eclipse_asr.en.vtt');
 
-const CONFIG = {
-  SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/,
-  MAX_SENTENCE_CHARS: 320
-};
-
-function cleanSubtitleNoise(text) {
-  if (!text) return '';
-  return text
-    .replace(/(?:&gt;|>){1,3}/g, '')
-    .replace(/[\[\(](?:music|applause|laughter|chuckle|chuckles|giggle|giggles|snicker|snickers|cheering|screaming|snort|gasp|sigh|crying|groan|groaning|bell|chime|silence|whisper|cough|coughing|throat clearing|instrumental|sound effect|bgm|inaudible|unintelligible|音樂|掌聲|笑聲|鼓掌|歓声|拍手|音楽)[\]\)]/gi, '')
-    .replace(/[♪♫♩♬]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+const { cleanSubtitleNoise } = require('../src/core/sentence-policy');
+const { StreamingSentenceExtractor } = require('../src/core/streaming-sentence-extractor');
 
 function parseVttToMutationStream(vttString) {
   const blocks = vttString.split(/\r?\n\r?\n/);
@@ -69,98 +57,13 @@ function runGeminiStreamTest() {
   const mutations = parseVttToMutationStream(vttRaw);
   console.log(`[INFO] Loaded ${mutations.length} live DOM mutation snapshots.`);
 
-  let speechTokenQueue = [];
+  const extractor = new StreamingSentenceExtractor();
   let prevSlot = { orig: '', trans: '' };
   let currSlot = { orig: '', trans: '' };
-  let lastLockedCompletedSentence = '';
   let lastFinishedSentence = '';
   let lastFinishedTrans = '';
   let shrinkToOneCount = 0;
   let translationCache = new Map();
-
-  function isTailOfImmediatePrev(phrase) {
-    if (!lastLockedCompletedSentence || !phrase) return false;
-    const clean = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-    if (!clean) return false;
-    const prevClean = lastLockedCompletedSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-    return prevClean.endsWith(clean) || prevClean === clean;
-  }
-
-  function ingestAndExtractSentence(windowText) {
-    let words = windowText.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return null;
-
-    if (lastLockedCompletedSentence) {
-      const prevWords = lastLockedCompletedSentence.trim().split(/\s+/).filter(Boolean);
-      for (let s = Math.min(words.length, prevWords.length + 2); s > 0; s--) {
-        const candidate = words.slice(0, s).join(' ');
-        if (isTailOfImmediatePrev(candidate)) {
-          words = words.slice(s);
-          break;
-        }
-      }
-    }
-    if (words.length === 0) return { completed: null, inProgress: speechTokenQueue.join(' ') };
-
-    let maxMatchedWordCount = 0;
-    for (let matchLen = Math.min(words.length, speechTokenQueue.length); matchLen > 0; matchLen--) {
-      const queueSuffix = speechTokenQueue.slice(-matchLen).map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')).join(' ');
-      const incomingPrefix = words.slice(0, matchLen).map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')).join(' ');
-      if (queueSuffix === incomingPrefix && queueSuffix.length > 0) {
-        maxMatchedWordCount = matchLen;
-        break;
-      }
-    }
-
-    if (maxMatchedWordCount > 0) {
-      speechTokenQueue.push(...words.slice(maxMatchedWordCount));
-    } else if (speechTokenQueue.length === 0) {
-      speechTokenQueue.push(...words);
-    } else {
-      const qClean = speechTokenQueue.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')).join(' ');
-      let matchedMid = false;
-      for (let len = Math.min(words.length, 6); len > 0; len--) {
-        const inPrefix = words.slice(0, len).map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')).join(' ');
-        const foundIdx = qClean.lastIndexOf(inPrefix);
-        if (foundIdx !== -1) {
-          const wordsBefore = qClean.slice(0, foundIdx).trim().split(/\s+/).filter(Boolean).length;
-          const matchedQueuePos = wordsBefore + len;
-          const newWords = words.slice(len);
-          speechTokenQueue = speechTokenQueue.slice(0, matchedQueuePos).concat(newWords);
-          matchedMid = true;
-          break;
-        }
-      }
-
-      if (!matchedMid) {
-        const currentQueueText = speechTokenQueue.join(' ');
-        const isOverLimit = currentQueueText.length > CONFIG.MAX_SENTENCE_CHARS;
-        const endsWithPunctuation = CONFIG.SENTENCE_END_REGEX.test(currentQueueText);
-
-        if (!endsWithPunctuation && !isOverLimit) {
-          speechTokenQueue.push(...words);
-        } else {
-          speechTokenQueue = [...words];
-        }
-      }
-    }
-
-    const fullText = speechTokenQueue.join(' ');
-    const match = fullText.match(/^([\s\S]+?[.!?。！？]+)(?:\s+([\s\S]*))?$/);
-    if (match) {
-      const completed = match[1].trim();
-      const remainder = (match[2] || '').trim();
-      const cleanCompleted = completed.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-      const cleanPrev = lastLockedCompletedSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-      const isDuplicate = cleanCompleted === cleanPrev;
-
-      speechTokenQueue = remainder ? remainder.split(/\s+/).filter(Boolean) : [];
-      lastLockedCompletedSentence = completed;
-      return isDuplicate ? { completed: null, inProgress: remainder } : { completed, inProgress: remainder };
-    }
-
-    return { completed: null, inProgress: fullText };
-  }
 
   // 測試指標
   let totalTestedMutations = 0;
@@ -188,10 +91,11 @@ function runGeminiStreamTest() {
     const cleaned = cleanSubtitleNoise(m.rawText);
     if (!cleaned) return;
 
-    const res = ingestAndExtractSentence(cleaned);
+    const res = extractor.ingest(cleaned);
     if (!res) return;
 
     if (res.completed) {
+      extractor.recordLockedCompleted(res.completed);
       completedSentences.push({ sec: m.timeSec, text: res.completed });
 
       // 嚴格檢驗：是否出現截圖中的畸形殘留詞拼接（例如 "We this cave..."）

@@ -15,6 +15,8 @@ const { runRealworldMatrixTest } = require('./test_realworld_matrix');
 const { runLifecycleHandshakeTest } = require('./test_lifecycle_handshake');
 const { runMainWorldInnerTubeChannelTest } = require('./test_mainworld_innertube_channel');
 const { runCcAndPluginToggleTest } = require('./test_cc_and_plugin_toggle');
+const { runCoreModulesTest } = require('./test_core_modules');
+const { runUIModuleTests } = require('./test_ui_modules');
 const { execSync } = require('child_process');
 
 async function main() {
@@ -88,6 +90,24 @@ async function main() {
   }
   console.log('\n--------------------------------------------------------\n');
 
+  let resCoreSuccess = false;
+  try {
+    const coreRes = runCoreModulesTest();
+    resCoreSuccess = coreRes.success;
+  } catch (e) {
+    resCoreSuccess = false;
+  }
+  console.log('\n--------------------------------------------------------\n');
+
+  let resUISuccess = false;
+  try {
+    runUIModuleTests();
+    resUISuccess = true;
+  } catch (e) {
+    resUISuccess = false;
+  }
+  console.log('\n--------------------------------------------------------\n');
+
   console.log('\n========================================================');
   console.log('  FINAL VERIFICATION DASHBOARD');
   console.log('========================================================');
@@ -103,9 +123,11 @@ async function main() {
   console.log(` 10. 時差握手機制 (Handshake):  ${resHandshakeSuccess ? '✅ PASS' : '❌ FAIL'}`);
   console.log(` 11. 主環境同源 InnerTube 通道: ${resInnerTubeSuccess ? '✅ PASS' : '❌ FAIL'}`);
   console.log(` 12. CC 與插件開關尊重機制:     ${resToggleSuccess ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(` 13. Phase 2 核心架構解耦模組:  ${resCoreSuccess ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(` 14. Phase 2 UI 介面解耦模組:   ${resUISuccess ? '✅ PASS' : '❌ FAIL'}`);
   console.log('========================================================\n');
 
-  const isAllPassed = res1.success && res2.success && res3.success && resE2E.success && resEdge.success && resMerge.success && resMode2Success && resMatrixSuccess && resFastSuccess && resHandshakeSuccess && resInnerTubeSuccess && resToggleSuccess;
+  const isAllPassed = res1.success && res2.success && res3.success && resE2E.success && resEdge.success && resMerge.success && resMode2Success && resMatrixSuccess && resFastSuccess && resHandshakeSuccess && resInnerTubeSuccess && resToggleSuccess && resCoreSuccess && resUISuccess;
   process.exit(isAllPassed ? 0 : 1);
 }
 

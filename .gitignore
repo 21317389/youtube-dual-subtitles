@@ -47,5 +47,7 @@ sync_all_analytics.py
 test_live_extension.py
 test_telemetry.js
 *.bat
+__pycache__/
+*.pyc
 
 
