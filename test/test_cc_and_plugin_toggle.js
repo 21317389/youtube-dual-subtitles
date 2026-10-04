@@ -16,7 +16,7 @@ function runCcAndPluginToggleTest() {
   console.log('🧪 執行【CC 字幕與插件開關尊重機制測試 (CC & Plugin Toggle Test)】');
 
   const injectCode = fs.readFileSync(path.join(__dirname, '..', 'inject.js'), 'utf8');
-  const contentCode = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
+  const contentCode = fs.readFileSync(path.join(__dirname, '..', 'dist', 'content.js'), 'utf8');
   const vtt = fs.readFileSync(path.join(__dirname, 'fixtures', 'internet_of_bugs_ZfcHwBKcNzY.en.vtt'), 'utf8');
 
   let ccBtnClicked = 0;

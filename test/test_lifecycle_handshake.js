@@ -6,13 +6,14 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const assert = require('assert');
 
 function runLifecycleHandshakeTest() {
   console.log('🧪 執行【生命週期時序競爭防禦測試 (Lifecycle Handshake Test)】');
 
-  const injectCode = fs.readFileSync('inject.js', 'utf8');
-  const contentCode = fs.readFileSync('content.js', 'utf8');
+  const injectCode = fs.readFileSync(path.join(__dirname, '..', 'inject.js'), 'utf8');
+  const contentCode = fs.readFileSync(path.join(__dirname, '..', 'dist', 'content.js'), 'utf8');
 
   // 1. 檢查代碼中是否具備握手關鍵字
   assert.ok(

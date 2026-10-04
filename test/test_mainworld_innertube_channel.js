@@ -13,13 +13,14 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const assert = require('assert');
 
 async function runMainWorldInnerTubeChannelTest() {
   console.log('🧪 執行【主環境同源 InnerTube 高速通道與 403 阻擋防禦測試】');
 
-  const contentCode = fs.readFileSync('content.js', 'utf8');
-  const injectCode = fs.readFileSync('inject.js', 'utf8');
+  const contentCode = fs.readFileSync(path.join(__dirname, '..', 'dist', 'content.js'), 'utf8');
+  const injectCode = fs.readFileSync(path.join(__dirname, '..', 'inject.js'), 'utf8');
 
   // 【斷言 1】代碼架構完整性校驗
   assert.ok(

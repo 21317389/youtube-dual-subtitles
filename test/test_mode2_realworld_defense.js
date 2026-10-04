@@ -9,38 +9,26 @@
  * 3. Mode 2 下槽（Slot 2）即時防抖雙語翻譯非空斷言（No Empty Translation）
  */
 
-const fs = require('fs');
-const path = require('path');
 const assert = require('assert');
-
-const contentJs = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
+const {
+  session,
+  scheduler,
+  streamingExtractor,
+  ingestAndExtractSentence,
+  debouncedTranslateLiveProgress
+} = require('../src/content-entry');
 
 function runMode2RealworldDefenseTest() {
   console.log('========================================================');
   console.log('🧪 執行【Mode 2 真實世界極端防禦測試 (Mode 2 Defense Test)】');
   console.log('========================================================\n');
 
-  global.isExtensionEnabled = true;
-  global.isCaptionsEnabled = true;
-  global.sentenceList = [];
-  global.lastRenderedSignature = '';
-  global.lastRenderedRollingSig = '';
-  global.userTargetLang = 'zh-TW';
-  global.currentTrack = { languageCode: 'en' };
-  global.subtitleOffset = 0;
-  global.lastWindowCheckTime = -999;
-  global.CONFIG = {
-    PRELOAD_SECONDS: 45,
-    WINDOW_CHECK_INTERVAL: 1.5,
-    BATCH_TRANSLATE_LIMIT: 8,
-    SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/,
-    INTRA_SPLIT_REGEX: /(?<=[.?!。？！]["'”’)]*)\s+/,
-    FALLBACK_LONG_PAUSE_SECONDS: 2.5,
-    MAX_SENTENCE_CHARS: 320,
-    MAX_SENTENCE_DURATION: 25.0
-  };
+  session.isExtensionEnabled = true;
+  session.isCaptionsEnabled = true;
+  session.currentTrack = { languageCode: 'en' };
+  session.userTargetLang = 'zh-TW';
 
-  global.safeSendMessage = (msg, cb) => {
+  scheduler.sendRuntimeMessage = (msg, cb) => {
     if (msg.action === 'translate') {
       if (cb) cb({ translatedText: `[譯] ${msg.text}` });
     } else {
@@ -48,23 +36,16 @@ function runMode2RealworldDefenseTest() {
     }
   };
 
-  global.getActivePlayer = () => ({
-    querySelector: () => null
-  });
-  global.ensureUIElements = () => {};
-  global.getActiveVideo = () => ({ currentTime: 10.0 });
-  global.startSyncLoop = () => {};
-  global.stopSyncLoop = () => {};
-  global.prioritizeCurrentSentence = () => {};
-  global.checkAndTriggerSlidingWindow = () => {};
-  global.renderCurrentSubtitle = () => {};
-  global.renderDualSlotSubtitle = () => {};
+  const resetStreamingState = () => {
+    session.resetStreaming();
+    streamingExtractor.reset();
+  };
 
-  // 抽出 Mode 2 核心函數
-  eval(contentJs.slice(
-    contentJs.indexOf('// 13. YouTube 雙語純句級對稱雙槽滾動引擎'),
-    contentJs.indexOf('function renderDualSlotSubtitle(')
-  ));
+  const getStreamingSlots = () => ({ prev: session.prevSlot, curr: session.currSlot });
+  const setStreamingSlots = (prev, curr) => {
+    if (prev) session.prevSlot = prev;
+    if (curr) session.currSlot = curr;
+  };
 
   // ----------------------------------------------------
   // 【測試 1】複合長句防腰斬測試（Casey Muratori 10x Developer 案例）

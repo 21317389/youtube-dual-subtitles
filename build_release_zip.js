@@ -4,10 +4,13 @@ const { execSync } = require('child_process');
 
 const rootDir = __dirname;
 
+console.log('Building dist/content.js via esbuild...');
+execSync('npm.cmd run build', { stdio: 'inherit' });
+
 const filesToInclude = [
   'manifest.json',
   'background.js',
-  'content.js',
+  'dist/content.js',
   'inject.js',
   'popup.html',
   'popup.js',

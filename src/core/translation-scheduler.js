@@ -13,12 +13,17 @@ class TranslationScheduler {
     this.inFlightRequests = new Map(); // key -> [callbacks]
     this.activeLiveRequestId = 0;
     this.sendRuntimeMessage = options.sendRuntimeMessage || ((msg, cb) => cb && cb({}));
-    this.onCacheHit = options.onCacheHit || (() => null);
-    this.onCacheSet = options.onCacheSet || (() => {});
+    this.cache = options.cache || new Map();
+    this.onCacheHit = options.onCacheHit || ((k) => this.cache.get(k) || null);
+    this.onCacheSet = options.onCacheSet || ((k, t, res) => this.cache.set(k, res));
   }
 
   getCacheKey(sourceLang, targetLang, text) {
     return `${sourceLang || 'auto'}->${targetLang || 'zh-TW'}:${text}`;
+  }
+
+  clearCache() {
+    this.cache.clear();
   }
 
   /**
@@ -26,14 +31,14 @@ class TranslationScheduler {
    */
   requestTranslation(text, sourceLang, targetLang, callback) {
     if (!text || !text.trim()) {
-      if (callback) callback('');
+      if (callback) callback({ translatedText: '' });
       return;
     }
 
     const key = this.getCacheKey(sourceLang, targetLang, text);
     const cached = this.onCacheHit(key, text);
     if (cached) {
-      if (callback) callback(cached);
+      if (callback) callback(typeof cached === 'object' && cached !== null ? cached : { translatedText: cached });
       return;
     }
 
@@ -56,9 +61,10 @@ class TranslationScheduler {
       }
       const cbs = this.inFlightRequests.get(key) || [];
       this.inFlightRequests.delete(key);
+      const resultObj = res?.translatedText !== undefined ? res : { translatedText };
       cbs.forEach(cb => {
         try {
-          if (cb) cb(translatedText);
+          if (cb) cb(resultObj);
         } catch (e) {}
       });
     });
@@ -69,9 +75,9 @@ class TranslationScheduler {
    */
   requestLiveTranslation(text, sourceLang, targetLang, callback) {
     const currentId = ++this.activeLiveRequestId;
-    this.requestTranslation(text, sourceLang, targetLang, (translatedText) => {
+    this.requestTranslation(text, sourceLang, targetLang, (res) => {
       if (currentId !== this.activeLiveRequestId) return;
-      if (callback) callback(translatedText);
+      if (callback) callback(res);
     });
     return currentId;
   }

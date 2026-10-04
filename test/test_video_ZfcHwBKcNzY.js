@@ -9,9 +9,16 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const contentJs = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
-const backgroundJs = fs.readFileSync(path.join(__dirname, '..', 'background.js'), 'utf8');
+const { parseVttCaptions } = require('../src/core/caption-parser');
+const {
+  CONFIG,
+  session,
+  scheduler,
+  parseCues,
+  getActiveCue,
+  checkAndTriggerSlidingWindow,
+  ingestAndExtractSentence
+} = require('../src/content-entry');
 const fixturePath = path.join(__dirname, 'fixtures', 'internet_of_bugs_ZfcHwBKcNzY.en.vtt');
 const vttRaw = fs.readFileSync(fixturePath, 'utf8');
 
@@ -27,48 +34,19 @@ function runZfcHwBKcNzYTest() {
   }
 
   // 2. 模擬環境準備
-  global.isExtensionEnabled = true;
-  global.isCaptionsEnabled = true;
-  global.lastRenderedSignature = '';
-  global.lastRenderedRollingSig = '';
-  global.currentTrack = { languageCode: 'en' };
-  global.userTargetLang = 'zh-TW';
-  global.CONFIG = {
-    PRELOAD_SECONDS: 45,
-    WINDOW_CHECK_INTERVAL: 1.5,
-    BATCH_TRANSLATE_LIMIT: 8,
-    SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/,
-    INTRA_SPLIT_REGEX: /(?<=[.?!。？！]["'”’)]*)\s+/,
-    FALLBACK_LONG_PAUSE_SECONDS: 2.5,
-    MAX_SENTENCE_CHARS: 320,
-    MAX_SENTENCE_DURATION: 25.0
-  };
-  global.subtitleOffset = 0;
-  global.getCurrentVideoId = () => 'ZfcHwBKcNzY';
-  global.ensureUIElements = () => {};
-  global.getActiveVideo = () => null;
-  global.prioritizeCurrentSentence = () => {};
-  global.renderCurrentSubtitle = () => {};
-  global.startSyncLoop = () => {};
-  global.sentenceList = [];
-  global.lastObservedVideoId = 'ZfcHwBKcNzY';
-  global.lastWindowCheckTime = -999;
+  session.isExtensionEnabled = true;
+  session.isCaptionsEnabled = true;
+  session.currentTrack = { languageCode: 'en' };
+  session.userTargetLang = 'zh-TW';
+  session.subtitleOffset = 0;
+  session.lastObservedVideoId = 'ZfcHwBKcNzY';
+  session.lastWindowCheckTime = -999;
+  session.sentenceList = [];
 
-  // 提取 content.js 關鍵解析與滑動窗口函式
-  eval(contentJs.slice(
-    contentJs.indexOf('function parseVttCaptions'),
-    contentJs.indexOf('// ==========================================\n// 7. 雙軌時間映射')
-  ));
-
-  eval(contentJs.slice(
-    contentJs.indexOf('function getActiveCue(currentTime) {'),
-    contentJs.indexOf('function onTimeUpdate()')
-  ));
-
-  eval(contentJs.slice(
-    contentJs.indexOf('function checkAndTriggerSlidingWindow('),
-    contentJs.indexOf('function showWarningToast(message)')
-  ));
+  Object.defineProperty(global, 'sentenceList', {
+    get: () => session.sentenceList,
+    configurable: true
+  });
 
   // 3. 執行字幕解析與合句測試
   const parsedData = parseVttCaptions(vttRaw);
@@ -90,7 +68,8 @@ function runZfcHwBKcNzYTest() {
   let pendingTranslations = [];
   let currentSimTime = 0;
 
-  global.safeSendMessage = (msg, cb) => {
+  scheduler.clearCache();
+  scheduler.sendRuntimeMessage = (msg, cb) => {
     if (msg.action === 'translate') {
       pendingTranslations.push({
         text: msg.text,
@@ -121,8 +100,8 @@ function runZfcHwBKcNzYTest() {
   for (let t = 0; t <= totalDuration; t += timeStep) {
     tickTranslations(t);
 
-    if (Math.abs(t - lastWindowCheckTime) > CONFIG.WINDOW_CHECK_INTERVAL) {
-      lastWindowCheckTime = t;
+    if (Math.abs(t - session.lastWindowCheckTime) > CONFIG.WINDOW_CHECK_INTERVAL) {
+      session.lastWindowCheckTime = t;
       checkAndTriggerSlidingWindow(t);
     }
 
@@ -168,14 +147,7 @@ function runZfcHwBKcNzYTest() {
   // ----------------------------------------------------
   console.log('\n--- 執行截圖回歸測試：低標點/無標點流長句堆疊與斷句防蒸發驗證 ---');
 
-  eval(contentJs.slice(
-    contentJs.indexOf('function cleanSubtitleNoise('),
-    contentJs.indexOf('function parseCues(')
-  ));
-  eval(contentJs.slice(
-    contentJs.indexOf('function isTailOfImmediatePrev('),
-    contentJs.indexOf('const translationCache = new Map();')
-  ));
+  session.resetStreaming();
 
   // 模擬 YouTube ASR 在該片第 4.68s ~ 26.08s 吐出的無標點連續串流字串 (與使用者截圖 100% 一致)
   const rawSpokenStream = [

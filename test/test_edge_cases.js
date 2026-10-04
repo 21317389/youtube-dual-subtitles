@@ -12,8 +12,18 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const contentJs = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
+const { parseVttCaptions } = require('../src/core/caption-parser');
+const {
+  CONFIG,
+  session,
+  scheduler,
+  renderer,
+  parseCues,
+  getActiveCue,
+  prioritizeCurrentSentence,
+  checkAndTriggerSlidingWindow,
+  renderCurrentSubtitle
+} = require('../src/content-entry');
 const vttZfcHwBKcNzY = fs.readFileSync(path.join(__dirname, 'fixtures', 'internet_of_bugs_ZfcHwBKcNzY.en.vtt'), 'utf8');
 const vttTed = fs.readFileSync(path.join(__dirname, 'fixtures', 'ted_talk_manual.en.vtt'), 'utf8');
 
@@ -25,26 +35,43 @@ function runEdgeCasesTest() {
   // ----------------------------------------------------------------
   // 環境通用 Mock
   // ----------------------------------------------------------------
-  global.isExtensionEnabled = true;
-  global.isCaptionsEnabled = true;
-  global.lastRenderedSignature = '';
-  global.lastRenderedRollingSig = '';
-  global.userTargetLang = 'zh-TW';
-  global.subtitleOffset = 0;
-  global.sentenceList = [];
-  global.lastWindowCheckTime = -999;
-  global.lastObservedVideoId = 'ZfcHwBKcNzY';
-  global.getCurrentVideoId = () => 'ZfcHwBKcNzY';
-  global.CONFIG = {
-    PRELOAD_SECONDS: 45,
-    WINDOW_CHECK_INTERVAL: 1.5,
-    BATCH_TRANSLATE_LIMIT: 8,
-    SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/,
-    INTRA_SPLIT_REGEX: /(?<=[.?!。？！]["'”’)]*)\s+/,
-    FALLBACK_LONG_PAUSE_SECONDS: 2.5,
-    MAX_SENTENCE_CHARS: 320,
-    MAX_SENTENCE_DURATION: 25.0
-  };
+  session.isExtensionEnabled = true;
+  session.isCaptionsEnabled = true;
+  session.userTargetLang = 'zh-TW';
+  session.subtitleOffset = 0;
+  session.sentenceList = [];
+  session.lastObservedVideoId = 'ZfcHwBKcNzY';
+  session.lastWindowCheckTime = -999;
+
+  Object.defineProperty(global, 'sentenceList', {
+    get: () => session.sentenceList,
+    set: (v) => { session.sentenceList = v; },
+    configurable: true
+  });
+
+  Object.defineProperty(global, 'isCaptionsEnabled', {
+    get: () => session.isCaptionsEnabled,
+    set: (v) => { session.isCaptionsEnabled = v; },
+    configurable: true
+  });
+
+  Object.defineProperty(global, 'isExtensionEnabled', {
+    get: () => session.isExtensionEnabled,
+    set: (v) => { session.isExtensionEnabled = v; },
+    configurable: true
+  });
+
+  let currentSendHandler = (msg, cb) => cb && cb({});
+  scheduler.sendRuntimeMessage = (msg, cb) => currentSendHandler(msg, cb);
+
+  Object.defineProperty(global, 'safeSendMessage', {
+    get: () => currentSendHandler,
+    set: (fn) => {
+      currentSendHandler = fn;
+      scheduler.clearCache();
+    },
+    configurable: true
+  });
 
   class MockElement {
     constructor(id = '', tag = 'div') {
@@ -52,8 +79,15 @@ function runEdgeCasesTest() {
       this.tagName = tag;
       this.style = { display: '' };
       this.textContent = '';
+      this.parentElement = null;
+      this.children = [];
       this.origEl = { textContent: '' };
       this.transEl = { textContent: '', style: { display: '', visibility: '' } };
+    }
+    appendChild(child) {
+      child.parentElement = this;
+      this.children.push(child);
+      return child;
     }
     querySelector(sel) {
       if (sel.includes('prev')) return this.prevSlot || (this.prevSlot = new MockElement('slot-prev'));
@@ -67,36 +101,12 @@ function runEdgeCasesTest() {
   const container = new MockElement('yt-dual-subtitle-container');
   global.document = {
     getElementById: (id) => id === 'yt-dual-subtitle-container' ? container : null,
+    createElement: (tag) => new MockElement('', tag),
     querySelector: () => null,
     addEventListener: () => {},
     removeEventListener: () => {}
   };
   global.window = { addEventListener: () => {}, removeEventListener: () => {} };
-  global.getActivePlayer = () => null;
-  global.ensureUIElements = () => {};
-  global.getActiveVideo = () => ({ currentTime: 0 });
-  global.startSyncLoop = () => {};
-  global.stopSyncLoop = () => {};
-
-  // 提取 content.js 核心函式
-  eval(contentJs.slice(
-    contentJs.indexOf('function parseVttCaptions('),
-    contentJs.indexOf('// ==========================================\n// 7. 雙軌時間映射')
-  ));
-  eval(contentJs.slice(
-    contentJs.indexOf('function getActiveCue('),
-    contentJs.indexOf('// ==========================================\n// 8. 滑動窗口')
-  ));
-  eval(contentJs.slice(
-    contentJs.indexOf('function prioritizeCurrentSentence('),
-    contentJs.indexOf('// ==========================================\n// 9. 即時串流監聽')
-  ));
-  eval(contentJs.slice(
-    contentJs.indexOf('function renderDualSlotSubtitle('),
-    contentJs.length
-  ));
-
-  global.safeSendMessage = (msg, cb) => cb && cb({});
 
   // 載入初始字幕數據
   const initialVttData = parseVttCaptions(vttZfcHwBKcNzY);

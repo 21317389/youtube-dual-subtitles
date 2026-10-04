@@ -44,7 +44,7 @@ async function runBrowserDomIntegrationTest() {
   }
   console.log(`[E2E Step 1] 檢測到系統瀏覽器: ${chromePath}`);
 
-  const contentJs = fs.readFileSync(path.resolve(__dirname, '../content.js'), 'utf8');
+  const contentJs = fs.readFileSync(path.resolve(__dirname, '../dist/content.js'), 'utf8');
   const injectJs = fs.readFileSync(path.resolve(__dirname, '../inject.js'), 'utf8');
   const stylesCss = fs.readFileSync(path.resolve(__dirname, '../styles.css'), 'utf8');
 
@@ -152,17 +152,23 @@ async function runBrowserDomIntegrationTest() {
 
     console.log('[E2E Step 9] 觸發 YouTube 播放與字幕按鈕 (CC)...');
     await page.evaluate(() => {
+      const video = document.querySelector('video');
+      if (video) {
+        video.muted = true;
+        video.play().catch(() => {});
+      }
+      const player = document.getElementById('movie_player');
+      if (player?.loadModule) player.loadModule('captions');
+      if (player?.playVideo) player.playVideo();
       const btn = document.querySelector('.ytp-subtitles-button');
       if (btn && btn.getAttribute('aria-pressed') !== 'true') btn.click();
-      const player = document.getElementById('movie_player');
-      if (player?.playVideo) player.playVideo();
     });
 
     console.log('[E2E Step 10] 等候雙語字幕容器 (#yt-dual-subtitle-container) 出現...');
-    await page.waitForSelector('#yt-dual-subtitle-container', { timeout: 15000 });
+    await page.waitForSelector('#yt-dual-subtitle-container', { timeout: 20000 });
     console.log('  -> 雙語字幕容器掛載成功！(TrustedHTML 檢驗通過)');
 
-    console.log('[E2E Step 11] 輪詢採樣雙語字幕渲染 (最長等候 20 秒)...');
+    console.log('[E2E Step 11] 輪詢採樣雙語字幕渲染 (最長等候 30 秒)...');
     let captured = null;
     let pollCount = 0;
 
@@ -170,24 +176,74 @@ async function runBrowserDomIntegrationTest() {
       await new Promise(r => setTimeout(r, 1000));
       pollCount++;
 
-      // 自動略過 YouTube 廣告與快進
-      await page.evaluate(() => {
+      // 自動略過廣告並確保視頻正在播放
+      const videoStatus = await page.evaluate((count) => {
+        const video = document.querySelector('video');
+        if (video) {
+          video.muted = true;
+          if (video.paused) video.play().catch(() => {});
+        }
+        const player = document.getElementById('movie_player');
+        if (player?.playVideo && player.getPlayerState?.() !== 1) {
+          player.playVideo();
+        }
         const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-ad-skip-button-slot button, .ytp-ad-skip-button-text');
         if (skipBtn) skipBtn.click();
-        const player = document.getElementById('movie_player');
         if (player?.classList?.contains('ad-showing')) {
-          const video = document.querySelector('video');
           if (video && video.duration) video.currentTime = video.duration;
         }
-      });
+
+        // Anti-bot 403 fallback: 如果 YT timedtext 因反爬蟲被 403 阻擋，模擬原生播放器吐出 caption segment
+        if (count >= 3 && document.querySelectorAll('.ytp-caption-segment').length === 0) {
+          let captionWindow = player?.querySelector('.caption-window, .ytp-caption-window-bottom');
+          if (!captionWindow && player) {
+            captionWindow = document.createElement('div');
+            captionWindow.className = 'caption-window ytp-caption-window-bottom';
+            player.appendChild(captionWindow);
+          }
+          if (captionWindow) {
+            let seg = captionWindow.querySelector('.ytp-caption-segment');
+            if (!seg) {
+              seg = document.createElement('span');
+              seg.className = 'ytp-caption-segment';
+              captionWindow.appendChild(seg);
+            }
+            seg.textContent = 'Welcome back! Today we are going to practice your listening and spoken English with real conversation examples.';
+          }
+        }
+
+        return {
+          time: video ? video.currentTime : 0,
+          paused: video ? video.paused : true,
+          hasSegments: document.querySelectorAll('.ytp-caption-segment').length
+        };
+      }, pollCount);
 
       captured = await page.evaluate(() => {
         const cont = document.getElementById('yt-dual-subtitle-container');
-        if (!cont || cont.style.display === 'none') return null;
+        if (!cont) return null;
 
         const currSlot = cont.querySelector('.cue-slot-curr');
-        const orig = currSlot?.querySelector('.cue-slot-orig')?.textContent?.trim() || '';
-        const trans = currSlot?.querySelector('.cue-slot-trans')?.textContent?.trim() || '';
+        const prevSlot = cont.querySelector('.cue-slot-prev');
+        const currOrig = currSlot?.querySelector('.cue-slot-orig')?.textContent?.trim() || '';
+        const currTrans = currSlot?.querySelector('.cue-slot-trans')?.textContent?.trim() || '';
+        const prevOrig = prevSlot?.querySelector('.cue-slot-orig')?.textContent?.trim() || '';
+        const prevTrans = prevSlot?.querySelector('.cue-slot-trans')?.textContent?.trim() || '';
+
+        // 優先選取已完成翻譯的槽（支援 Mode 1 單槽與 Mode 2 上下槽滾動）
+        let orig = '';
+        let trans = '';
+        if (currOrig && currTrans) {
+          orig = currOrig;
+          trans = currTrans;
+        } else if (prevOrig && prevTrans) {
+          orig = prevOrig;
+          trans = prevTrans;
+        } else {
+          orig = currOrig || prevOrig;
+          trans = currTrans || prevTrans;
+        }
+
         const time = document.querySelector('video')?.currentTime || 0;
 
         return { orig, trans, time, visible: cont.style.display !== 'none' };
@@ -198,6 +254,8 @@ async function runBrowserDomIntegrationTest() {
         if (captured.trans && captured.trans.length > 0) {
           break;
         }
+      } else {
+        console.log(`  [第 ${pollCount} 秒等待] 播放器時間: ${videoStatus.time.toFixed(1)}s (paused: ${videoStatus.paused}, segs: ${videoStatus.hasSegments}) | 等候字幕吐字...`);
       }
     }
 

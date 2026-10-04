@@ -9,82 +9,35 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const contentJs = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
+const { parseVttCaptions } = require('../src/core/caption-parser');
+const {
+  CONFIG,
+  session,
+  scheduler,
+  parseCues,
+  getActiveCue,
+  checkAndTriggerSlidingWindow
+} = require('../src/content-entry');
 const vttRaw = fs.readFileSync(path.join(__dirname, 'fixtures', 'ted_talk_manual.en.vtt'), 'utf8');
 
 // 全域模擬環境
-global.isExtensionEnabled = true;
-global.isCaptionsEnabled = true;
-global.lastRenderedSignature = '';
-global.lastRenderedRollingSig = '';
-global.currentTrack = { languageCode: 'en' };
-global.userTargetLang = 'zh-TW';
-global.CONFIG = {
-  PRELOAD_SECONDS: 45,
-  WINDOW_CHECK_INTERVAL: 1.5,
-  BATCH_TRANSLATE_LIMIT: 8,
-  SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/,
-  INTRA_SPLIT_REGEX: /(?<=[.?!。？！]["'”’)]*)\s+/,
-  FALLBACK_LONG_PAUSE_SECONDS: 2.5,
-  MAX_SENTENCE_CHARS: 320,
-  MAX_SENTENCE_DURATION: 25.0
-};
+session.isExtensionEnabled = true;
+session.isCaptionsEnabled = true;
+session.currentTrack = { languageCode: 'en' };
+session.userTargetLang = 'zh-TW';
+session.subtitleOffset = 0;
+session.sentenceList = [];
 
-global.subtitleOffset = 0;
-global.ensureUIElements = () => {};
-global.getActiveVideo = () => null;
-global.prioritizeCurrentSentence = () => {};
-global.renderCurrentSubtitle = () => {};
-global.startSyncLoop = () => {};
-global.sentenceList = [];
-global.lastObservedVideoId = '';
-global.lastWindowCheckTime = -999;
-
-// 提取 content.js 關鍵函式
-eval(contentJs.slice(
-  contentJs.indexOf('function parseVttCaptions'),
-  contentJs.indexOf('// ==========================================\n// 7. 雙軌時間映射')
-));
-
-eval(contentJs.slice(
-  contentJs.indexOf('function getActiveCue(currentTime) {'),
-  contentJs.indexOf('function onTimeUpdate()')
-));
-
-eval(contentJs.slice(
-  contentJs.indexOf('function checkAndTriggerSlidingWindow('),
-  contentJs.indexOf('function showWarningToast(message)')
-));
-
-// 模擬 Mock DOM 容器
-const mockContainer = { style: { display: '' } };
-const mockSlotPrev = {
-  style: { display: '' },
-  querySelector: (s) => ({ textContent: '', style: { display: '', visibility: '' } })
-};
-const mockSlotCurr = {
-  style: { display: '' },
-  querySelector: (s) => ({ textContent: '', style: { display: '', visibility: '' } })
-};
-
-global.document = {
-  getElementById: (id) => {
-    if (id === 'yt-dual-subtitle-container') return mockContainer;
-    return null;
-  }
-};
-mockContainer.querySelector = (s) => {
-  if (s.includes('prev')) return mockSlotPrev;
-  if (s.includes('curr')) return mockSlotCurr;
-  return null;
-};
+Object.defineProperty(global, 'sentenceList', {
+  get: () => session.sentenceList,
+  configurable: true
+});
 
 // 模擬非同步翻譯伺服器 (延遲 150ms ~ 200ms)
 let currentSimTime = 0;
 let pendingTranslations = [];
 
-global.safeSendMessage = (msg, cb) => {
+scheduler.sendRuntimeMessage = (msg, cb) => {
   if (msg.action === 'translate') {
     pendingTranslations.push({
       text: msg.text,
@@ -124,7 +77,8 @@ function runPlaybackSpeedTest(playbackSpeed) {
 
   // 重設滑動窗口與快取
   pendingTranslations = [];
-  lastWindowCheckTime = -999;
+  scheduler.clearCache();
+  session.lastWindowCheckTime = -999;
   currentSimTime = 0;
 
   const totalDuration = sentenceList[sentenceList.length - 1].end;
@@ -139,8 +93,8 @@ function runPlaybackSpeedTest(playbackSpeed) {
     tickSimTranslations(t);
 
     // 觸發 45 秒滑動窗口檢查
-    if (Math.abs(t - lastWindowCheckTime) > CONFIG.WINDOW_CHECK_INTERVAL) {
-      lastWindowCheckTime = t;
+    if (Math.abs(t - session.lastWindowCheckTime) > CONFIG.WINDOW_CHECK_INTERVAL) {
+      session.lastWindowCheckTime = t;
       checkAndTriggerSlidingWindow(t);
     }
 

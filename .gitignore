@@ -38,7 +38,8 @@ edge_automation_profile/
 dashboard_data/
 *.csv
 build/
-dist/
+dist/*
+!dist/content.js
 *.spec
 test_profile_temp/
 download_dashboard.py

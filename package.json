@@ -3,9 +3,9 @@
   "version": "1.5.0",
   "description": "YouTube Bilingual Dual Subtitles Chrome Extension",
   "scripts": {
+    "build": "esbuild src/content-entry.js --bundle --outfile=dist/content.js --format=iife",
     "test": "node test/run_all_tests.js",
-    "test:integration": "node test/test_browser_dom_integration.js",
-    "test:e2e": "node test/test_browser_dom_integration.js"
+    "test:integration": "node test/test_browser_dom_integration.js"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -21,7 +21,7 @@ async function runRealworldMatrixTest() {
   console.log('🧪 執行【真實世界極限情境測試矩陣 (Real-World Matrix Test)】');
   console.log('========================================================\n');
 
-  const contentJsCode = fs.readFileSync(path.join(__dirname, '../content.js'), 'utf8');
+  const contentJsCode = fs.readFileSync(path.join(__dirname, '../dist/content.js'), 'utf8');
   const backgroundJsCode = fs.readFileSync(path.join(__dirname, '../background.js'), 'utf8');
 
   // ----------------------------------------------------
@@ -30,13 +30,14 @@ async function runRealworldMatrixTest() {
   // ----------------------------------------------------
   console.log('【防線 1】真實 content.js 設定檔架構完整性校驗');
   
-  // 提取 content.js 內的原始 CONFIG
-  const configMatch = contentJsCode.match(/const\s+CONFIG\s*=\s*(\{[\s\S]*?\n\};)/);
+  // 提取 dist/content.js 內的原始 CONFIG
+  const configMatch = contentJsCode.match(/(?:const|var)\s+CONFIG\s*=\s*(\{[\s\S]*?\n\s*\};)/);
   assert.strictEqual(!!configMatch, true, 'content.js 必須宣告全域 CONFIG 物件！');
 
   let realConfig;
   try {
-    const sandbox = {};
+    const { SENTENCE_END_REGEX, FALLBACK_LONG_PAUSE_SECONDS, MAX_SENTENCE_CHARS, MAX_SENTENCE_DURATION } = require('../src/core/sentence-policy');
+    const { DEFAULT_SIZE_MAP } = require('../src/ui/subtitle-renderer');
     realConfig = eval(`(${configMatch[1].replace(';', '')})`);
   } catch (e) {
     throw new Error('解析 content.js 內部 CONFIG 語法失敗: ' + e.message);
@@ -155,16 +156,7 @@ async function runRealworldMatrixTest() {
   // ----------------------------------------------------
   console.log('【防線 4】全格式字幕解析器真實壓測 (JSON3 / WebVTT / 原生 XML 轉義還原)');
 
-  // 提取 parseUniversalCaptionText 函數
-  const parseUniversalCaptionText = eval(`
-    (function() {
-      ${contentJsCode.slice(
-        contentJsCode.indexOf('function parseUniversalCaptionText('),
-        contentJsCode.indexOf('// URL 變更兜底防護')
-      )}
-      return parseUniversalCaptionText;
-    })()
-  `);
+  const { parseUniversalCaptionText } = require('../src/core/caption-parser');
 
   // 測試 4.1: JSON3
   const sampleJson3 = JSON.stringify({

@@ -5,48 +5,23 @@
  * 針對新功能「遇到短句 (< 5 個字數) 就跟後面合併為一句」進行全方位單元測試與回歸驗證
  */
 
-const fs = require('fs');
-const path = require('path');
-
-const contentJs = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
+const { parseVttCaptions } = require('../src/core/caption-parser');
+const { parseCues, session } = require('../src/content-entry');
 
 function runShortSentenceMergeTest() {
   console.log('========================================================');
   console.log('🧪 執行【短句 (<5個字數) 向後智慧合流功能測試】');
   console.log('========================================================\n');
 
-  global.isExtensionEnabled = true;
-  global.isCaptionsEnabled = true;
-  global.sentenceList = [];
-  global.lastRenderedSignature = '';
-  global.lastRenderedRollingSig = '';
-  global.userTargetLang = 'zh-TW';
-  global.subtitleOffset = 0;
-  global.lastWindowCheckTime = -999;
-  global.CONFIG = {
-    PRELOAD_SECONDS: 45,
-    WINDOW_CHECK_INTERVAL: 1.5,
-    BATCH_TRANSLATE_LIMIT: 8,
-    SENTENCE_END_REGEX: /[.?!。？！]["'”’)]*$/,
-    INTRA_SPLIT_REGEX: /(?<=[.?!。？！]["'”’)]*)\s+/,
-    FALLBACK_LONG_PAUSE_SECONDS: 2.5,
-    MAX_SENTENCE_CHARS: 320,
-    MAX_SENTENCE_DURATION: 25.0
-  };
-  global.safeSendMessage = (msg, cb) => cb && cb({});
-  global.getActivePlayer = () => null;
-  global.ensureUIElements = () => {};
-  global.getActiveVideo = () => null;
-  global.startSyncLoop = () => {};
-  global.stopSyncLoop = () => {};
-  global.prioritizeCurrentSentence = () => {};
-  global.checkAndTriggerSlidingWindow = () => {};
-  global.renderCurrentSubtitle = () => {};
+  session.isExtensionEnabled = true;
+  session.isCaptionsEnabled = true;
+  session.userTargetLang = 'zh-TW';
+  session.subtitleOffset = 0;
 
-  eval(contentJs.slice(
-    contentJs.indexOf('function parseVttCaptions('),
-    contentJs.indexOf('// ==========================================\n// 7. 雙軌時間映射')
-  ));
+  Object.defineProperty(global, 'sentenceList', {
+    get: () => session.sentenceList,
+    configurable: true
+  });
 
   // ----------------------------------------------------
   // 案例 1：單一短句與後續長句合流

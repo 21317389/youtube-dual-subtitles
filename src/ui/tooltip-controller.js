@@ -234,7 +234,8 @@ class TooltipController {
   ensureElements(player) {
     const targetPlayer = player || this.getPlayer();
     if (!targetPlayer) return null;
-    const tooltip = ensureTooltipElement(targetPlayer, targetPlayer.ownerDocument, this.tooltipId);
+    const doc = targetPlayer.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    const tooltip = ensureTooltipElement(targetPlayer, doc, this.tooltipId);
     return tooltip;
   }
 
@@ -247,7 +248,8 @@ class TooltipController {
     if (now - this.lastToastTime < debounceMs) return;
     this.lastToastTime = now;
 
-    const toast = ensureToastElement(player, player.ownerDocument, this.toastId);
+    const doc = player.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    const toast = ensureToastElement(player, doc, this.toastId);
     if (!toast) return;
 
     toast.textContent = message;

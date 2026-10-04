@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const backgroundJsCode = fs.readFileSync(path.join(__dirname, '..', 'background.js'), 'utf8');
-const contentJsCode = fs.readFileSync(path.join(__dirname, '..', 'content.js'), 'utf8');
+const contentJsCode = fs.readFileSync(path.join(__dirname, '..', 'dist', 'content.js'), 'utf8');
 const injectJsCode = fs.readFileSync(path.join(__dirname, '..', 'inject.js'), 'utf8');
 
 const vttZfcHwBKcNzY = fs.readFileSync(path.join(__dirname, 'fixtures', 'internet_of_bugs_ZfcHwBKcNzY.en.vtt'), 'utf8');
@@ -266,8 +266,10 @@ function runE2EPipelineTest() {
   // ----------------------------------------------------
   // 3. 載入真實的 content.js
   // ----------------------------------------------------
-  eval(contentJsCode.replace('const CONFIG =', 'global.CONFIG = CONFIG ='));
-  console.log('[E2E Step 2] 真實 content.js 載入成功，已完成雙語字幕引擎初始化。');
+  const { CONFIG } = require('../src/content-entry');
+  global.CONFIG = CONFIG;
+  eval(contentJsCode);
+  console.log('[E2E Step 2] 真實 dist/content.js 載入成功，已完成雙語字幕引擎初始化。');
 
   if (typeof CONFIG.BATCH_TRANSLATE_LIMIT !== 'number' || CONFIG.BATCH_TRANSLATE_LIMIT < 1) {
     throw new Error('嚴重錯誤：content.js 缺失 CONFIG.BATCH_TRANSLATE_LIMIT 配置！');

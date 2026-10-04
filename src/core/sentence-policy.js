@@ -131,6 +131,10 @@ function shouldMergeShortSentence(wordCount) {
   return typeof wordCount === 'number' && wordCount < SENTENCE_LIMITS.MIN_SENTENCE_WORD_COUNT;
 }
 
+const FALLBACK_LONG_PAUSE_SECONDS = 2.5;
+const MAX_SENTENCE_CHARS = SENTENCE_LIMITS.MAX_SENTENCE_CHARS;
+const MAX_SENTENCE_DURATION = SENTENCE_LIMITS.MAX_SENTENCE_DURATION;
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SENTENCE_END_REGEX,
@@ -138,6 +142,9 @@ if (typeof module !== 'undefined' && module.exports) {
     METADATA_HEADER_REGEX,
     COMMON_CONJUNCTIONS,
     SENTENCE_LIMITS,
+    FALLBACK_LONG_PAUSE_SECONDS,
+    MAX_SENTENCE_CHARS,
+    MAX_SENTENCE_DURATION,
     cleanSubtitleNoise,
     normalizeWord,
     isConjunction,

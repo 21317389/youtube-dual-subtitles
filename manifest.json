@@ -40,7 +40,7 @@
     },
     {
       "matches": ["*://www.youtube.com/*"],
-      "js": ["content.js"],
+      "js": ["dist/content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
     }

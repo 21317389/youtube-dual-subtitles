@@ -31,9 +31,11 @@ class StreamingSentenceExtractor {
   recordLockedCompleted(sentence) {
     if (!sentence) return;
     this.lastLockedCompletedSentence = sentence;
-    this.completedSentenceHistory.push(sentence);
-    if (this.completedSentenceHistory.length > this.historyLimit) {
-      this.completedSentenceHistory.shift();
+    if (this.completedSentenceHistory[this.completedSentenceHistory.length - 1] !== sentence) {
+      this.completedSentenceHistory.push(sentence);
+      if (this.completedSentenceHistory.length > this.historyLimit) {
+        this.completedSentenceHistory.shift();
+      }
     }
   }
 
@@ -41,6 +43,13 @@ class StreamingSentenceExtractor {
     if (!windowText || typeof windowText !== 'string') return null;
     let words = windowText.trim().split(/\s+/).filter(Boolean);
     if (words.length === 0) return null;
+
+    const returnResult = (completed, inProgress) => {
+      if (completed) {
+        this.recordLockedCompleted(completed);
+      }
+      return { completed, inProgress };
+    };
 
     // 1. 若 incoming words 開頭包含歷史完結句 (完整整句或末尾殘留)，精準從開頭剝除，絕不污染下句隊列！
     const targets = [this.lastLockedCompletedSentence, ...this.completedSentenceHistory].filter(Boolean);
@@ -56,7 +65,7 @@ class StreamingSentenceExtractor {
     }
 
     if (words.length === 0) {
-      return { completed: null, inProgress: this.speechTokenQueue.join(' ') };
+      return returnResult(null, this.speechTokenQueue.join(' '));
     }
 
     // 2. 尋找 incoming words 在 speechTokenQueue 尾部的重疊切入點
@@ -104,7 +113,7 @@ class StreamingSentenceExtractor {
           if (this.speechTokenQueue.length >= 6) {
             const completed = this.speechTokenQueue.join(' ');
             this.speechTokenQueue = [...words];
-            return { completed, inProgress: this.speechTokenQueue.join(' ') };
+            return returnResult(completed, this.speechTokenQueue.join(' '));
           }
           this.speechTokenQueue = [...words];
         }
@@ -126,10 +135,10 @@ class StreamingSentenceExtractor {
           const doubleCompleted = secondMatch[1].trim();
           const doubleRemainder = (secondMatch[2] || '').trim();
           this.speechTokenQueue = doubleRemainder ? doubleRemainder.split(/\s+/).filter(Boolean) : [];
-          return { completed: doubleCompleted, inProgress: doubleRemainder };
+          return returnResult(doubleCompleted, doubleRemainder);
         }
         // 後句仍在說話中，先暫留隊列中累計
-        return { completed: null, inProgress: fullText };
+        return returnResult(null, fullText);
       }
 
       const cleanCompleted = completed.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
@@ -138,11 +147,11 @@ class StreamingSentenceExtractor {
 
       if (!isDuplicate) {
         this.speechTokenQueue = remainder ? remainder.split(/\s+/).filter(Boolean) : [];
-        return { completed, inProgress: remainder };
+        return returnResult(completed, remainder);
       } else {
         // 若隊列開頭與上一句剛完結的句子完全重複，立即清除
         this.speechTokenQueue = remainder ? remainder.split(/\s+/).filter(Boolean) : [];
-        return { completed: null, inProgress: remainder };
+        return returnResult(null, remainder);
       }
     }
 
@@ -160,11 +169,11 @@ class StreamingSentenceExtractor {
         const completed = this.speechTokenQueue.slice(0, splitIdx).join(' ');
         const remainder = this.speechTokenQueue.slice(splitIdx).join(' ');
         this.speechTokenQueue = remainder ? remainder.split(/\s+/).filter(Boolean) : [];
-        return { completed, inProgress: remainder };
+        return returnResult(completed, remainder);
       }
     }
 
-    return { completed: null, inProgress: fullText };
+    return returnResult(null, fullText);
   }
 }
 
