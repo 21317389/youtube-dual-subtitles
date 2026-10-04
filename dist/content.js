@@ -1660,6 +1660,15 @@
       if (typeof window !== "undefined") {
         window.addEventListener("message", (event) => {
           if (event.source !== window || !event.data || !event.data.type) return;
+          if (event.data.type === WindowMessageType.NAVIGATE_START) {
+            const newVid = event.data.videoId || getCurrentVideoId();
+            if (newVid && newVid !== session.lastObservedVideoId) {
+              handleVideoChange(newVid);
+            } else {
+              resetSubtitles();
+            }
+            return;
+          }
           if (event.data.type === WindowMessageType.CAPTION_TRACK_CHANGED) {
             const { track, enabled } = event.data;
             if (enabled && track) {
@@ -1720,6 +1729,12 @@
         renderer.resetSignature();
         const sessionId = session.nextFetchSessionId();
         const vid = track.videoId || getCurrentVideoId();
+        if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+          session.resetVideoNavigation(vid);
+        }
+        const player = getActivePlayer();
+        const container = document.getElementById(renderer.containerId);
+        renderer.hide(container, player);
         console.log("[YT-Dual-Sub] \u6536\u5230\u8ECC\u9053\u8B8A\u66F4:", track.languageCode, "vid:", vid);
         observeNativePlayerCaptions();
         try {
@@ -1815,7 +1830,7 @@
             }
           }, CONFIG.MAIN_WORLD_FETCH_TIMEOUT);
           function onMsg(e) {
-            if (e.source !== window || e.data?.type !== WindowMessageType.FETCH_MAIN_WORLD_RESPONSE) return;
+            if (e.source !== window || e.data?.type !== WindowMessageType.FETCH_CAPTION_RESPONSE) return;
             if (e.data.requestId !== requestId) return;
             if (!settled) {
               settled = true;
@@ -1826,7 +1841,7 @@
           }
           window.addEventListener("message", onMsg);
           window.postMessage({
-            type: WindowMessageType.FETCH_MAIN_WORLD_REQUEST,
+            type: WindowMessageType.FETCH_CAPTION_REQUEST,
             requestId,
             url
           }, "*");

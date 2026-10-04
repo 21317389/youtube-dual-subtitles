@@ -176,22 +176,25 @@ async function runExtensionMv3E2ETest() {
     });
     console.log('  -> Page debug state:', JSON.stringify(pageState));
 
-    // 驗證握手日誌
+    // 驗證握手日誌 (嚴格斷言：必須確認 Content Script 的索取請求已真實抵達 Main World)
     await new Promise(r => setTimeout(r, 4000));
     const hasMainWorldLog = capturedLogs.some(l => l.includes('[YT-Dual-Sub MainWorld]'));
     const hasHandshakeReq = capturedLogs.some(l => l.includes('收到 content.js 軌道索取請求'));
     console.log(`  - Main World 注入日誌檢出: ${hasMainWorldLog ? '✅' : '❌'}`);
-    console.log(`  - Content Script 握手索取請求檢出: ${hasHandshakeReq ? '✅' : '❌'}`);
-    if (!hasMainWorldLog && !hasHandshakeReq) {
-      throw new Error('Case 2 失敗: 未偵測到 Main World 與 Isolated World 之間的握手日誌！');
+    console.log(`  - Content Script 握手索取請求抵達: ${hasHandshakeReq ? '✅' : '❌'}`);
+    if (!hasMainWorldLog) {
+      throw new Error('Case 2 失敗: inject.js 未在 Main World 成功注入或執行！');
     }
-    console.log('✅ Case 2 PASS: YouTube 播放器與兩大執行環境成功建立雙向 postMessage 握手通訊！');
+    if (!hasHandshakeReq) {
+      throw new Error('Case 2 失敗: Main World 未收到來自 Content Script 的 YT_REQUEST_CURRENT_TRACK 握手請求！');
+    }
+    console.log('✅ Case 2 PASS: Content Script 成功送達握手請求，Main World 即刻完成雙向通訊協議握手！');
 
     // ==========================================
     // Case 3: CC ON 雙語字幕上屏渲染驗證
     // ==========================================
     console.log('\n--------------------------------------------------------');
-    console.log('🧪 【Case 3: CC ON (雙槽渲染與樣式生效)】');
+    console.log('🧪 【Case 3: CC ON (雙槽渲染、譯文與播放器遮蔽樣式生效)】');
     console.log('--------------------------------------------------------');
     // 確保點擊 CC 按鈕為開啟狀態且播放器處於播放狀態 (定位在字幕區段 2s)
     await page.evaluate(() => {
@@ -227,6 +230,10 @@ async function runExtensionMv3E2ETest() {
         const player = document.getElementById('movie_player');
         if (player?.playVideo && player.getPlayerState?.() !== 1) {
           player.playVideo();
+        }
+        const btn = document.querySelector('.ytp-subtitles-button');
+        if (btn && btn.getAttribute('aria-pressed') === 'false') {
+          btn.click();
         }
         const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-ad-skip-button-slot button, .ytp-ad-skip-button-text');
         if (skipBtn) skipBtn.click();
@@ -272,19 +279,26 @@ async function runExtensionMv3E2ETest() {
 
       if (renderedCue && renderedCue.orig) {
         console.log(`  [採樣第 ${pollCount} 秒] 原文: "${renderedCue.orig}" | 譯文: "${renderedCue.trans}"`);
-        if (renderedCue.trans && /[\u4e00-\u9fa5]/.test(renderedCue.trans)) {
+        if (renderedCue.trans && /[\u4e00-\u9fff]/.test(renderedCue.trans) && renderedCue.hasActiveCls && renderedCue.visible) {
           break;
         }
       }
     }
 
-    if (!renderedCue || !renderedCue.orig) {
-      throw new Error('Case 3 失敗: 雙語字幕容器未上屏渲染任何字幕原文！');
+    const hasOrig = !!renderedCue?.orig?.trim();
+    const hasChinese = /[\u4e00-\u9fff]/.test(renderedCue?.trans || '');
+    const hasActive = renderedCue?.hasActiveCls === true;
+    const isVisible = renderedCue?.visible === true;
+
+    console.log(`  - 原文字幕檢出: "${renderedCue?.orig}" (${hasOrig ? '✅' : '❌'})`);
+    console.log(`  - 中文翻譯檢出 (含漢字): "${renderedCue?.trans}" (${hasChinese ? '✅' : '❌'})`);
+    console.log(`  - 播放器遮蔽樣式生效 (yt-dual-sub-active): ${hasActive ? '✅' : '❌'}`);
+    console.log(`  - 雙語字幕容器顯示狀態 (visible): ${isVisible ? '✅' : '❌'}`);
+
+    if (!hasOrig || !hasChinese || !hasActive || !isVisible) {
+      throw new Error(`Case 3 失敗: CC ON 嚴格驗收未達標！(hasOrig: ${hasOrig}, hasChinese: ${hasChinese}, hasActive: ${hasActive}, visible: ${isVisible})`);
     }
-    console.log(`  - 原文字幕檢出: "${renderedCue.orig}" (✅)`);
-    console.log(`  - 中文翻譯檢出: "${renderedCue.trans}" (✅)`);
-    console.log(`  - 播放器遮蔽樣式生效 (yt-dual-sub-active): ${renderedCue.hasActiveCls ? '✅' : '❌'}`);
-    console.log('✅ Case 3 PASS: CC ON 狀態下，原生字幕被遮蔽，雙語字幕容器成功渲染原文與譯文！');
+    console.log('✅ Case 3 PASS: CC ON 狀態下，原生字幕被遮蔽，雙語容器可見且成功渲染原文與中文譯文！');
 
     // ==========================================
     // Case 4: CC OFF 雙語字幕即刻隱藏驗證
@@ -351,7 +365,7 @@ async function runExtensionMv3E2ETest() {
       throw new Error('Case 5 失敗: 插件開關設為 false 後雙語字幕未即刻隱藏！');
     }
 
-    console.log('  -> 重新將 extensionEnabled 設為 true 驗證自動復原...');
+    console.log('  -> 重新將 extensionEnabled 設為 true 驗證自動復原 (Bounded Polling)...');
     await popupPage.evaluate(() => {
       return new Promise(resolve => {
         chrome.storage.sync.set({ extensionEnabled: true }, resolve);
@@ -359,57 +373,210 @@ async function runExtensionMv3E2ETest() {
     });
     await popupPage.close();
 
-    await new Promise(r => setTimeout(r, 2000));
-    const isExtReEnabledHandled = await page.evaluate(() => {
-      const cont = document.getElementById('yt-dual-subtitle-container');
-      return cont && cont.style.display !== 'none';
-    });
-    console.log(`  - 插件重新啟用後雙語字幕復原: ${isExtReEnabledHandled ? '✅' : '❌'}`);
+    let reEnabledState = null;
+    let reEnabledPoll = 0;
+    while (reEnabledPoll < 15) {
+      await new Promise(r => setTimeout(r, 1000));
+      reEnabledPoll++;
+
+      reEnabledState = await page.evaluate(() => {
+        const cont = document.getElementById('yt-dual-subtitle-container');
+        const player = document.getElementById('movie_player');
+        if (!cont || cont.style.display === 'none') return null;
+
+        const currSlot = cont.querySelector('.cue-slot-curr');
+        const prevSlot = cont.querySelector('.cue-slot-prev');
+        const currOrig = currSlot?.querySelector('.cue-slot-orig')?.textContent?.trim() || '';
+        const prevOrig = prevSlot?.querySelector('.cue-slot-orig')?.textContent?.trim() || '';
+        const hasActiveCls = player ? player.classList.contains('yt-dual-sub-active') : false;
+
+        const orig = currOrig || prevOrig;
+        if (!orig || !hasActiveCls) return null;
+
+        return {
+          visible: true,
+          hasActiveCls,
+          orig
+        };
+      });
+
+      if (reEnabledState) break;
+    }
+
+    console.log(`  - 插件重新啟用後雙語字幕容器可見: ${reEnabledState?.visible ? '✅' : '❌'}`);
+    console.log(`  - 播放器遮蔽樣式恢復 (yt-dual-sub-active): ${reEnabledState?.hasActiveCls ? '✅' : '❌'}`);
+    console.log(`  - 雙語字幕內容成功恢復: "${reEnabledState?.orig}" (${reEnabledState?.orig ? '✅' : '❌'})`);
+
+    if (!reEnabledState || !reEnabledState.visible || !reEnabledState.hasActiveCls || !reEnabledState.orig) {
+      throw new Error('Case 5 失敗: 插件開關重新設為 true 後未能完整恢復雙語字幕與播放器樣式！');
+    }
     console.log('✅ Case 5 PASS: chrome.storage.sync 事件驅動開關切換運作正常且即時響應！');
 
     // ==========================================
-    // Case 6: SPA 切頁換片驗證
+    // Case 6: 真實 YouTube SPA 換片驗證 (Real DOM Navigation)
     // ==========================================
     console.log('\n--------------------------------------------------------');
-    console.log('🧪 【Case 6: SPA 切頁換片 (Navigation & Stale Cache Defense)】');
+    console.log('🧪 【Case 6: 真實 YouTube DOM 導航 SPA 換片 (Real UI Navigation)】');
     console.log('--------------------------------------------------------');
-    const targetUrlB = 'https://www.youtube.com/watch?v=ZfcHwBKcNzY';
-    console.log(`  -> 透過 YouTube SPA 導航切換至影片 B: ${targetUrlB} (不重整頁面)...`);
 
-    await page.evaluate((url) => {
-      window.history.pushState({}, '', url);
-      window.dispatchEvent(new Event('yt-navigate-start'));
-      const video = document.querySelector('video');
-      if (video) video.currentTime = 0;
-    }, targetUrlB);
-
-    await new Promise(r => setTimeout(r, 3000));
-    const navResult = await page.evaluate(() => {
+    // 1. 記錄 Video A 的現狀資訊
+    const videoAData = await page.evaluate(() => {
+      const p = document.getElementById('movie_player');
       const url = window.location.href;
       const match = url.match(/[?&]v=([^&#]+)/);
-      const currentVid = match ? match[1] : '';
+      return {
+        vid: match ? match[1] : (p?.getVideoData?.()?.video_id || ''),
+        subtitleText: document.getElementById('yt-dual-subtitle-container')?.textContent?.trim() || ''
+      };
+    });
+    console.log(`  -> Video A 基準紀錄: ID = "${videoAData.vid}", 當前字幕 = "${videoAData.subtitleText.slice(0, 35)}..."`);
+
+    // 2. 尋找 YouTube 側欄真實推薦影片或播放器下一部按鈕進行真實 DOM Click
+    let clickedNav = false;
+    let expectedNewVid = '';
+
+    // 等候側欄推薦區或播放器控制元件就緒
+    await page.waitForSelector('#related, .ytp-next-button', { timeout: 15000 }).catch(() => {});
+
+    // 尋找側欄具有有效 watch?v= 連結的真實推薦影片
+    const relatedLinks = await page.$$(
+      '#related a#thumbnail[href*="/watch?v="], ytd-compact-video-renderer a#thumbnail[href*="/watch?v="], #related a[href*="/watch?v="]'
+    );
+
+    for (const rLink of relatedLinks) {
+      const itemInfo = await page.evaluate(el => {
+        const href = el.getAttribute('href') || el.href;
+        const match = href ? href.match(/[?&]v=([^&#]+)/) : null;
+        const aria = el.getAttribute('aria-label') || el.getAttribute('title') || '';
+        const parent = el.closest('ytd-compact-video-renderer, ytd-rich-item-renderer, yt-lockup-view-model, #content') || el.parentElement;
+        const parentText = parent?.textContent?.trim() || '';
+        return {
+          vid: match ? match[1] : '',
+          text: (aria + ' ' + parentText).toLowerCase()
+        };
+      }, rLink);
+
+      // 優先選擇非同頻道系列模板之真實推薦影片，避免片頭詞語範本衝突
+      const isSameSeries = itemInfo.text.includes('slow english') || itemInfo.text.includes('slow british') || itemInfo.vid === 'n9sAY_fnclI';
+      if (itemInfo.vid && itemInfo.vid !== videoAData.vid && !isSameSeries) {
+        expectedNewVid = itemInfo.vid;
+        console.log(`  -> 檢測到側欄相異主題推薦影片 (目標 ID: ${expectedNewVid})，觸發真實 DOM Click...`);
+        await page.evaluate(el => el.scrollIntoView({ block: 'center' }), rLink);
+        await new Promise(r => setTimeout(r, 300));
+        await page.evaluate(el => el.click(), rLink);
+        clickedNav = true;
+        break;
+      }
+    }
+
+    // 若側欄均為同系列，則選任一不同 videoId 推薦影片
+    if (!clickedNav) {
+      for (const rLink of relatedLinks) {
+        const href = await page.evaluate(el => el.getAttribute('href') || el.href, rLink);
+        const match = href ? href.match(/[?&]v=([^&#]+)/) : null;
+        if (match && match[1] && match[1] !== videoAData.vid) {
+          expectedNewVid = match[1];
+          console.log(`  -> 檢測到側欄候選推薦影片 (目標 ID: ${expectedNewVid})，觸發真實 DOM Click...`);
+          await page.evaluate(el => el.scrollIntoView({ block: 'center' }), rLink);
+          await new Promise(r => setTimeout(r, 300));
+          await page.evaluate(el => el.click(), rLink);
+          clickedNav = true;
+          break;
+        }
+      }
+    }
+
+    if (!clickedNav) {
+      console.log('  -> 側欄推薦影片未就緒，使用播放器原生 Next 按鈕 (.ytp-next-button) 觸發真實 DOM Click...');
+      await page.hover('#movie_player').catch(() => {});
+      await page.waitForSelector('.ytp-next-button', { timeout: 10000 });
+      await page.evaluate(() => {
+        const btn = document.querySelector('.ytp-next-button');
+        if (btn) btn.click();
+      });
+      clickedNav = true;
+    }
+
+    // 3. Bounded Polling 等候真實 YouTube SPA 路由切換完成
+    let newVid = '';
+    let playerVid = '';
+    let pollNav = 0;
+    while (pollNav < 40) {
+      await new Promise(r => setTimeout(r, 500));
+      pollNav++;
+
+      const navState = await page.evaluate(() => {
+        const url = window.location.href;
+        const match = url.match(/[?&]v=([^&#]+)/);
+        const uVid = match ? match[1] : '';
+        const player = document.getElementById('movie_player');
+        const pVid = player?.getVideoData?.()?.video_id || '';
+        const pState = player?.getPlayerState?.();
+        const video = document.querySelector('video');
+        if (video) {
+          video.muted = true;
+          if (video.paused) video.play().catch(() => {});
+        }
+        if (player?.playVideo && pState !== 1) player.playVideo();
+        return {
+          uVid,
+          pVid,
+          pState,
+          time: video?.currentTime || 0
+        };
+      });
+
+      if (navState.uVid && navState.uVid !== videoAData.vid && navState.pVid === navState.uVid) {
+        newVid = navState.uVid;
+        playerVid = navState.pVid;
+        break;
+      }
+    }
+
+    // 4. 驗證 URL 與 Player 均切換為新影片
+    console.log(`  - SPA 換片後 URL Video ID: ${newVid}`);
+    console.log(`  - 播放器內部 Player Video ID: ${playerVid}`);
+    if (!newVid || newVid === videoAData.vid || playerVid !== newVid) {
+      throw new Error(`Case 6 失敗: 真實 YouTube SPA 換片未於時限內完成！(newVid: ${newVid}, playerVid: ${playerVid}, oldVid: ${videoAData.vid})`);
+    }
+
+    // 5. 驗證舊片字幕 0 殘留
+    await new Promise(r => setTimeout(r, 1000));
+    const staleCheck = await page.evaluate((oldText) => {
       const cont = document.getElementById('yt-dual-subtitle-container');
       const text = cont?.textContent?.trim() || '';
       return {
-        currentVid,
-        hasK7qzStaleText: text.includes('listening comprehension')
+        text,
+        hasStaleText: oldText && oldText.length > 5 ? text.includes(oldText.slice(0, 20)) : false,
+        contDisplay: cont ? cont.style.display : 'none'
       };
-    });
+    }, videoAData.subtitleText);
 
-    console.log(`  - 當前 URL VideoId 更新為: ${navResult.currentVid}`);
-    console.log(`  - 舊片 A 字幕殘留檢驗 (0 殘留): ${!navResult.hasK7qzStaleText ? '✅ PASS' : '❌ FAIL'}`);
-    if (navResult.currentVid !== 'ZfcHwBKcNzY' || navResult.hasK7qzStaleText) {
-      throw new Error('Case 6 失敗: SPA 換片後舊片字幕仍發生殘留污染！');
+    console.log(`  - 舊片 A 字幕殘留檢驗 (0 殘留): ${!staleCheck.hasStaleText ? '✅ PASS' : '❌ FAIL'}`);
+    if (staleCheck.hasStaleText) {
+      throw new Error(`Case 6 失敗: SPA 換片後舊片 A 字幕仍發生殘留污染！("${staleCheck.text}")`);
     }
-    console.log('✅ Case 6 PASS: SPA 換片後舊會話成功作廢，新影片狀態獨立，無跨片字幕殘留！');
+
+    // 6. Task 7 核心驗收：驗證新影片狀態獨立建立 (New Session Actually Works)
+    await new Promise(r => setTimeout(r, 2000));
+    const newSessionWorks = capturedLogs.some(l =>
+      (l.includes(newVid) && (l.includes('收到') || l.includes('軌道') || l.includes('InnerTube'))) ||
+      l.includes(`檢測到影片跨片切換: ${videoAData.vid} -> ${newVid}`)
+    );
+    console.log(`  - 新影片獨立會話建立 (New Session Handshake/Track): ${newSessionWorks ? '✅ PASS' : '❌ FAIL'}`);
+    if (!newSessionWorks) {
+      throw new Error(`Case 6 失敗: SPA 換片後未偵測到新影片 ${newVid} 的獨立會話或軌道請求！`);
+    }
+    console.log('✅ Case 6 PASS: 真實 YouTube DOM Click 觸發 SPA 換片，舊會話作廢，新影片狀態獨立運作！');
 
     // ==========================================
-    // Case 7: Service Worker 雙向通訊驗證
+    // Case 7: Extension Page ↔ Service Worker 雙向通訊驗證
     // ==========================================
     console.log('\n--------------------------------------------------------');
-    console.log('🧪 【Case 7: Service Worker 雙向通訊 (chrome.runtime.sendMessage)】');
+    console.log('🧪 【Case 7: Extension Page ↔ Service Worker 雙向通訊 (chrome.runtime.sendMessage)】');
     console.log('--------------------------------------------------------');
-    console.log('  -> 透過 Extension Context 測試與 background.js Service Worker 真實訊息交換...');
+    console.log('  -> 透過 Extension Context (popup.html) 向 background.js Service Worker 發送 translate 訊息...');
+    console.log('  -> (說明: Content Script ↔ Service Worker 通訊與調度聚合已於 Case 3 真實字幕流程 100% 驗證)');
     const extMsgPage = await browser.newPage();
     await extMsgPage.goto(`chrome-extension://${extId}/popup.html`, { waitUntil: 'load' });
     const testMsgResult = await extMsgPage.evaluate(async () => {
@@ -430,12 +597,12 @@ async function runExtensionMv3E2ETest() {
     await extMsgPage.close();
 
     console.log('  -> Service Worker 回傳翻譯資料:', JSON.stringify(testMsgResult));
-    const isTransValid = testMsgResult?.translatedText && /[\u4e00-\u9fa5]/.test(testMsgResult.translatedText);
+    const isTransValid = testMsgResult?.translatedText && /[\u4e00-\u9fff]/.test(testMsgResult.translatedText);
     console.log(`  - 翻譯內容合法繁體中文斷言: ${isTransValid ? '✅ PASS' : '❌ FAIL'}`);
     if (!isTransValid) {
       throw new Error('Case 7 失敗: 未收到來自 Service Worker 的有效翻譯回應！');
     }
-    console.log('✅ Case 7 PASS: Content Script 與 Service Worker 雙向訊息通道 100% 暢通！');
+    console.log('✅ Case 7 PASS: Extension Page ↔ Service Worker 雙向訊息通道 100% 暢通！');
 
     // 儲存 E2E 截圖
     const screenshotPath = path.join(screenshotDir, 'mv3_extension_e2e_result.png');

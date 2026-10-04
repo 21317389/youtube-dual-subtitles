@@ -112,12 +112,53 @@ function runCoreModulesTest() {
   assert.strictEqual(sendCount, 1, '同一在途請求必須被聚合為單次發送');
   console.log('  - 結果: ✅ PASS\n');
 
-  // 5. Protocol Constants
-  console.log('【5. Protocol 型別常量檢驗】');
+  // 5. Protocol Constants & Static Contract Verification
+  console.log('【5. Protocol 型別常量與靜態契約檢驗 (Protocol Contract)】');
   assert.strictEqual(WindowMessageType.CAPTION_TRACK_CHANGED, 'YT_CAPTION_TRACK_CHANGED');
+  assert.strictEqual(WindowMessageType.FETCH_CAPTION_REQUEST, 'YT_FETCH_CAPTION_REQUEST');
+  assert.strictEqual(WindowMessageType.FETCH_CAPTION_RESPONSE, 'YT_FETCH_CAPTION_RESPONSE');
   assert.strictEqual(RuntimeAction.TRANSLATE, 'translate');
   assert.strictEqual(isValidWindowMessage({ type: 'TEST' }), true);
   assert.strictEqual(isValidWindowMessage('string'), false);
+
+  // 靜態合約檢驗：掃描 src/content-entry.js 確保所有被引用的協議常量均在 protocol.js 具體定義
+  const fs = require('fs');
+  const path = require('path');
+  const contentCode = fs.readFileSync(path.join(__dirname, '../src/content-entry.js'), 'utf8');
+
+  const wndMsgMatches = [...contentCode.matchAll(/WindowMessageType\.([A-Za-z0-9_]+)/g)].map(m => m[1]);
+  const runtimeActMatches = [...contentCode.matchAll(/RuntimeAction\.([A-Za-z0-9_]+)/g)].map(m => m[1]);
+
+  assert.ok(wndMsgMatches.length > 0, 'content-entry.js 必須至少包含 WindowMessageType 引用');
+  assert.ok(runtimeActMatches.length > 0, 'content-entry.js 必須至少包含 RuntimeAction 引用');
+
+  const undefinedWndMsg = [];
+  for (const prop of wndMsgMatches) {
+    if (WindowMessageType[prop] === undefined) {
+      undefinedWndMsg.push(prop);
+    }
+  }
+
+  const undefinedRuntimeAct = [];
+  for (const prop of runtimeActMatches) {
+    if (RuntimeAction[prop] === undefined) {
+      undefinedRuntimeAct.push(prop);
+    }
+  }
+
+  assert.strictEqual(
+    undefinedWndMsg.length,
+    0,
+    `content-entry.js 引用了不存在的 WindowMessageType 屬性: ${undefinedWndMsg.join(', ')}`
+  );
+  assert.strictEqual(
+    undefinedRuntimeAct.length,
+    0,
+    `content-entry.js 引用了不存在的 RuntimeAction 屬性: ${undefinedRuntimeAct.join(', ')}`
+  );
+
+  console.log(`  - WindowMessageType 引用檢查 (${wndMsgMatches.length} 處引用): 全部合法 (0 undefined)`);
+  console.log(`  - RuntimeAction 引用檢查 (${runtimeActMatches.length} 處引用): 全部合法 (0 undefined)`);
   console.log('  - 結果: ✅ PASS\n');
 
   // 6. Session State Machine
