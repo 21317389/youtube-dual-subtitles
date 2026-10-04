@@ -1021,7 +1021,15 @@
         return true;
       }
       function hideSubtitle(container, player) {
-        if (container) container.style.display = "none";
+        if (container) {
+          container.style.display = "none";
+          if (typeof container.querySelectorAll === "function") {
+            const texts = container.querySelectorAll(".cue-slot-orig, .cue-slot-trans");
+            texts.forEach((el) => {
+              el.textContent = "";
+            });
+          }
+        }
         if (player && player.classList) player.classList.remove("yt-dual-sub-active");
       }
       var SubtitleRenderer = class {
@@ -1698,8 +1706,13 @@
       async function loadCaptionTrack(track) {
         if (!session.isExtensionEnabled || !session.isCaptionsEnabled) return;
         if (!track || !track.languageCode) return;
+        const currentVid = getCurrentVideoId();
+        if (track.videoId && currentVid && track.videoId !== currentVid) {
+          console.warn("[YT-Dual-Sub] \u4E1F\u68C4\u904E\u671F\u820A\u5F71\u7247\u8ECC\u9053\u5EE3\u64AD:", track.videoId, "!= \u7576\u524D\u5F71\u7247:", currentVid);
+          return;
+        }
         ensureUIElements();
-        const currentTrackKey = `${track.vssId || track.languageCode}_${track.videoId || getCurrentVideoId()}`;
+        const currentTrackKey = `${track.vssId || track.languageCode}_${track.videoId || currentVid}`;
         if (session.fetch.inFlightKey === currentTrackKey && session.sentenceList.length > 0) return;
         session.currentTrack = track;
         session.fetch.inFlightKey = currentTrackKey;
@@ -1887,20 +1900,38 @@
         }
         return null;
       }
+      function handleVideoChange(vid) {
+        if (!vid || vid === session.lastObservedVideoId) return;
+        console.log("[YT-Dual-Sub] \u6AA2\u6E2C\u5230\u5F71\u7247\u8DE8\u7247\u5207\u63DB:", session.lastObservedVideoId, "->", vid);
+        resetSubtitles();
+        session.resetVideoNavigation(vid);
+        const detectEventName = isShortsPage() ? "youtube_shorts_detected" : "youtube_video_detected";
+        trackEvent(detectEventName);
+        ensureUIElements();
+        requestCurrentTrackFromMainWorld();
+      }
       if (typeof window !== "undefined") {
         setInterval(() => {
           const vid = getCurrentVideoId();
-          const detectEventName = isShortsPage() ? "youtube_shorts_detected" : "youtube_video_detected";
           if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
-            console.log("[YT-Dual-Sub] \u6AA2\u6E2C\u5230\u5F71\u7247\u8DE8\u7247\u5207\u63DB:", session.lastObservedVideoId, "->", vid);
-            session.resetVideoNavigation(vid);
-            trackEvent(detectEventName);
-            ensureUIElements();
+            handleVideoChange(vid);
           } else if (vid && !session.lastObservedVideoId) {
             session.lastObservedVideoId = vid;
-            trackEvent(detectEventName);
+            trackEvent(isShortsPage() ? "youtube_shorts_detected" : "youtube_video_detected");
           }
         }, 500);
+        window.addEventListener("yt-navigate-start", () => {
+          const vid = getCurrentVideoId();
+          if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+            handleVideoChange(vid);
+          }
+        });
+        window.addEventListener("yt-navigate-finish", () => {
+          const vid = getCurrentVideoId();
+          if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+            handleVideoChange(vid);
+          }
+        });
       }
       function parseCues(captionJson, sourceLang) {
         if (!captionJson || !captionJson.events) return;

@@ -416,9 +416,15 @@ if (typeof window !== 'undefined') {
 async function loadCaptionTrack(track) {
   if (!session.isExtensionEnabled || !session.isCaptionsEnabled) return;
   if (!track || !track.languageCode) return;
+
+  const currentVid = getCurrentVideoId();
+  if (track.videoId && currentVid && track.videoId !== currentVid) {
+    console.warn('[YT-Dual-Sub] 丟棄過期舊影片軌道廣播:', track.videoId, '!= 當前影片:', currentVid);
+    return;
+  }
   ensureUIElements();
 
-  const currentTrackKey = `${track.vssId || track.languageCode}_${track.videoId || getCurrentVideoId()}`;
+  const currentTrackKey = `${track.vssId || track.languageCode}_${track.videoId || currentVid}`;
   if (session.fetch.inFlightKey === currentTrackKey && session.sentenceList.length > 0) return;
 
   session.currentTrack = track;
@@ -635,21 +641,42 @@ async function fetchCaptionTextWithFallback(track) {
   return null;
 }
 
+function handleVideoChange(vid) {
+  if (!vid || vid === session.lastObservedVideoId) return;
+  console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', session.lastObservedVideoId, '->', vid);
+  resetSubtitles();
+  session.resetVideoNavigation(vid);
+  const detectEventName = isShortsPage() ? 'youtube_shorts_detected' : 'youtube_video_detected';
+  trackEvent(detectEventName);
+  ensureUIElements();
+  requestCurrentTrackFromMainWorld();
+}
+
 // URL SPA 換片監聽器
 if (typeof window !== 'undefined') {
   setInterval(() => {
     const vid = getCurrentVideoId();
-    const detectEventName = isShortsPage() ? 'youtube_shorts_detected' : 'youtube_video_detected';
     if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
-      console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', session.lastObservedVideoId, '->', vid);
-      session.resetVideoNavigation(vid);
-      trackEvent(detectEventName);
-      ensureUIElements();
+      handleVideoChange(vid);
     } else if (vid && !session.lastObservedVideoId) {
       session.lastObservedVideoId = vid;
-      trackEvent(detectEventName);
+      trackEvent(isShortsPage() ? 'youtube_shorts_detected' : 'youtube_video_detected');
     }
   }, 500);
+
+  window.addEventListener('yt-navigate-start', () => {
+    const vid = getCurrentVideoId();
+    if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+      handleVideoChange(vid);
+    }
+  });
+
+  window.addEventListener('yt-navigate-finish', () => {
+    const vid = getCurrentVideoId();
+    if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+      handleVideoChange(vid);
+    }
+  });
 }
 
 // ==========================================

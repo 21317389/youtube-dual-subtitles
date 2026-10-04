@@ -15,16 +15,16 @@
 
   // 2. 取得當前影片 ID
   function getCurrentVideoId() {
-    const player = getActivePlayer();
-    const vidFromPlayer = player?.getVideoData?.()?.video_id;
-    if (vidFromPlayer) return vidFromPlayer;
-
     const url = window.location.href;
     const matchV = url.match(/[?&]v=([^&#]+)/);
     if (matchV) return matchV[1];
 
     const matchShorts = url.match(/\/shorts\/([^/?&#]+)/);
     if (matchShorts) return matchShorts[1];
+
+    const player = getActivePlayer();
+    const vidFromPlayer = player?.getVideoData?.()?.video_id;
+    if (vidFromPlayer) return vidFromPlayer;
 
     return '';
   }
@@ -344,7 +344,9 @@
   window.addEventListener('message', async (e) => {
     if (e.source !== window || e.data?.type !== 'YT_FETCH_INNERTUBE_CAPTION_REQUEST') return;
     const { requestId, videoId, languageCode } = e.data;
+    console.log('[YT-Dual-Sub MainWorld] 收到 InnerTube 請求:', videoId, languageCode);
     const text = await fetchCaptionFromAndroidInnertube(videoId, languageCode);
+    console.log('[YT-Dual-Sub MainWorld] InnerTube 取得結果長度:', text ? text.length : 0);
     window.postMessage({
       type: 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE',
       requestId,

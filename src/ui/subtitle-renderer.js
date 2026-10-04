@@ -220,7 +220,13 @@ function renderDualSlotSubtitle(container, prev, curr, options = {}) {
  * @param {HTMLElement} [player]
  */
 function hideSubtitle(container, player) {
-  if (container) container.style.display = 'none';
+  if (container) {
+    container.style.display = 'none';
+    if (typeof container.querySelectorAll === 'function') {
+      const texts = container.querySelectorAll('.cue-slot-orig, .cue-slot-trans');
+      texts.forEach(el => { el.textContent = ''; });
+    }
+  }
   if (player && player.classList) player.classList.remove('yt-dual-sub-active');
 }
 
