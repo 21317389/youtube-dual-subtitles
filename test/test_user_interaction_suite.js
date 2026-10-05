@@ -34,7 +34,8 @@ const {
   isShortsPage,
   getCurrentVideoId,
   getActivePlayer,
-  getActiveVideo
+  getActiveVideo,
+  debouncedTranslateLiveProgress
 } = require('../src/content-entry');
 
 async function runUserInteractionSuite() {
@@ -352,6 +353,121 @@ async function runUserInteractionSuite() {
   console.log('  - Mode 2 舊語言譯文即刻清除: ✅ PASS');
   console.log('  - Mode 2 新目標語言翻譯請求重新發送: ✅ PASS');
   console.log('  - Mode 2 新譯文成功渲染回當前槽位: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 3.3 Mode 2 Current Slot 非同步過期回應競爭防禦 (Task 3: Current Slot Stale Race)
+  // ------------------------------------------------------------------
+  console.log('【3.3 Mode 2 當前槽位非同步過期回應競爭檢驗 (Task 3)】');
+
+  session.sentenceList = [];
+  session.userTargetLang = 'zh-TW';
+  session.currSlot = { orig: 'Good morning', trans: '' };
+  session.prevSlot = { orig: '', trans: '' };
+
+  const pendingRuntimeRequests = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    pendingRuntimeRequests.push({ msg, cb });
+  };
+
+  // Step A: 觸發舊語言 live translation (zh-TW)
+  debouncedTranslateLiveProgress('Good morning');
+  // 等候 debounce 計時器觸發，產生 pending request A
+  await new Promise(r => setTimeout(r, 400));
+
+  const reqA = pendingRuntimeRequests.find(r => r.msg.action === 'translate' && r.msg.targetLang === 'zh-TW');
+  assert.ok(reqA, 'Step A: 必須成功產生 targetLang=zh-TW 的 pending 請求 A');
+
+  // Step B: 在 A 尚未回應時，使用者切換語言：zh-TW -> ja
+  handleStorageChange({ targetLang: { newValue: 'ja' } }, 'sync');
+  assert.strictEqual(session.userTargetLang, 'ja', 'Step B: 目標語言已切換為 ja');
+
+  // Step C: 舊的 zh-TW 回應 A 在新 ja 請求尚未排程觸發前 (即 350ms debounce 期間) 先行到達
+  reqA.cb({ translatedText: '舊中文翻譯' });
+
+  // 驗證舊回應被嚴格作廢與壓制 (Old response suppressed!)
+  assert.notStrictEqual(session.currSlot.trans, '舊中文翻譯', 'Step C: 舊 zh-TW 回應不得寫入 currSlot.trans (必須被 suppress)');
+  assert.strictEqual(session.currSlot.trans, '', 'Step C: currSlot.trans 應保持為清除狀態');
+
+  // Step D: 等候新 ja request 產生並讓其回應到達
+  await new Promise(r => setTimeout(r, 400));
+  const reqB = pendingRuntimeRequests.find(r => r.msg.action === 'translate' && r.msg.targetLang === 'ja');
+  assert.ok(reqB, 'Step D: 必須成功產生新 targetLang=ja 的 pending 請求 B');
+  reqB.cb({ translatedText: '新日文翻譯' });
+
+  // 驗證新回應成功生效
+  assert.strictEqual(session.currSlot.trans, '新日文翻譯', 'Step D: 新 ja 回應應成功渲染至 currSlot.trans');
+  console.log('  - 舊語言非同步過期回應成功被作廢與壓制: ✅ PASS');
+  console.log('  - 新語言翻譯不受過期回應污染並成功渲染: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 3.4 Mode 2 prevSlot 狀態覆蓋與非同步污染防禦 (Task 4: prevSlot Replacement Race)
+  // ------------------------------------------------------------------
+  console.log('【3.4 Mode 2 上一槽位非同步狀態替換競爭檢驗 (Task 4)】');
+
+  session.sentenceList = [];
+  session.userTargetLang = 'ja';
+  session.currSlot = { orig: '', trans: '' };
+  session.prevSlot = { orig: 'Hello everyone', trans: '' };
+
+  const prevPendingRequests = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    prevPendingRequests.push({ msg, cb });
+  };
+
+  // 觸發 prevSlot A 翻譯 (透過 handleStorageChange 觸發 Mode 2 prevSlot 翻譯)
+  handleStorageChange({ targetLang: { newValue: 'ja' } }, 'sync');
+
+  const prevReqA = prevPendingRequests.find(r => r.msg.action === 'translate' && r.msg.text === 'Hello everyone');
+  assert.ok(prevReqA, '必須產生針對 Hello everyone 的翻譯請求');
+
+  // 在 A 回應到達前，字幕向前滾動，prevSlot 內容被覆蓋為新句子 B
+  session.prevSlot = { orig: 'Welcome to the show', trans: '' };
+
+  // 此時舊請求 A 回應到達
+  prevReqA.cb({ translatedText: '皆さんこんにちは' });
+
+  // 斷言：舊句 A 的日文翻譯絕不可污染新句 B！
+  assert.strictEqual(session.prevSlot.orig, 'Welcome to the show', 'prevSlot.orig 必須保持為新句 B');
+  assert.notStrictEqual(session.prevSlot.trans, '皆さんこんにちは', '舊句 A 的翻譯不得寫入新句 B 的 prevSlot.trans');
+  assert.strictEqual(session.prevSlot.trans, '', '新句 B 譯文應保持為初始空字串 (不受污染)');
+  console.log('  - 舊句非同步回呼成功受捕獲狀態守護 (Captured State Guard): ✅ PASS');
+  console.log('  - 新句 prevSlot 未被舊句譯文污染: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 3.5 Mode 2 目標語言連續二次切換順序反轉防禦 (Task 5: Language Changes Twice)
+  // ------------------------------------------------------------------
+  console.log('【3.5 Mode 2 目標語言連續切換順序反轉檢驗 (Task 5)】');
+
+  session.sentenceList = [];
+  session.currSlot = { orig: 'Good evening', trans: '' };
+  session.prevSlot = { orig: '', trans: '' };
+
+  const langTwiceRequests = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    langTwiceRequests.push({ msg, cb });
+  };
+
+  // 1. 切換至 ja
+  handleStorageChange({ targetLang: { newValue: 'ja' } }, 'sync');
+  await new Promise(r => setTimeout(r, 400));
+  const jaReq = langTwiceRequests.find(r => r.msg.targetLang === 'ja');
+  assert.ok(jaReq, '必須產生 ja 請求');
+
+  // 2. 切換至 ko
+  handleStorageChange({ targetLang: { newValue: 'ko' } }, 'sync');
+  await new Promise(r => setTimeout(r, 400));
+  const koReq = langTwiceRequests.find(r => r.msg.targetLang === 'ko');
+  assert.ok(koReq, '必須產生 ko 請求');
+
+  // 3. 回應順序反轉：ko 先回，ja 後回
+  koReq.cb({ translatedText: '안녕하세요' });
+  assert.strictEqual(session.currSlot.trans, '안녕하세요', 'ko 回應先到達應正常渲染');
+
+  jaReq.cb({ translatedText: 'こんばんは' });
+  // ja 後回，絕不可覆蓋 ko
+  assert.strictEqual(session.userTargetLang, 'ko', '目標語言仍為 ko');
+  assert.strictEqual(session.currSlot.trans, '안녕하세요', '過期的 ja 回應不得覆蓋較新的 ko 譯文');
+  console.log('  - 目標語言連續切換且非同步回傳順序反轉時正確維護最終狀態: ✅ PASS\n');
 
   // ------------------------------------------------------------------
   // 4. YouTube 廣告播放狀態避讓 (Priority 8: Real onTimeUpdate Flow)

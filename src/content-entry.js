@@ -224,6 +224,7 @@ function handleStorageChange(changes, namespace) {
   if (changes.targetLang) {
     session.userTargetLang = changes.targetLang.newValue;
     scheduler.clearCache();
+    scheduler.cancelActiveLiveRequests();
     renderer.resetSignature();
 
     if (session.sentenceList && session.sentenceList.length > 0) {
@@ -258,10 +259,18 @@ function handleStorageChange(changes, namespace) {
         debouncedTranslateLiveProgress(session.currSlot.orig);
       }
       if (session.prevSlot.orig) {
+        const prevOrig = session.prevSlot.orig;
+        const targetLang = session.userTargetLang;
         const srcLang = session.currentTrack?.languageCode || 'auto';
-        scheduler.requestTranslation(session.prevSlot.orig, srcLang, session.userTargetLang, (res) => {
+        scheduler.requestTranslation(prevOrig, srcLang, targetLang, (res) => {
+          if (
+            session.prevSlot.orig !== prevOrig ||
+            session.userTargetLang !== targetLang
+          ) {
+            return;
+          }
           const transText = res?.translatedText?.trim() || '';
-          if (transText && session.prevSlot.orig) {
+          if (transText) {
             session.prevSlot.trans = transText;
             const c = document.getElementById(renderer.containerId);
             const p = getActivePlayer();
@@ -1397,7 +1406,9 @@ function observeNativePlayerCaptions() {
       });
 
       const srcLang = session.currentTrack?.languageCode || 'auto';
-      scheduler.requestTranslation(completedSentence, srcLang, session.userTargetLang, (res) => {
+      const targetLang = session.userTargetLang;
+      scheduler.requestTranslation(completedSentence, srcLang, targetLang, (res) => {
+        if (session.userTargetLang !== targetLang) return;
         const transText = res?.translatedText?.trim() || '';
         if (transText) {
           let needRender = false;
