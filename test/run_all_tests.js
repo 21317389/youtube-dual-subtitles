@@ -114,7 +114,7 @@ async function main() {
 
   let resInteractionSuccess = false;
   try {
-    const interRes = runUserInteractionSuite();
+    const interRes = await runUserInteractionSuite();
     resInteractionSuccess = interRes.success;
   } catch (e) {
     resInteractionSuccess = false;

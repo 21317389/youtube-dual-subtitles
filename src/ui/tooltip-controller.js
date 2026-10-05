@@ -261,10 +261,6 @@ class TooltipController {
     }, options.durationMs || 5000);
   }
 
-  showToast(message, options = {}) {
-    return this.showWarningToast(message, options);
-  }
-
   showTooltip({ selectedText, rect, playerRect, snippetRange, i18n = {} }) {
     const player = this.getPlayer();
     if (!player) return null;

@@ -138,7 +138,7 @@ function handleRuntimeMessage(request, sender, sendResponse) {
   if (request.action === 'fetchCaption') {
     const { url } = request;
     if (!url) {
-      sendResponse({ error: 'Missing url' });
+      sendResponse({ success: false, text: '', error: 'Missing url' });
       return false;
     }
 
@@ -147,7 +147,7 @@ function handleRuntimeMessage(request, sender, sendResponse) {
         const res = await fetch(url);
         if (res.status === 429) {
           console.warn('[YT-Dual-Sub Background] 遇到 429 限流，即刻終止後續重試，保護 IP 安全');
-          sendResponse({ text: '', error: 'RATE_LIMIT_429' });
+          sendResponse({ success: false, status: 429, error: 'RATE_LIMIT_429', text: '' });
           return;
         }
         if (res.ok) {
@@ -155,19 +155,21 @@ function handleRuntimeMessage(request, sender, sendResponse) {
           const isHtmlBlock = text && (text.trim().startsWith('<html') || text.includes('<title>Sorry...'));
           if (isHtmlBlock) {
             console.warn('[YT-Dual-Sub Background] 收到 Sorry 風控頁面，即刻終止後續重試');
-            sendResponse({ text: '', error: 'RATE_LIMIT_429' });
+            sendResponse({ success: false, status: 429, error: 'RATE_LIMIT_429', text: '' });
             return;
           }
           if (text && text.trim().length > 0) {
-            sendResponse({ text });
+            sendResponse({ success: true, text });
             return;
           }
         }
       } catch (e) {
         console.warn('[YT-Dual-Sub Background] 字幕抓取受阻:', e.message);
+        sendResponse({ success: false, text: '', error: e.message });
+        return;
       }
 
-      sendResponse({ text: '' });
+      sendResponse({ success: false, text: '' });
     })();
 
     return true;

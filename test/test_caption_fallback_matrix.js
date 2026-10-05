@@ -15,7 +15,8 @@ const assert = require('assert');
 const {
   session,
   renderer,
-  loadCaptionTrack
+  loadCaptionTrack,
+  buildTrackKey
 } = require('../src/content-entry');
 
 async function runCaptionFallbackMatrixTest() {
@@ -102,6 +103,7 @@ async function runCaptionFallbackMatrixTest() {
 
   global.chrome = global.chrome || {};
   global.chrome.runtime = global.chrome.runtime || {};
+  global.chrome.runtime.id = 'test-extension-id';
   global.chrome.runtime.sendMessage = (msg, cb) => {
     if (cb) cb({ text: '' });
   };
@@ -118,6 +120,7 @@ async function runCaptionFallbackMatrixTest() {
     session.sentenceList = [];
     session.lastObservedVideoId = vid;
     session.fetch.inFlightKey = '';
+    session.fetch.timedtextCooldownUntil = 0;
     global.window.location = { href: `https://www.youtube.com/watch?v=${vid}` };
   }
 
@@ -184,6 +187,110 @@ async function runCaptionFallbackMatrixTest() {
   assert.strictEqual(requestsSent.includes('YT_FETCH_TRANSCRIPT_REQUEST'), false, 'timedtext 成功時絕對不可呼叫 get_transcript');
   console.log('  - InnerTube 失敗 -> timedtext 順暢降級命中: ✅ PASS');
   console.log('  - 嚴格守門：未觸發次級逐字稿請求: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // Case B2: InnerTube 失敗 -> Main World timedtext 失敗 -> Background fetchCaption 成功 (Task 2)
+  // ------------------------------------------------------------------
+  console.log('【Case B2: Background timedtext 成功】');
+  resetSession('vid_b2');
+
+  let bgMessagesSent = [];
+  global.chrome.runtime.sendMessage = (msg, cb) => {
+    if (msg.action === 'fetchCaption') {
+      bgMessagesSent.push(msg);
+      if (cb) {
+        cb({
+          success: true,
+          text: '<?xml version="1.0" encoding="utf-8" ?><transcript><text start="2.0" dur="3.0">Background Timedtext Case B2 Success.</text></transcript>'
+        });
+      }
+    } else {
+      if (cb) cb({ text: '' });
+    }
+  };
+
+  mockPostMessageResponder = (req) => {
+    if (req.type === 'YT_FETCH_INNERTUBE_CAPTION_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE',
+        requestId: req.requestId,
+        success: false,
+        text: null
+      });
+    } else if (req.type === 'YT_FETCH_CAPTION_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_CAPTION_RESPONSE',
+        requestId: req.requestId,
+        success: false,
+        text: null
+      });
+    }
+  };
+
+  await loadCaptionTrack({ videoId: 'vid_b2', languageCode: 'en', baseUrl: 'https://timedtext.com/b2' });
+
+  assert.strictEqual(session.sentenceList.length > 0, true, 'Background timedtext 成功後應解析出 sentenceList (Mode 1)');
+  assert.strictEqual(session.sentenceList[0].origText.includes('Background Timedtext Case B2 Success'), true, '首句文字應吻合');
+  assert.strictEqual(bgMessagesSent.length > 0, true, '應調用 background.js 的 fetchCaption 訊息通道');
+  assert.strictEqual(requestsSent.includes('YT_FETCH_TRANSCRIPT_REQUEST'), false, 'Background timedtext 成功時絕對不可呼叫 get_transcript');
+  console.log('  - Background timedtext 通道順暢降級命中: ✅ PASS');
+  console.log('  - 嚴格守門：未觸發次級逐字稿請求: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // Case B3: Background 429 限流冷卻合約檢驗 (Task 3)
+  // ------------------------------------------------------------------
+  console.log('【Case B3: Background 429 限流冷卻合約檢驗】');
+  resetSession('vid_b3');
+  session.fetch.timedtextCooldownUntil = 0;
+
+  let bg429CallCount = 0;
+  global.chrome.runtime.sendMessage = (msg, cb) => {
+    if (msg.action === 'fetchCaption') {
+      bg429CallCount++;
+      if (cb) {
+        cb({
+          success: false,
+          status: 429,
+          error: 'RATE_LIMIT_429',
+          text: ''
+        });
+      }
+    } else {
+      if (cb) cb({ text: '' });
+    }
+  };
+
+  mockPostMessageResponder = (req) => {
+    if (req.type === 'YT_FETCH_INNERTUBE_CAPTION_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE',
+        requestId: req.requestId,
+        success: false,
+        text: null
+      });
+    } else if (req.type === 'YT_FETCH_CAPTION_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_CAPTION_RESPONSE',
+        requestId: req.requestId,
+        success: false,
+        text: null
+      });
+    } else if (req.type === 'YT_FETCH_TRANSCRIPT_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_TRANSCRIPT_RESPONSE',
+        requestId: req.requestId,
+        success: false,
+        data: null
+      });
+    }
+  };
+
+  await loadCaptionTrack({ videoId: 'vid_b3', languageCode: 'en', baseUrl: 'https://timedtext.com/b3' });
+
+  assert.strictEqual(session.fetch.timedtextCooldownUntil > Date.now(), true, '遇到 429 時 timedtextCooldownUntil 必須設置為未來時間 (冷卻中)');
+  assert.strictEqual(bg429CallCount, 1, '遇到 429 應立即 break 終止，不得對後續 format 發動 request storm');
+  console.log('  - Background 429 觸發 RATE_LIMIT_COOLDOWN 冷卻防護: ✅ PASS');
+  console.log('  - 遇到 429 立即中斷重試，杜絕請求風暴: ✅ PASS\n');
 
   // ------------------------------------------------------------------
   // Case C: InnerTube 失敗 -> timedtext 失敗 -> get_transcript 成功
@@ -267,6 +374,71 @@ async function runCaptionFallbackMatrixTest() {
   assert.ok(lastObserver, '必須實例化 MutationObserver');
   assert.strictEqual(lastObserver.isObserving, true, '靜態字幕全數失敗後 Mode 2 observer 必須處於 active 監聽狀態');
   console.log('  - 全靜態失敗 -> 保全機制啟動，Mode 2 observer 成功接管: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // Case E: 同語言不同字幕軌切換 (Task 5: Same-Language Track Switch)
+  // ------------------------------------------------------------------
+  console.log('【Case E: 同語言不同字幕軌切換 (Task 5: Same-Language Track Switch)】');
+  resetSession('vid_switch');
+
+  // Track A (.en 手動字幕)
+  mockPostMessageResponder = (req) => {
+    if (req.type === 'YT_FETCH_INNERTUBE_CAPTION_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE',
+        requestId: req.requestId,
+        success: true,
+        text: JSON.stringify({
+          events: [
+            { tStartMs: 1000, dDurationMs: 2000, segs: [{ utf8: 'Manual English.' }] }
+          ]
+        })
+      });
+    }
+  };
+
+  const trackA = { videoId: 'vid_switch', languageCode: 'en', vssId: '.en', baseUrl: 'https://timedtext.com/manual' };
+  await loadCaptionTrack(trackA);
+
+  assert.strictEqual(session.currentTrack.vssId, '.en', '當前軌道應為 Track A (.en)');
+  assert.strictEqual(session.sentenceList[0].origText.includes('Manual English'), true, '首句文字應為手動字幕 Manual English');
+
+  // 切換為 Track B (a.en 自動語音字幕)
+  mockPostMessageResponder = (req) => {
+    if (req.type === 'YT_FETCH_INNERTUBE_CAPTION_REQUEST') {
+      dispatchMessageToWindow({
+        type: 'YT_FETCH_INNERTUBE_CAPTION_RESPONSE',
+        requestId: req.requestId,
+        success: true,
+        text: JSON.stringify({
+          events: [
+            { tStartMs: 1000, dDurationMs: 2000, segs: [{ utf8: 'Auto English.' }] }
+          ]
+        })
+      });
+    }
+  };
+
+  const trackB = { videoId: 'vid_switch', languageCode: 'en', vssId: 'a.en', baseUrl: 'https://timedtext.com/auto' };
+  await loadCaptionTrack(trackB);
+
+  assert.strictEqual(session.currentTrack.vssId, 'a.en', '當前軌道應成功切換為 Track B (a.en)');
+  assert.strictEqual(session.sentenceList[0].origText.includes('Auto English'), true, '首句文字應更新為 Auto English，不得被舊手動字幕卡死');
+  console.log('  - 同語言不同 vssId (.en -> a.en) 成功切換並加載新字幕: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // Case F: 完全相同軌道去重 (Task 6: Duplicate Track Dedupe)
+  // ------------------------------------------------------------------
+  console.log('【Case F: 完全相同軌道去重 (Task 6: Duplicate Track Dedupe)】');
+  const requestsBeforeDedupe = requestsSent.length;
+
+  // 重複呼叫完全相同的 Track B
+  await loadCaptionTrack(trackB);
+
+  const requestsAfterDedupe = requestsSent.length;
+  assert.strictEqual(requestsAfterDedupe, requestsBeforeDedupe, '完全相同的軌道重複載入時必須直接 Dedupe，不得發起額外網路請求');
+  assert.strictEqual(session.currentTrack.vssId, 'a.en', '軌道狀態應保持不變');
+  console.log('  - 完全相同軌道去重成功，無多餘請求產生: ✅ PASS\n');
 
   console.log('🏆【字幕通道階梯降級矩陣測試】全部通過！\n');
   return { success: true };

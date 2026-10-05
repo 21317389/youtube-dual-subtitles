@@ -37,7 +37,7 @@ const {
   getActiveVideo
 } = require('../src/content-entry');
 
-function runUserInteractionSuite() {
+async function runUserInteractionSuite() {
   console.log('========================================================');
   console.log('🧪 執行【專屬使用者互動與邊界功能測試 (User Interaction Suite)】');
   console.log('========================================================\n');
@@ -310,6 +310,48 @@ function runUserInteractionSuite() {
 
   console.log('  - 目標語言動態切換: ✅ PASS');
   console.log('  - 舊翻譯自動作廢與新語言重譯 (真實 production path): ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 3.2 Mode 2 串流模式下動態切換目標翻譯語言 (Task 8: Mode 2 Target Language Switch)
+  // ------------------------------------------------------------------
+  console.log('【3.2 Mode 2 串流模式動態切換目標翻譯語言檢驗 (Task 8)】');
+
+  // 設置 Mode 2 狀態：無 sentenceList，但當前槽位有字幕
+  session.sentenceList = [];
+  session.userTargetLang = 'zh-TW';
+  session.currSlot = { orig: 'Good morning', trans: '早安 (zh-TW)' };
+  session.prevSlot = { orig: 'Hello everyone', trans: '大家好 (zh-TW)' };
+
+  let mode2RequestedLanguages = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    if (msg.action === 'translate') {
+      mode2RequestedLanguages.push({ targetLang: msg.targetLang, text: msg.text });
+      cb({ translatedText: `[${msg.targetLang}] ${msg.text}` });
+    }
+  };
+
+  // 觸發 production storage change: targetLang -> ja
+  handleStorageChange({ targetLang: { newValue: 'ja' } }, 'sync');
+
+  // 1. 舊語言譯文必須立即被清除 (Old translation cleared: YES)
+  assert.strictEqual(session.currSlot.trans, '', '舊當前槽位中文譯文必須立即清除');
+  assert.notStrictEqual(session.prevSlot.trans, '大家好 (zh-TW)', '舊上一槽位中文譯文必須被清除');
+  assert.strictEqual(session.userTargetLang, 'ja', '目標語言已切換為 ja');
+
+  // 2. 等候 debouncedTranslateLiveProgress 觸發即時翻譯 (350ms debounce)
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  // 3. 驗證新 targetLang = ja 請求已被發送 (New target language request emitted: YES)
+  const jaRequests = mode2RequestedLanguages.filter(r => r.targetLang === 'ja');
+  assert.strictEqual(jaRequests.length > 0, true, '必須向 background 發起 targetLang === ja 翻譯請求');
+
+  // 4. 驗證新日文譯文成功渲染至 session.currSlot (New translation rendered: YES)
+  assert.strictEqual(session.currSlot.trans.includes('[ja]'), true, '新日文譯文應成功填入當前槽位');
+  assert.strictEqual(session.currSlot.trans.includes('Good morning'), true, '當前槽位譯文應對應 Good morning');
+
+  console.log('  - Mode 2 舊語言譯文即刻清除: ✅ PASS');
+  console.log('  - Mode 2 新目標語言翻譯請求重新發送: ✅ PASS');
+  console.log('  - Mode 2 新譯文成功渲染回當前槽位: ✅ PASS\n');
 
   // ------------------------------------------------------------------
   // 4. YouTube 廣告播放狀態避讓 (Priority 8: Real onTimeUpdate Flow)

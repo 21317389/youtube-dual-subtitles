@@ -56,7 +56,7 @@ const CONFIG = {
   MAX_SENTENCE_CHARS: MAX_SENTENCE_CHARS,
   MAX_SENTENCE_DURATION: MAX_SENTENCE_DURATION,
   BACKGROUND_FETCH_TIMEOUT: 6000,
-  INNERTUBE_FETCH_TIMEOUT: 6000,
+  INNERTUBE_FETCH_TIMEOUT: 4000,
   MAIN_WORLD_FETCH_TIMEOUT: 2000,
   TRANSCRIPT_FETCH_TIMEOUT: 1200,
   RATE_LIMIT_COOLDOWN_MS: 60000,
@@ -225,19 +225,56 @@ function handleStorageChange(changes, namespace) {
     session.userTargetLang = changes.targetLang.newValue;
     scheduler.clearCache();
     renderer.resetSignature();
+
     if (session.sentenceList && session.sentenceList.length > 0) {
       for (let i = 0; i < session.sentenceList.length; i++) {
         session.sentenceList[i].status = 'idle';
         session.sentenceList[i].transText = '';
       }
-    }
-    session.currSlot.trans = '';
-    session.prevSlot.trans = '';
-    const video = getActiveVideo();
-    if (video) {
-      prioritizeCurrentSentence(video.currentTime);
-      checkAndTriggerSlidingWindow(video.currentTime);
-      renderCurrentSubtitle(video.currentTime);
+      session.currSlot.trans = '';
+      session.prevSlot.trans = '';
+      const video = getActiveVideo();
+      if (video) {
+        prioritizeCurrentSentence(video.currentTime);
+        checkAndTriggerSlidingWindow(video.currentTime);
+        renderCurrentSubtitle(video.currentTime);
+      }
+    } else {
+      // Mode 2: 串流模式即刻清空舊語言譯文並重新排程當前槽位即時翻譯
+      session.currSlot.trans = '';
+      session.prevSlot.trans = '';
+
+      const container = document.getElementById(renderer.containerId);
+      const player = getActivePlayer();
+      if (container && player) {
+        renderer.render(container, session.prevSlot, session.currSlot, {
+          isExtensionEnabled: session.isExtensionEnabled,
+          isCaptionsEnabled: session.isCaptionsEnabled,
+          player
+        });
+      }
+
+      if (session.currSlot.orig) {
+        debouncedTranslateLiveProgress(session.currSlot.orig);
+      }
+      if (session.prevSlot.orig) {
+        const srcLang = session.currentTrack?.languageCode || 'auto';
+        scheduler.requestTranslation(session.prevSlot.orig, srcLang, session.userTargetLang, (res) => {
+          const transText = res?.translatedText?.trim() || '';
+          if (transText && session.prevSlot.orig) {
+            session.prevSlot.trans = transText;
+            const c = document.getElementById(renderer.containerId);
+            const p = getActivePlayer();
+            if (c && p) {
+              renderer.render(c, session.prevSlot, session.currSlot, {
+                isExtensionEnabled: session.isExtensionEnabled,
+                isCaptionsEnabled: session.isCaptionsEnabled,
+                player: p
+              });
+            }
+          }
+        });
+      }
     }
   }
 
@@ -428,6 +465,19 @@ if (typeof window !== 'undefined') {
   }
 }
 
+function buildTrackKey(track, videoId = '') {
+  if (!track) return '';
+  const vid = track.videoId || videoId || '';
+  const vssId = track.vssId || '';
+  const lang = track.languageCode || '';
+  const tlang = track.targetTlang || '';
+  if (vssId) {
+    return `${vid}_${vssId}_${lang}_${tlang}`;
+  }
+  const baseUrl = track.baseUrl || '';
+  return `${vid}_${lang}_${tlang}_${baseUrl}`;
+}
+
 async function loadCaptionTrack(track) {
   if (!session.isExtensionEnabled || !session.isCaptionsEnabled) return;
   if (!track || !track.languageCode) return;
@@ -444,9 +494,15 @@ async function loadCaptionTrack(track) {
     session.resetVideoNavigation(vid);
   }
 
-  const currentTrackKey = `${track.vssId || track.languageCode}_${vid || currentVid}`;
+  const currentTrackKey = buildTrackKey(track, vid || currentVid);
   if (session.fetch.inFlightKey === currentTrackKey) return;
-  if (session.currentTrack && session.currentTrack.languageCode === track.languageCode && session.sentenceList.length > 0) return;
+  if (
+    session.currentTrack &&
+    buildTrackKey(session.currentTrack, vid || currentVid) === currentTrackKey &&
+    session.sentenceList.length > 0
+  ) {
+    return;
+  }
 
   session.currentTrack = track;
   session.fetch.inFlightKey = currentTrackKey;
@@ -1462,6 +1518,7 @@ if (typeof module !== 'undefined' && module.exports) {
     handleStorageChange,
     onTimeUpdate,
     loadCaptionTrack,
+    buildTrackKey,
     isShortsPage,
     getCurrentVideoId,
     getActivePlayer,
