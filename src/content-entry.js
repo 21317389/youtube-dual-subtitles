@@ -4,7 +4,7 @@
  *  1. 匯總各領域核心模組 (SessionState, SentencePolicy, StreamingExtractor, CaptionParser, TranslationScheduler, SubtitleRenderer, TooltipController)
  *  2. 集中由 SessionState 管理全生命週期狀態，消除頂層 40+ 個散落變數
  *  3. 透過 TranslationScheduler 聚合在途翻譯請求，徹底阻絕重複發送與 Request Storm
- *  4. 透過 Protocol 常量保證與 inject.js / background.js 的類型安全通訊
+ *  4. Content 端透過 Protocol 常量收斂通訊鍵名，並經由契約測試防護與 inject.js / background.js 協議一致性
  *  5. 經由 esbuild 打包輸出為 dist/content.js (100% 零依賴、嚴格遵從 MV3 規範)
  */
 
