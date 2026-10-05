@@ -314,6 +314,7 @@
   var require_sentence_policy = __commonJS({
     "src/core/sentence-policy.js"(exports, module) {
       var SENTENCE_END_REGEX = /(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*$/;
+      var INTRA_SPLIT_REGEX = /(?<=(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*)\s+/;
       var COMMON_CONJUNCTIONS = [
         "and",
         "but",
@@ -387,6 +388,7 @@
       if (typeof module !== "undefined" && module.exports) {
         module.exports = {
           SENTENCE_END_REGEX,
+          INTRA_SPLIT_REGEX,
           COMMON_CONJUNCTIONS,
           SENTENCE_LIMITS,
           FALLBACK_LONG_PAUSE_SECONDS,
@@ -1316,6 +1318,7 @@
         isConjunction,
         shouldMergeShortSentence,
         SENTENCE_END_REGEX,
+        INTRA_SPLIT_REGEX,
         FALLBACK_LONG_PAUSE_SECONDS,
         MAX_SENTENCE_CHARS,
         MAX_SENTENCE_DURATION
@@ -1885,21 +1888,39 @@
             rawSegments[i].end = Math.max(rawSegments[i].start + 0.3, nextStart);
           }
         }
-        let totalSegments = rawSegments.length;
-        let punctSegments = 0;
+        const normalizedSegments = [];
         for (const seg of rawSegments) {
+          const parts = seg.text.split(INTRA_SPLIT_REGEX).filter((p) => p.trim().length > 0);
+          if (parts.length > 1) {
+            const totalChars = seg.text.length;
+            const totalDur = seg.end - seg.start;
+            let currStart = seg.start;
+            for (let p = 0; p < parts.length; p++) {
+              const partText = parts[p].trim();
+              const partDur = Math.max(0.3, partText.length / totalChars * totalDur);
+              const partEnd = p === parts.length - 1 ? seg.end : Math.min(seg.end, currStart + partDur);
+              normalizedSegments.push({ start: currStart, end: partEnd, text: partText });
+              currStart = partEnd;
+            }
+          } else {
+            normalizedSegments.push({ start: seg.start, end: seg.end, text: seg.text.trim() });
+          }
+        }
+        let totalSegments = normalizedSegments.length;
+        let punctSegments = 0;
+        for (const seg of normalizedSegments) {
           if (CONFIG.SENTENCE_END_REGEX.test(seg.text.trim())) punctSegments++;
         }
         const punctRatio = punctSegments / Math.max(1, totalSegments);
         const isSparsePunctuation = punctRatio < 0.2;
         const sentences = [];
         let currentGroup = [];
-        for (let i = 0; i < rawSegments.length; i++) {
-          const seg = rawSegments[i];
+        for (let i = 0; i < normalizedSegments.length; i++) {
+          const seg = normalizedSegments[i];
           currentGroup.push(seg);
           const currentText = currentGroup.map((s) => s.text).join(" ").trim();
           const currentDuration = seg.end - currentGroup[0].start;
-          const nextSeg = rawSegments[i + 1];
+          const nextSeg = normalizedSegments[i + 1];
           const pauseGap = nextSeg ? Math.max(0, nextSeg.start - seg.end) : 999;
           let shouldSplit = false;
           if (!isSparsePunctuation) {
@@ -1927,7 +1948,7 @@
           if (currentDuration >= CONFIG.MAX_SENTENCE_DURATION || currentText.length >= CONFIG.MAX_SENTENCE_CHARS) {
             shouldSplit = true;
           }
-          if (i === rawSegments.length - 1) {
+          if (i === normalizedSegments.length - 1) {
             shouldSplit = true;
           }
           if (shouldSplit && currentGroup.length > 0) {

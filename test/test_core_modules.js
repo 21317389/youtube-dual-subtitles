@@ -17,7 +17,8 @@ const {
   isConjunction,
   isTailOfImmediatePrev,
   shouldMergeShortSentence,
-  SENTENCE_END_REGEX
+  SENTENCE_END_REGEX,
+  INTRA_SPLIT_REGEX
 } = require('../src/core/sentence-policy');
 const { StreamingSentenceExtractor } = require('../src/core/streaming-sentence-extractor');
 const {
@@ -29,6 +30,7 @@ const {
 const { TranslationScheduler } = require('../src/core/translation-scheduler');
 const { WindowMessageType, RuntimeAction, isValidWindowMessage } = require('../src/bridge/protocol');
 const { SessionState } = require('../src/core/session-state');
+const { parseCues, session: coreSession } = require('../src/content-entry');
 
 function runCoreModulesTest() {
   console.log('========================================================');
@@ -234,6 +236,36 @@ function runCoreModulesTest() {
   assert.strictEqual(sessionOrder.isSessionActive(oldSessionA), false, '舊影片會話必須作廢');
   assert.strictEqual(sessionOrder.isSessionActive(newSessionB), true, '新影片會話在非同步回傳前必須保持活躍 (isSessionActive === true)');
   console.log('  - navigation reset -> new session -> isSessionActive 狀態序約: ✅ PASS\n');
+
+  // 8. Intra-Segment Sentence Splitting Regression (1.4.0 機制完整接回驗證)
+  console.log('【8. Intra-Segment 句中標點拆解與時間戳內插檢驗 (1.4.0 Regression)】');
+  const sampleIntraText = "You will achieve much more by being consistently reliable than by being occasionally extraordinary. That's a line from Sahil Bloom from his book, The";
+  const intraParts = sampleIntraText.split(INTRA_SPLIT_REGEX);
+  assert.strictEqual(intraParts.length, 2, '遇到句號必須精準切分為兩部分');
+  assert.strictEqual(intraParts[0], "You will achieve much more by being consistently reliable than by being occasionally extraordinary.");
+  assert.strictEqual(intraParts[1], "That's a line from Sahil Bloom from his book, The");
+
+  // 驗證 parseCues 遇段內句號時獨立成句
+  const testIntraCaption = {
+    events: [
+      {
+        tStartMs: 1000,
+        dDurationMs: 6000,
+        segs: [{ utf8: sampleIntraText }]
+      },
+      {
+        tStartMs: 7000,
+        dDurationMs: 2000,
+        segs: [{ utf8: "5 Types of Wealth." }]
+      }
+    ]
+  };
+  parseCues(testIntraCaption, 'en');
+  assert.strictEqual(coreSession.sentenceList.length, 2, '段內有句號應拆為兩句');
+  assert.strictEqual(coreSession.sentenceList[0].origText, "You will achieve much more by being consistently reliable than by being occasionally extraordinary.", '第一句遇句號必須獨立結算');
+  assert.strictEqual(coreSession.sentenceList[1].origText, "That's a line from Sahil Bloom from his book, The 5 Types of Wealth.", '第二句應正確與後續連接');
+  assert.ok(coreSession.sentenceList[0].end < coreSession.sentenceList[1].end, '時間戳必須按字數比例正確內插');
+  console.log('  - 單片段內部多句拆解與時間戳內插: ✅ PASS\n');
 
   return { success: true };
 }

@@ -21,6 +21,7 @@ const {
   isConjunction,
   shouldMergeShortSentence,
   SENTENCE_END_REGEX,
+  INTRA_SPLIT_REGEX,
   FALLBACK_LONG_PAUSE_SECONDS,
   MAX_SENTENCE_CHARS,
   MAX_SENTENCE_DURATION
@@ -722,10 +723,32 @@ function parseCues(captionJson, sourceLang) {
     }
   }
 
-  // 統計標點密度
-  let totalSegments = rawSegments.length;
-  let punctSegments = 0;
+  // 步驟二：拆解單片段內部多句（杜絕段內跨句，按字數比例內插時間戳）
+  const normalizedSegments = [];
   for (const seg of rawSegments) {
+    const parts = seg.text.split(INTRA_SPLIT_REGEX).filter(p => p.trim().length > 0);
+    if (parts.length > 1) {
+      const totalChars = seg.text.length;
+      const totalDur = seg.end - seg.start;
+      let currStart = seg.start;
+
+      for (let p = 0; p < parts.length; p++) {
+        const partText = parts[p].trim();
+        const partDur = Math.max(0.3, (partText.length / totalChars) * totalDur);
+        const partEnd = (p === parts.length - 1) ? seg.end : Math.min(seg.end, currStart + partDur);
+
+        normalizedSegments.push({ start: currStart, end: partEnd, text: partText });
+        currStart = partEnd;
+      }
+    } else {
+      normalizedSegments.push({ start: seg.start, end: seg.end, text: seg.text.trim() });
+    }
+  }
+
+  // 步驟三：統計標點密度與合句
+  let totalSegments = normalizedSegments.length;
+  let punctSegments = 0;
+  for (const seg of normalizedSegments) {
     if (CONFIG.SENTENCE_END_REGEX.test(seg.text.trim())) punctSegments++;
   }
   const punctRatio = punctSegments / Math.max(1, totalSegments);
@@ -734,13 +757,13 @@ function parseCues(captionJson, sourceLang) {
   const sentences = [];
   let currentGroup = [];
 
-  for (let i = 0; i < rawSegments.length; i++) {
-    const seg = rawSegments[i];
+  for (let i = 0; i < normalizedSegments.length; i++) {
+    const seg = normalizedSegments[i];
     currentGroup.push(seg);
 
     const currentText = currentGroup.map(s => s.text).join(' ').trim();
     const currentDuration = seg.end - currentGroup[0].start;
-    const nextSeg = rawSegments[i + 1];
+    const nextSeg = normalizedSegments[i + 1];
     const pauseGap = nextSeg ? Math.max(0, nextSeg.start - seg.end) : 999;
 
     let shouldSplit = false;
@@ -773,7 +796,7 @@ function parseCues(captionJson, sourceLang) {
       shouldSplit = true;
     }
 
-    if (i === rawSegments.length - 1) {
+    if (i === normalizedSegments.length - 1) {
       shouldSplit = true;
     }
 
