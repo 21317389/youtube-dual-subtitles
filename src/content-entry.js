@@ -173,7 +173,7 @@ function getCurrentVideoId() {
 }
 
 function getSystemDefaultTargetLang() {
-  const uiLang = (chrome?.i18n?.getUILanguage?.() || navigator.language || 'en').toLowerCase();
+  const uiLang = ((typeof chrome !== 'undefined' && chrome?.i18n?.getUILanguage?.()) || (typeof navigator !== 'undefined' && navigator.language) || 'en').toLowerCase();
   if (uiLang.startsWith('zh-tw') || uiLang.startsWith('zh-hk')) return 'zh-TW';
   if (uiLang.startsWith('zh')) return 'zh-CN';
   if (uiLang.startsWith('ja')) return 'ja';
@@ -1119,9 +1119,9 @@ function handleSubtitleMouseUp(e) {
     }
   }
 
-  const msgTranslating = chrome?.i18n?.getMessage('tooltipTranslating') || '翻譯中...';
-  const msgPlaySnippet = chrome?.i18n?.getMessage('tooltipPlaySnippet') || '🎬 聽原聲';
-  const msgSpeak = chrome?.i18n?.getMessage('tooltipSpeak') || '🗣️ 朗讀';
+  const msgTranslating = (typeof chrome !== 'undefined' && chrome?.i18n?.getMessage?.('tooltipTranslating')) || '翻譯中...';
+  const msgPlaySnippet = (typeof chrome !== 'undefined' && chrome?.i18n?.getMessage?.('tooltipPlaySnippet')) || '🎬 聽原聲';
+  const msgSpeak = (typeof chrome !== 'undefined' && chrome?.i18n?.getMessage?.('tooltipSpeak')) || '🗣️ 朗讀';
 
   tooltipCtrl.showTooltip({
     selectedText,
@@ -1440,6 +1440,12 @@ if (typeof module !== 'undefined' && module.exports) {
     debouncedTranslateLiveProgress,
     jumpToSentence,
     isUserTyping,
-    handleKeyDown
+    handleKeyDown,
+    tooltipCtrl,
+    handleSubtitleMouseUp,
+    isShortsPage,
+    getCurrentVideoId,
+    getActivePlayer,
+    getActiveVideo
   };
 }

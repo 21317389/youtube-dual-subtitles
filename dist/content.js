@@ -1432,7 +1432,7 @@
         return match ? match[1] : "";
       }
       function getSystemDefaultTargetLang() {
-        const uiLang = (chrome?.i18n?.getUILanguage?.() || navigator.language || "en").toLowerCase();
+        const uiLang = (typeof chrome !== "undefined" && chrome?.i18n?.getUILanguage?.() || typeof navigator !== "undefined" && navigator.language || "en").toLowerCase();
         if (uiLang.startsWith("zh-tw") || uiLang.startsWith("zh-hk")) return "zh-TW";
         if (uiLang.startsWith("zh")) return "zh-CN";
         if (uiLang.startsWith("ja")) return "ja";
@@ -2215,9 +2215,9 @@
             snippetEnd = currentTime + 0.5;
           }
         }
-        const msgTranslating = chrome?.i18n?.getMessage("tooltipTranslating") || "\u7FFB\u8B6F\u4E2D...";
-        const msgPlaySnippet = chrome?.i18n?.getMessage("tooltipPlaySnippet") || "\u{1F3AC} \u807D\u539F\u8072";
-        const msgSpeak = chrome?.i18n?.getMessage("tooltipSpeak") || "\u{1F5E3}\uFE0F \u6717\u8B80";
+        const msgTranslating = typeof chrome !== "undefined" && chrome?.i18n?.getMessage?.("tooltipTranslating") || "\u7FFB\u8B6F\u4E2D...";
+        const msgPlaySnippet = typeof chrome !== "undefined" && chrome?.i18n?.getMessage?.("tooltipPlaySnippet") || "\u{1F3AC} \u807D\u539F\u8072";
+        const msgSpeak = typeof chrome !== "undefined" && chrome?.i18n?.getMessage?.("tooltipSpeak") || "\u{1F5E3}\uFE0F \u6717\u8B80";
         tooltipCtrl.showTooltip({
           selectedText,
           rect,
@@ -2485,7 +2485,13 @@
           debouncedTranslateLiveProgress,
           jumpToSentence,
           isUserTyping,
-          handleKeyDown
+          handleKeyDown,
+          tooltipCtrl,
+          handleSubtitleMouseUp,
+          isShortsPage,
+          getCurrentVideoId,
+          getActivePlayer,
+          getActiveVideo
         };
       }
     }
