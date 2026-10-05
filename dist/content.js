@@ -1396,7 +1396,9 @@
         isHoverPauseEnabled: () => session.isHoverPauseEnabled,
         getLanguage: () => session.currentTrack?.languageCode || "en-US",
         onTranslate: (selectedText, callback) => {
-          scheduler.requestTranslation(selectedText, "auto", session.userTargetLang, (res) => {
+          const targetLang = session.userTargetLang;
+          scheduler.requestTranslation(selectedText, "auto", targetLang, (res) => {
+            if (session.userTargetLang !== targetLang) return;
             callback(res?.translatedText || null);
           });
         }
@@ -2175,7 +2177,11 @@
         const target = session.sentenceList.find((s) => adjustedTime >= s.start && adjustedTime <= s.end) || session.sentenceList[0];
         if (target && target.status === "idle") {
           target.status = "loading";
-          scheduler.requestTranslation(target.origText, target.sourceLang || "auto", session.userTargetLang, (res) => {
+          const targetLang = session.userTargetLang;
+          scheduler.requestTranslation(target.origText, target.sourceLang || "auto", targetLang, (res) => {
+            if (session.userTargetLang !== targetLang) {
+              return;
+            }
             if (res?.translatedText) {
               target.transText = res.translatedText;
               target.status = "done";
@@ -2204,7 +2210,11 @@
         pendingSentences.forEach((s) => s.status = "loading");
         const combinedText = pendingSentences.map((s) => s.origText).join("\n");
         const sourceLang = pendingSentences[0].sourceLang || "auto";
-        scheduler.requestTranslation(combinedText, sourceLang, session.userTargetLang, (res) => {
+        const targetLang = session.userTargetLang;
+        scheduler.requestTranslation(combinedText, sourceLang, targetLang, (res) => {
+          if (session.userTargetLang !== targetLang) {
+            return;
+          }
           if (res?.translatedText) {
             session.consecutiveTranslateErrors = 0;
             const lines = res.translatedText.split("\n");
@@ -2215,7 +2225,10 @@
               });
             } else {
               pendingSentences.forEach((s) => {
-                scheduler.requestTranslation(s.origText, sourceLang, session.userTargetLang, (singleRes) => {
+                scheduler.requestTranslation(s.origText, sourceLang, targetLang, (singleRes) => {
+                  if (session.userTargetLang !== targetLang) {
+                    return;
+                  }
                   s.transText = singleRes?.translatedText || s.origText;
                   s.status = "done";
                 });

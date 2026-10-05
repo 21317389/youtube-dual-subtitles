@@ -313,6 +313,147 @@ async function runUserInteractionSuite() {
   console.log('  - 舊翻譯自動作廢與新語言重譯 (真實 production path): ✅ PASS\n');
 
   // ------------------------------------------------------------------
+  // 3.1 Mode 1 當前句非同步過期回應競爭防禦 (Task 3: Mode 1 Current Sentence Stale Race)
+  // ------------------------------------------------------------------
+  console.log('【3.1 Mode 1 當前句非同步過期回應競爭檢驗 (Task 3)】');
+
+  session.userTargetLang = 'zh-TW';
+  session.sentenceList = [{
+    start: 1.0,
+    end: 5.0,
+    origText: 'Good morning',
+    transText: '',
+    status: 'idle',
+    sourceLang: 'en'
+  }];
+
+  const mode1PendingRequests = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    mode1PendingRequests.push({ msg, cb });
+  };
+
+  // Step A: 影片時間落在 2.0s，呼叫 production prioritizeCurrentSentence
+  prioritizeCurrentSentence(2.0);
+
+  const reqZh = mode1PendingRequests.find(r => r.msg.action === 'translate' && r.msg.targetLang === 'zh-TW' && r.msg.text === 'Good morning');
+  assert.ok(reqZh, 'Step A: 必須產生 targetLang=zh-TW 的 pending 請求');
+  assert.strictEqual(session.sentenceList[0].status, 'loading', '請求送出後句子狀態應為 loading');
+
+  // Step B: 使用者切換目標語言：zh-TW -> ja
+  handleStorageChange({ targetLang: { newValue: 'ja' } }, 'sync');
+  assert.strictEqual(session.userTargetLang, 'ja', 'Step B: 目標語言已切換為 ja');
+
+  const reqJa = mode1PendingRequests.find(r => r.msg.action === 'translate' && r.msg.targetLang === 'ja' && r.msg.text === 'Good morning');
+  assert.ok(reqJa, 'Step B: 必須產生新 targetLang=ja 的請求');
+
+  // Step C: 讓新語言 ja 回應先回來
+  reqJa.cb({ translatedText: 'おはようございます' });
+  assert.strictEqual(session.sentenceList[0].transText, 'おはようございます', 'Step C: 新日文譯文應成功寫入');
+  assert.strictEqual(session.sentenceList[0].status, 'done', '狀態應更新為 done');
+
+  // Step D: 讓舊的 zh-TW 回應較晚到達
+  reqZh.cb({ translatedText: '早安' });
+
+  // 斷言：舊的中文回應絕對不得覆蓋新日文譯文！
+  assert.strictEqual(session.sentenceList[0].transText, 'おはようございます', 'Step D: 舊 zh-TW 回應不得覆蓋新 ja 譯文');
+  assert.strictEqual(session.userTargetLang, 'ja', '目標語言保持為 ja');
+  console.log('  - Mode 1 當前句舊語言非同步過期回應成功被壓制: ✅ PASS');
+  console.log('  - 新語言譯文完整保留未被覆蓋: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 3.1b Mode 1 滑動窗口批次非同步過期回應競爭防禦 (Task 4: Batch Stale Race)
+  // ------------------------------------------------------------------
+  console.log('【3.1b Mode 1 滑動窗口批次非同步過期回應競爭檢驗 (Task 4)】');
+
+  session.userTargetLang = 'zh-TW';
+  session.sentenceList = [
+    { start: 0.0, end: 2.0, origText: 'Current Sentence', transText: '', status: 'idle', sourceLang: 'en' },
+    { start: 3.0, end: 5.0, origText: 'Batch Sentence A', transText: '', status: 'idle', sourceLang: 'en' },
+    { start: 6.0, end: 9.0, origText: 'Batch Sentence B', transText: '', status: 'idle', sourceLang: 'en' }
+  ];
+
+  const batchPendingRequests = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    batchPendingRequests.push({ msg, cb });
+  };
+
+  // 觸發舊語言 zh-TW 批次請求 (當前影片時間 1.0s，當前句為索引 0，預載批次為索引 1 & 2)
+  prioritizeCurrentSentence(1.0);
+  checkAndTriggerSlidingWindow(1.0);
+
+  const batchReqZh = batchPendingRequests.find(r => r.msg.action === 'translate' && r.msg.targetLang === 'zh-TW' && r.msg.text.includes('\n'));
+  assert.ok(batchReqZh, '必須成功發出包含多句換行之 zh-TW 批次請求');
+
+  // 切換語言至 ja
+  handleStorageChange({ targetLang: { newValue: 'ja' } }, 'sync');
+  assert.strictEqual(session.userTargetLang, 'ja', '目標語言已切換為 ja');
+
+  const batchReqJa = batchPendingRequests.find(r => r.msg.action === 'translate' && r.msg.targetLang === 'ja' && r.msg.text.includes('\n'));
+  assert.ok(batchReqJa, '切換後必須發出 ja 批次請求');
+
+  // 順序控制：新 ja 先回，舊 zh-TW 後回
+  batchReqJa.cb({ translatedText: '日文句子 A\n日文句子 B' });
+  assert.strictEqual(session.sentenceList[1].transText, '日文句子 A');
+  assert.strictEqual(session.sentenceList[2].transText, '日文句子 B');
+
+  // 舊 zh-TW 批次回應到達
+  batchReqZh.cb({ translatedText: '中文句子 A\n中文句子 B' });
+
+  // 斷言：所有句子必須維持日文，舊中文批次整批丟棄！
+  assert.strictEqual(session.sentenceList[1].transText, '日文句子 A', '句子 A 譯文不得被舊中文批次覆蓋');
+  assert.strictEqual(session.sentenceList[2].transText, '日文句子 B', '句子 B 譯文不得被舊中文批次覆蓋');
+  console.log('  - Mode 1 批次翻譯過期回應整批作廢壓制: ✅ PASS');
+  console.log('  - 批次新語言狀態完整保留: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 3.1c Mode 1 批次降級單句與過期錯誤回呼防禦 (Task 5 & 6)
+  // ------------------------------------------------------------------
+  console.log('【3.1c Mode 1 批次降級單句與過期錯誤回呼防禦 (Task 5 & 6)】');
+
+  session.userTargetLang = 'ja';
+  session.sentenceList = [
+    { start: 2.0, end: 5.0, origText: 'Fallback Sentence 1', transText: '', status: 'idle', sourceLang: 'en' },
+    { start: 6.0, end: 9.0, origText: 'Fallback Sentence 2', transText: '', status: 'idle', sourceLang: 'en' }
+  ];
+
+  const fallbackRequests = [];
+  scheduler.sendRuntimeMessage = (msg, cb) => {
+    fallbackRequests.push({ msg, cb });
+  };
+
+  checkAndTriggerSlidingWindow(2.0);
+  const jaBatch = fallbackRequests.find(r => r.msg.targetLang === 'ja');
+  assert.ok(jaBatch, '必須發出 ja 批次請求');
+
+  // 模擬批次行數不匹配 (只回傳 1 行)，觸發 production 降級單句請求
+  jaBatch.cb({ translatedText: '只有一行的日文 (行數不符)' });
+
+  // 驗證已產生針對單句的 ja 請求
+  const singleJaReq = fallbackRequests.find(r => r.msg.targetLang === 'ja' && r.msg.text === 'Fallback Sentence 1');
+  assert.ok(singleJaReq, '行數不匹配後必須發出降級單句 ja 請求');
+
+  // 此時使用者切換語言：ja -> ko
+  handleStorageChange({ targetLang: { newValue: 'ko' } }, 'sync');
+  assert.strictEqual(session.userTargetLang, 'ko', '目標語言已切換為 ko');
+
+  // 1. 舊 ja 單句成功回應到達 -> 必須被壓制
+  singleJaReq.cb({ translatedText: '過期日文單句譯文' });
+  assert.notStrictEqual(session.sentenceList[0].transText, '過期日文單句譯文', '過期 ja 單句譯文不得寫入');
+
+  // 2. 測試過期錯誤回呼防禦 (Task 6: Stale Failure Guard)
+  // 模擬另一個過期請求返回錯誤 (translatedText 為空)
+  session.consecutiveTranslateErrors = 0;
+  const singleJaReq2 = fallbackRequests.find(r => r.msg.targetLang === 'ja' && r.msg.text === 'Fallback Sentence 2');
+  if (singleJaReq2) {
+    singleJaReq2.cb({ translatedText: '' }); // 失敗回應
+    assert.strictEqual(session.consecutiveTranslateErrors, 0, '過期語言的失敗請求不得遞增 consecutiveTranslateErrors');
+    assert.notStrictEqual(session.sentenceList[1].status, 'error', '過期語言的失敗請求不得將新狀態標記為 error');
+  }
+
+  console.log('  - 降級單句過期回應成功被壓制: ✅ PASS');
+  console.log('  - 過期失敗回應不得污染錯誤計數與句子狀態 (Task 6): ✅ PASS\n');
+
+  // ------------------------------------------------------------------
   // 3.2 Mode 2 串流模式下動態切換目標翻譯語言 (Task 8: Mode 2 Target Language Switch)
   // ------------------------------------------------------------------
   console.log('【3.2 Mode 2 串流模式動態切換目標翻譯語言檢驗 (Task 8)】');

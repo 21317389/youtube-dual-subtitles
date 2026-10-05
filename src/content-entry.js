@@ -117,7 +117,9 @@ const tooltipCtrl = new TooltipController({
   isHoverPauseEnabled: () => session.isHoverPauseEnabled,
   getLanguage: () => session.currentTrack?.languageCode || 'en-US',
   onTranslate: (selectedText, callback) => {
-    scheduler.requestTranslation(selectedText, 'auto', session.userTargetLang, (res) => {
+    const targetLang = session.userTargetLang;
+    scheduler.requestTranslation(selectedText, 'auto', targetLang, (res) => {
+      if (session.userTargetLang !== targetLang) return;
       callback(res?.translatedText || null);
     });
   }
@@ -1071,7 +1073,11 @@ function prioritizeCurrentSentence(currentTime) {
 
   if (target && target.status === 'idle') {
     target.status = 'loading';
-    scheduler.requestTranslation(target.origText, target.sourceLang || 'auto', session.userTargetLang, (res) => {
+    const targetLang = session.userTargetLang;
+    scheduler.requestTranslation(target.origText, target.sourceLang || 'auto', targetLang, (res) => {
+      if (session.userTargetLang !== targetLang) {
+        return;
+      }
       if (res?.translatedText) {
         target.transText = res.translatedText;
         target.status = 'done';
@@ -1104,8 +1110,13 @@ function checkAndTriggerSlidingWindow(currentTime) {
   pendingSentences.forEach(s => s.status = 'loading');
   const combinedText = pendingSentences.map(s => s.origText).join('\n');
   const sourceLang = pendingSentences[0].sourceLang || 'auto';
+  const targetLang = session.userTargetLang;
 
-  scheduler.requestTranslation(combinedText, sourceLang, session.userTargetLang, (res) => {
+  scheduler.requestTranslation(combinedText, sourceLang, targetLang, (res) => {
+    if (session.userTargetLang !== targetLang) {
+      return;
+    }
+
     if (res?.translatedText) {
       session.consecutiveTranslateErrors = 0;
       const lines = res.translatedText.split('\n');
@@ -1118,7 +1129,10 @@ function checkAndTriggerSlidingWindow(currentTime) {
       } else {
         // 行數不匹配時降級獨立聚合重試
         pendingSentences.forEach(s => {
-          scheduler.requestTranslation(s.origText, sourceLang, session.userTargetLang, (singleRes) => {
+          scheduler.requestTranslation(s.origText, sourceLang, targetLang, (singleRes) => {
+            if (session.userTargetLang !== targetLang) {
+              return;
+            }
             s.transText = singleRes?.translatedText || s.origText;
             s.status = 'done';
           });
