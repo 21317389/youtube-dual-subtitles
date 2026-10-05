@@ -368,6 +368,15 @@ async function runExtensionMv3E2ETest() {
     });
     await popupPage.close();
 
+    // 確保影片處於播放狀態且時間軸位於有效對話區間
+    await page.evaluate(() => {
+      const v = document.querySelector('video');
+      if (v) {
+        if (v.paused) v.play().catch(() => {});
+        if (v.currentTime < 2.0 || v.currentTime > 25.0) v.currentTime = 2.5;
+      }
+    });
+
     let reEnabledState = null;
     let reEnabledPoll = 0;
     while (reEnabledPoll < 15) {

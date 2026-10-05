@@ -35,7 +35,8 @@ const {
   session: coreSession,
   jumpToSentence,
   isUserTyping,
-  handleKeyDown
+  handleKeyDown,
+  tooltipCtrl
 } = require('../src/content-entry');
 
 function runCoreModulesTest() {
@@ -374,10 +375,61 @@ function runCoreModulesTest() {
   assert.strictEqual(prevented, false, 'Ctrl+A 系統熱鍵不應被擴充功能誤攔截');
   assert.strictEqual(mockVideoTime, 2.0, 'Ctrl+A 不應觸發跳轉');
 
+  // 9.4 Hotkey Empty-State 防禦與 Warning Toast 檢驗 (Priority 2)
+  coreSession.sentenceList = [];
+  coreSession.isCaptionsEnabled = true;
+  let warningToastMsg = null;
+  const originalShowWarningToast = tooltipCtrl.showWarningToast;
+  tooltipCtrl.showWarningToast = (msg) => { warningToastMsg = msg; };
+
+  prevented = false;
+  handleKeyDown(createMockEvent('a', 'KeyA'));
+  assert.strictEqual(warningToastMsg, '⚠️ 目前字幕尚未載入或為即時語音辨識模式', 'CC開啟但無字幕時按 A 應彈出警告 Toast 且不崩潰');
+
+  warningToastMsg = null;
+  handleKeyDown(createMockEvent('d', 'KeyD'));
+  assert.strictEqual(warningToastMsg, '⚠️ 目前字幕尚未載入或為即時語音辨識模式', 'CC開啟但無字幕時按 D 應彈出警告 Toast 且不崩潰');
+  tooltipCtrl.showWarningToast = originalShowWarningToast;
+
+  // 9.5 KeyR 原音重聽 (Replay Sentence) 檢驗 (Priority 3)
+  let snippetStart = null;
+  let snippetEnd = null;
+  const originalPlaySnippet = tooltipCtrl.playSnippet;
+  tooltipCtrl.playSnippet = (s, e) => { snippetStart = s; snippetEnd = e; };
+
+  // Case A: Mode 1 (currentTime 落在當前 sentence 內)
+  coreSession.sentenceList = mockSentences;
+  mockVideoTime = 2.5; // 落在 mockSentences[0] (1.0 - 4.0)
+  prevented = false;
+  handleKeyDown(createMockEvent('r', 'KeyR'));
+  assert.strictEqual(prevented, true, 'KeyR 應阻止預設行為');
+  assert.strictEqual(snippetStart, 1.0, 'Mode 1 下 KeyR 重聽起點應為當前句子起點 1.0');
+  assert.strictEqual(snippetEnd, 4.0, 'Mode 1 下 KeyR 重聽終點應為當前句子終點 4.0');
+
+  // Case B: Mode 2 fallback (無 sentenceList，但有 prevSlotTimeRange)
+  coreSession.sentenceList = [];
+  coreSession.prevSlotTimeRange = { start: 12.0, end: 15.5 };
+  mockVideoTime = 16.0;
+  handleKeyDown(createMockEvent('r', 'KeyR'));
+  assert.strictEqual(snippetStart, 12.0, 'Mode 2 fallback 下 KeyR 重聽起點應為 prevSlotTimeRange.start');
+  assert.strictEqual(snippetEnd, 15.5, 'Mode 2 fallback 下 KeyR 重聽終點應為 prevSlotTimeRange.end');
+
+  // Case C: Final fallback (無 sentenceList，無 prevSlotTimeRange)
+  coreSession.sentenceList = [];
+  coreSession.prevSlotTimeRange = { start: 0, end: 0 };
+  mockVideoTime = 10.0;
+  handleKeyDown(createMockEvent('r', 'KeyR'));
+  assert.strictEqual(snippetStart, 7.0, '最終 fallback 下 KeyR 起點應為 currentTime - 3s (7.0)');
+  assert.strictEqual(snippetEnd, 10.0, '最終 fallback 下 KeyR 終點應為 currentTime (10.0)');
+
+  tooltipCtrl.playSnippet = originalPlaySnippet;
+
   console.log('  - isUserTyping 輸入框與留言區避讓: ✅ PASS');
   console.log('  - jumpToSentence 雙向跳轉與連續跳轉防卡死: ✅ PASS');
   console.log('  - Windows IME (Process) 輸入法鍵盤相容性: ✅ PASS');
-  console.log('  - Ctrl/Alt/Meta 系統熱鍵組合保護: ✅ PASS\n');
+  console.log('  - Ctrl/Alt/Meta 系統熱鍵組合保護: ✅ PASS');
+  console.log('  - Hotkey Empty-State 不崩潰與警告提示: ✅ PASS');
+  console.log('  - KeyR 單句與跨槽重聽原音 (A/B/C 三路分流): ✅ PASS\n');
 
   return { success: true };
 }

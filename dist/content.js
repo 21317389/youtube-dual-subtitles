@@ -1193,6 +1193,9 @@
             toast.classList.remove("show");
           }, options.durationMs || 5e3);
         }
+        showToast(message, options = {}) {
+          return this.showWarningToast(message, options);
+        }
         showTooltip({ selectedText, rect, playerRect, snippetRange, i18n = {} }) {
           const player = this.getPlayer();
           if (!player) return null;
@@ -1350,7 +1353,7 @@
         MAX_SENTENCE_CHARS,
         MAX_SENTENCE_DURATION,
         BACKGROUND_FETCH_TIMEOUT: 6e3,
-        INNERTUBE_FETCH_TIMEOUT: 4e3,
+        INNERTUBE_FETCH_TIMEOUT: 6e3,
         MAIN_WORLD_FETCH_TIMEOUT: 2e3,
         TRANSCRIPT_FETCH_TIMEOUT: 1200,
         RATE_LIMIT_COOLDOWN_MS: 6e4,
@@ -1460,43 +1463,53 @@
         }
       } catch (e) {
       }
+      function handleStorageChange(changes, namespace) {
+        if (namespace !== "sync") return;
+        if (changes.extensionEnabled !== void 0) {
+          session.isExtensionEnabled = !!changes.extensionEnabled.newValue;
+          if (!session.isExtensionEnabled) {
+            resetSubtitles();
+          } else {
+            renderer.resetSignature();
+            requestCurrentTrackFromMainWorld();
+          }
+        }
+        if (changes.targetLang) {
+          session.userTargetLang = changes.targetLang.newValue;
+          scheduler.clearCache();
+          renderer.resetSignature();
+          if (session.sentenceList && session.sentenceList.length > 0) {
+            for (let i = 0; i < session.sentenceList.length; i++) {
+              session.sentenceList[i].status = "idle";
+              session.sentenceList[i].transText = "";
+            }
+          }
+          session.currSlot.trans = "";
+          session.prevSlot.trans = "";
+          const video = getActiveVideo();
+          if (video) {
+            prioritizeCurrentSentence(video.currentTime);
+            checkAndTriggerSlidingWindow(video.currentTime);
+            renderCurrentSubtitle(video.currentTime);
+          }
+        }
+        if (changes.uiSize) {
+          session.userUiSize = changes.uiSize.newValue;
+          renderer.applySize(session.userUiSize);
+        }
+        if (changes.hoverPause !== void 0) {
+          session.isHoverPauseEnabled = !!changes.hoverPause.newValue;
+        }
+        if (changes.subtitleOffset !== void 0) {
+          session.subtitleOffset = Number(changes.subtitleOffset.newValue) || 0;
+          renderer.resetSignature();
+          const video = getActiveVideo();
+          if (video) renderCurrentSubtitle(video.currentTime);
+        }
+      }
       try {
         if (typeof chrome !== "undefined" && chrome?.storage?.onChanged) {
-          chrome.storage.onChanged.addListener((changes, namespace) => {
-            if (namespace !== "sync") return;
-            if (changes.extensionEnabled !== void 0) {
-              session.isExtensionEnabled = !!changes.extensionEnabled.newValue;
-              if (!session.isExtensionEnabled) {
-                resetSubtitles();
-              } else {
-                renderer.resetSignature();
-                requestCurrentTrackFromMainWorld();
-              }
-            }
-            if (changes.targetLang) {
-              session.userTargetLang = changes.targetLang.newValue;
-              scheduler.clearCache();
-              renderer.resetSignature();
-              const video = getActiveVideo();
-              if (video) {
-                prioritizeCurrentSentence(video.currentTime);
-                checkAndTriggerSlidingWindow(video.currentTime);
-              }
-            }
-            if (changes.uiSize) {
-              session.userUiSize = changes.uiSize.newValue;
-              renderer.applySize(session.userUiSize);
-            }
-            if (changes.hoverPause !== void 0) {
-              session.isHoverPauseEnabled = !!changes.hoverPause.newValue;
-            }
-            if (changes.subtitleOffset !== void 0) {
-              session.subtitleOffset = Number(changes.subtitleOffset.newValue) || 0;
-              renderer.resetSignature();
-              const video = getActiveVideo();
-              if (video) renderCurrentSubtitle(video.currentTime);
-            }
-          });
+          chrome.storage.onChanged.addListener(handleStorageChange);
         }
       } catch (e) {
       }
@@ -1644,7 +1657,8 @@
           session.resetVideoNavigation(vid);
         }
         const currentTrackKey = `${track.vssId || track.languageCode}_${vid || currentVid}`;
-        if (session.fetch.inFlightKey === currentTrackKey && session.sentenceList.length > 0) return;
+        if (session.fetch.inFlightKey === currentTrackKey) return;
+        if (session.currentTrack && session.currentTrack.languageCode === track.languageCode && session.sentenceList.length > 0) return;
         session.currentTrack = track;
         session.fetch.inFlightKey = currentTrackKey;
         session.sentenceList = [];
@@ -1701,6 +1715,7 @@
         } catch (err) {
           console.warn("[YT-Dual-Sub] \u6B21\u7D1A\u5099\u63F4 get_transcript \u5931\u6557:", err);
         }
+        session.fetch.inFlightKey = "";
         console.log("[YT-Dual-Sub] \u975C\u614B\u5B57\u5E55\u4E0D\u53EF\u7528\uFF0C\u555F\u52D5 Mode 2 (Gemini / DOM \u4E32\u6D41\u76E3\u807D)");
         trackEvent("fallback_mode2_active", { language_code: track.languageCode || "unknown" });
         observeNativePlayerCaptions();
@@ -2256,7 +2271,7 @@
         } else if (isKeyA || isKeyD) {
           if (session.sentenceList.length === 0) {
             if (session.isCaptionsEnabled) {
-              tooltipCtrl.showToast("\u26A0\uFE0F \u76EE\u524D\u5B57\u5E55\u5C1A\u672A\u8F09\u5165\u6216\u70BA\u5373\u6642\u8A9E\u97F3\u8FA8\u8B58\u6A21\u5F0F");
+              tooltipCtrl.showWarningToast("\u26A0\uFE0F \u76EE\u524D\u5B57\u5E55\u5C1A\u672A\u8F09\u5165\u6216\u70BA\u5373\u6642\u8A9E\u97F3\u8FA8\u8B58\u6A21\u5F0F");
             }
             return;
           }
@@ -2320,14 +2335,15 @@
           renderCurrentSubtitle(video.currentTime);
         }
       }
+      function handleDocumentMouseDown(e) {
+        const tooltip = document.getElementById(tooltipCtrl.tooltipId);
+        const container = document.getElementById(renderer.containerId);
+        if (tooltip && !tooltip.contains(e.target) && !container?.contains(e.target)) {
+          tooltipCtrl.hideTooltip();
+        }
+      }
       if (typeof document !== "undefined") {
-        document.addEventListener("mousedown", (e) => {
-          const tooltip = document.getElementById(tooltipCtrl.tooltipId);
-          const container = document.getElementById(renderer.containerId);
-          if (tooltip && !tooltip.contains(e.target) && !container?.contains(e.target)) {
-            tooltipCtrl.hideTooltip();
-          }
-        });
+        document.addEventListener("mousedown", handleDocumentMouseDown);
       }
       function observeNativePlayerCaptions() {
         if (typeof MutationObserver === "undefined") return;
@@ -2488,6 +2504,10 @@
           handleKeyDown,
           tooltipCtrl,
           handleSubtitleMouseUp,
+          handleDocumentMouseDown,
+          handleStorageChange,
+          onTimeUpdate,
+          loadCaptionTrack,
           isShortsPage,
           getCurrentVideoId,
           getActivePlayer,

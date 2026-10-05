@@ -18,6 +18,9 @@ const { runCcAndPluginToggleTest } = require('./test_cc_and_plugin_toggle');
 const { runCoreModulesTest } = require('./test_core_modules');
 const { runUIModuleTests } = require('./test_ui_modules');
 const { runUserInteractionSuite } = require('./test_user_interaction_suite');
+const { runPopupSettingsIntegrationTest } = require('./test_popup_settings_integration');
+const { runCaptionFallbackMatrixTest } = require('./test_caption_fallback_matrix');
+const { runBackgroundReliabilityTest } = require('./test_background_reliability');
 const { execSync } = require('child_process');
 
 async function main() {
@@ -118,6 +121,33 @@ async function main() {
   }
   console.log('\n--------------------------------------------------------\n');
 
+  let resPopupSuccess = false;
+  try {
+    const popupRes = runPopupSettingsIntegrationTest();
+    resPopupSuccess = popupRes.success;
+  } catch (e) {
+    resPopupSuccess = false;
+  }
+  console.log('\n--------------------------------------------------------\n');
+
+  let resFallbackSuccess = false;
+  try {
+    const fallbackRes = await runCaptionFallbackMatrixTest();
+    resFallbackSuccess = fallbackRes.success;
+  } catch (e) {
+    resFallbackSuccess = false;
+  }
+  console.log('\n--------------------------------------------------------\n');
+
+  let resBgSuccess = false;
+  try {
+    const bgRes = await runBackgroundReliabilityTest();
+    resBgSuccess = bgRes.success;
+  } catch (e) {
+    resBgSuccess = false;
+  }
+  console.log('\n--------------------------------------------------------\n');
+
   console.log('\n========================================================');
   console.log('  FINAL VERIFICATION DASHBOARD');
   console.log('========================================================');
@@ -136,9 +166,12 @@ async function main() {
   console.log(` 13. Phase 2 核心架構解耦模組:  ${resCoreSuccess ? '✅ PASS' : '❌ FAIL'}`);
   console.log(` 14. Phase 2 UI 介面解耦模組:   ${resUISuccess ? '✅ PASS' : '❌ FAIL'}`);
   console.log(` 15. 使用者互動與邊界功能套件:  ${resInteractionSuccess ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(` 16. Popup 設定面板整合測試:   ${resPopupSuccess ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(` 17. 字幕通道階梯降級矩陣:     ${resFallbackSuccess ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(` 18. 背景翻譯容錯與可靠性:     ${resBgSuccess ? '✅ PASS' : '❌ FAIL'}`);
   console.log('========================================================\n');
 
-  const isAllPassed = res1.success && res2.success && res3.success && resE2E.success && resEdge.success && resMerge.success && resMode2Success && resMatrixSuccess && resFastSuccess && resHandshakeSuccess && resInnerTubeSuccess && resToggleSuccess && resCoreSuccess && resUISuccess && resInteractionSuccess;
+  const isAllPassed = res1.success && res2.success && res3.success && resE2E.success && resEdge.success && resMerge.success && resMode2Success && resMatrixSuccess && resFastSuccess && resHandshakeSuccess && resInnerTubeSuccess && resToggleSuccess && resCoreSuccess && resUISuccess && resInteractionSuccess && resPopupSuccess && resFallbackSuccess && resBgSuccess;
   process.exit(isAllPassed ? 0 : 1);
 }
 

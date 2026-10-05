@@ -60,20 +60,24 @@ const translationCache = new Map();
 let saveDebounceTimer = null;
 
 // 2. 初始化持久化快取 (防 Service Worker 休眠)
-chrome.storage.local.get('translationCache', (result) => {
-  if (Array.isArray(result?.translationCache)) {
-    result.translationCache.forEach(([key, val]) => {
-      translationCache.set(key, val);
-    });
-  }
-});
+if (typeof chrome !== 'undefined' && chrome?.storage?.local?.get) {
+  chrome.storage.local.get('translationCache', (result) => {
+    if (Array.isArray(result?.translationCache)) {
+      result.translationCache.forEach(([key, val]) => {
+        translationCache.set(key, val);
+      });
+    }
+  });
+}
 
 function persistCache() {
   clearTimeout(saveDebounceTimer);
   saveDebounceTimer = setTimeout(() => {
-    chrome.storage.local.set({
-      translationCache: Array.from(translationCache.entries())
-    });
+    if (typeof chrome !== 'undefined' && chrome?.storage?.local?.set) {
+      chrome.storage.local.set({
+        translationCache: Array.from(translationCache.entries())
+      });
+    }
   }, CONFIG.SAVE_DEBOUNCE_MS);
 }
 
@@ -130,7 +134,7 @@ async function requestTranslationWithFallback(text, sourceLang, targetLang) {
 }
 
 // 4. 監聽 Content Script 請求
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+function handleRuntimeMessage(request, sender, sendResponse) {
   if (request.action === 'fetchCaption') {
     const { url } = request;
     if (!url) {
@@ -200,7 +204,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
 
   return true;
-});
+}
+
+if (typeof chrome !== 'undefined' && chrome?.runtime?.onMessage?.addListener) {
+  chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+}
 
 // ==========================================
 // 4. GA4 輕量開源遙測引擎与卸載原因問卷 (不含私密金鑰，100% 開源安全)
@@ -349,20 +357,34 @@ async function syncWhatsNewBadge() {
 }
 
 // 啟動時立即綁定卸載問卷網址與更新紅點狀態 (確保既有更新用戶與新安裝用戶皆生效)
-configureUninstallSurveyUrl();
-syncWhatsNewBadge();
-
-// 監聽初次安裝 / 更新事件
-chrome.runtime?.onInstalled?.addListener((details) => {
+if (typeof chrome !== 'undefined') {
   configureUninstallSurveyUrl();
   syncWhatsNewBadge();
-  const currentVersion = chrome.runtime?.getManifest?.()?.version || 'unknown';
-  if (details.reason === 'install') {
-    sendGA4Event('extension_installed', { version: currentVersion });
-  } else if (details.reason === 'update') {
-    sendGA4Event('extension_updated', { version: currentVersion });
-  }
-});
+
+  // 監聽初次安裝 / 更新事件
+  chrome.runtime?.onInstalled?.addListener((details) => {
+    configureUninstallSurveyUrl();
+    syncWhatsNewBadge();
+    const currentVersion = chrome.runtime?.getManifest?.()?.version || 'unknown';
+    if (details.reason === 'install') {
+      sendGA4Event('extension_installed', { version: currentVersion });
+    } else if (details.reason === 'update') {
+      sendGA4Event('extension_updated', { version: currentVersion });
+    }
+  });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    CONFIG,
+    ENDPOINTS,
+    translationCache,
+    setCache,
+    persistCache,
+    requestTranslationWithFallback,
+    handleRuntimeMessage
+  };
+}
 
 
 

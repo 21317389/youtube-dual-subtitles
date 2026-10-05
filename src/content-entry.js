@@ -56,7 +56,7 @@ const CONFIG = {
   MAX_SENTENCE_CHARS: MAX_SENTENCE_CHARS,
   MAX_SENTENCE_DURATION: MAX_SENTENCE_DURATION,
   BACKGROUND_FETCH_TIMEOUT: 6000,
-  INNERTUBE_FETCH_TIMEOUT: 4000,
+  INNERTUBE_FETCH_TIMEOUT: 6000,
   MAIN_WORLD_FETCH_TIMEOUT: 2000,
   TRANSCRIPT_FETCH_TIMEOUT: 1200,
   RATE_LIMIT_COOLDOWN_MS: 60000,
@@ -208,48 +208,59 @@ try {
   }
 } catch (e) {}
 
+function handleStorageChange(changes, namespace) {
+  if (namespace !== 'sync') return;
+
+  if (changes.extensionEnabled !== undefined) {
+    session.isExtensionEnabled = !!changes.extensionEnabled.newValue;
+    if (!session.isExtensionEnabled) {
+      resetSubtitles();
+    } else {
+      renderer.resetSignature();
+      requestCurrentTrackFromMainWorld();
+    }
+  }
+
+  if (changes.targetLang) {
+    session.userTargetLang = changes.targetLang.newValue;
+    scheduler.clearCache();
+    renderer.resetSignature();
+    if (session.sentenceList && session.sentenceList.length > 0) {
+      for (let i = 0; i < session.sentenceList.length; i++) {
+        session.sentenceList[i].status = 'idle';
+        session.sentenceList[i].transText = '';
+      }
+    }
+    session.currSlot.trans = '';
+    session.prevSlot.trans = '';
+    const video = getActiveVideo();
+    if (video) {
+      prioritizeCurrentSentence(video.currentTime);
+      checkAndTriggerSlidingWindow(video.currentTime);
+      renderCurrentSubtitle(video.currentTime);
+    }
+  }
+
+  if (changes.uiSize) {
+    session.userUiSize = changes.uiSize.newValue;
+    renderer.applySize(session.userUiSize);
+  }
+
+  if (changes.hoverPause !== undefined) {
+    session.isHoverPauseEnabled = !!changes.hoverPause.newValue;
+  }
+
+  if (changes.subtitleOffset !== undefined) {
+    session.subtitleOffset = Number(changes.subtitleOffset.newValue) || 0;
+    renderer.resetSignature();
+    const video = getActiveVideo();
+    if (video) renderCurrentSubtitle(video.currentTime);
+  }
+}
+
 try {
   if (typeof chrome !== 'undefined' && chrome?.storage?.onChanged) {
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace !== 'sync') return;
-
-      if (changes.extensionEnabled !== undefined) {
-        session.isExtensionEnabled = !!changes.extensionEnabled.newValue;
-        if (!session.isExtensionEnabled) {
-          resetSubtitles();
-        } else {
-          renderer.resetSignature();
-          requestCurrentTrackFromMainWorld();
-        }
-      }
-
-      if (changes.targetLang) {
-        session.userTargetLang = changes.targetLang.newValue;
-        scheduler.clearCache();
-        renderer.resetSignature();
-        const video = getActiveVideo();
-        if (video) {
-          prioritizeCurrentSentence(video.currentTime);
-          checkAndTriggerSlidingWindow(video.currentTime);
-        }
-      }
-
-      if (changes.uiSize) {
-        session.userUiSize = changes.uiSize.newValue;
-        renderer.applySize(session.userUiSize);
-      }
-
-      if (changes.hoverPause !== undefined) {
-        session.isHoverPauseEnabled = !!changes.hoverPause.newValue;
-      }
-
-      if (changes.subtitleOffset !== undefined) {
-        session.subtitleOffset = Number(changes.subtitleOffset.newValue) || 0;
-        renderer.resetSignature();
-        const video = getActiveVideo();
-        if (video) renderCurrentSubtitle(video.currentTime);
-      }
-    });
+    chrome.storage.onChanged.addListener(handleStorageChange);
   }
 } catch (e) {}
 
@@ -434,7 +445,8 @@ async function loadCaptionTrack(track) {
   }
 
   const currentTrackKey = `${track.vssId || track.languageCode}_${vid || currentVid}`;
-  if (session.fetch.inFlightKey === currentTrackKey && session.sentenceList.length > 0) return;
+  if (session.fetch.inFlightKey === currentTrackKey) return;
+  if (session.currentTrack && session.currentTrack.languageCode === track.languageCode && session.sentenceList.length > 0) return;
 
   session.currentTrack = track;
   session.fetch.inFlightKey = currentTrackKey;
@@ -503,6 +515,7 @@ async function loadCaptionTrack(track) {
     console.warn('[YT-Dual-Sub] 次級備援 get_transcript 失敗:', err);
   }
 
+  session.fetch.inFlightKey = '';
   console.log('[YT-Dual-Sub] 靜態字幕不可用，啟動 Mode 2 (Gemini / DOM 串流監聽)');
   trackEvent('fallback_mode2_active', { language_code: track.languageCode || 'unknown' });
   observeNativePlayerCaptions();
@@ -1170,7 +1183,7 @@ function handleKeyDown(e) {
   } else if (isKeyA || isKeyD) {
     if (session.sentenceList.length === 0) {
       if (session.isCaptionsEnabled) {
-        tooltipCtrl.showToast('⚠️ 目前字幕尚未載入或為即時語音辨識模式');
+        tooltipCtrl.showWarningToast('⚠️ 目前字幕尚未載入或為即時語音辨識模式');
       }
       return;
     }
@@ -1249,14 +1262,16 @@ function jumpToSentence(direction) {
 }
 
 // 點擊空白處關閉選詞彈窗
+function handleDocumentMouseDown(e) {
+  const tooltip = document.getElementById(tooltipCtrl.tooltipId);
+  const container = document.getElementById(renderer.containerId);
+  if (tooltip && !tooltip.contains(e.target) && !container?.contains(e.target)) {
+    tooltipCtrl.hideTooltip();
+  }
+}
+
 if (typeof document !== 'undefined') {
-  document.addEventListener('mousedown', (e) => {
-    const tooltip = document.getElementById(tooltipCtrl.tooltipId);
-    const container = document.getElementById(renderer.containerId);
-    if (tooltip && !tooltip.contains(e.target) && !container?.contains(e.target)) {
-      tooltipCtrl.hideTooltip();
-    }
-  });
+  document.addEventListener('mousedown', handleDocumentMouseDown);
 }
 
 // ==========================================
@@ -1443,6 +1458,10 @@ if (typeof module !== 'undefined' && module.exports) {
     handleKeyDown,
     tooltipCtrl,
     handleSubtitleMouseUp,
+    handleDocumentMouseDown,
+    handleStorageChange,
+    onTimeUpdate,
+    loadCaptionTrack,
     isShortsPage,
     getCurrentVideoId,
     getActivePlayer,
