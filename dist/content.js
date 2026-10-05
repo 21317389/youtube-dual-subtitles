@@ -1628,8 +1628,7 @@
         }
         onTimeUpdate();
       }
-      function resetSubtitles() {
-        session.resetSubtitles();
+      function cleanupRuntimeUI() {
         streamingExtractor.reset();
         stopNativeCaptionObserver();
         stopSyncLoop();
@@ -1637,6 +1636,10 @@
         const container = document.getElementById(renderer.containerId);
         renderer.hide(container, player);
         tooltipCtrl.hideTooltip();
+      }
+      function resetSubtitles() {
+        session.resetSubtitles();
+        cleanupRuntimeUI();
       }
       function startSyncLoop() {
         if (animationFrameId) return;
@@ -1721,21 +1724,22 @@
           return;
         }
         ensureUIElements();
-        const currentTrackKey = `${track.vssId || track.languageCode}_${track.videoId || currentVid}`;
+        const vid = track.videoId || currentVid;
+        if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+          session.resetVideoNavigation(vid);
+        }
+        const currentTrackKey = `${track.vssId || track.languageCode}_${vid || currentVid}`;
         if (session.fetch.inFlightKey === currentTrackKey && session.sentenceList.length > 0) return;
         session.currentTrack = track;
         session.fetch.inFlightKey = currentTrackKey;
         session.sentenceList = [];
         renderer.resetSignature();
-        const sessionId = session.nextFetchSessionId();
-        const vid = track.videoId || getCurrentVideoId();
-        if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
-          session.resetVideoNavigation(vid);
-        }
         const player = getActivePlayer();
         const container = document.getElementById(renderer.containerId);
         renderer.hide(container, player);
+        const sessionId = session.nextFetchSessionId();
         console.log("[YT-Dual-Sub] \u6536\u5230\u8ECC\u9053\u8B8A\u66F4:", track.languageCode, "vid:", vid);
+        console.log("[YT-Dual-Sub] Caption session started:", vid, "sessionId:", sessionId);
         observeNativePlayerCaptions();
         try {
           const mainWorldText = await fetchCaptionViaMainWorldInnerTube(vid, track.languageCode);
@@ -1918,7 +1922,7 @@
       function handleVideoChange(vid) {
         if (!vid || vid === session.lastObservedVideoId) return;
         console.log("[YT-Dual-Sub] \u6AA2\u6E2C\u5230\u5F71\u7247\u8DE8\u7247\u5207\u63DB:", session.lastObservedVideoId, "->", vid);
-        resetSubtitles();
+        cleanupRuntimeUI();
         session.resetVideoNavigation(vid);
         const detectEventName = isShortsPage() ? "youtube_shorts_detected" : "youtube_video_detected";
         trackEvent(detectEventName);

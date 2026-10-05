@@ -322,8 +322,7 @@ function handleUserSeek() {
   onTimeUpdate();
 }
 
-function resetSubtitles() {
-  session.resetSubtitles();
+function cleanupRuntimeUI() {
   streamingExtractor.reset();
   stopNativeCaptionObserver();
   stopSyncLoop();
@@ -332,6 +331,11 @@ function resetSubtitles() {
   const container = document.getElementById(renderer.containerId);
   renderer.hide(container, player);
   tooltipCtrl.hideTooltip();
+}
+
+function resetSubtitles() {
+  session.resetSubtitles();
+  cleanupRuntimeUI();
 }
 
 // 60fps 動畫幀同步
@@ -434,7 +438,12 @@ async function loadCaptionTrack(track) {
   }
   ensureUIElements();
 
-  const currentTrackKey = `${track.vssId || track.languageCode}_${track.videoId || currentVid}`;
+  const vid = track.videoId || currentVid;
+  if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
+    session.resetVideoNavigation(vid);
+  }
+
+  const currentTrackKey = `${track.vssId || track.languageCode}_${vid || currentVid}`;
   if (session.fetch.inFlightKey === currentTrackKey && session.sentenceList.length > 0) return;
 
   session.currentTrack = track;
@@ -442,15 +451,13 @@ async function loadCaptionTrack(track) {
   session.sentenceList = [];
   renderer.resetSignature();
 
-  const sessionId = session.nextFetchSessionId();
-  const vid = track.videoId || getCurrentVideoId();
-  if (vid && session.lastObservedVideoId && vid !== session.lastObservedVideoId) {
-    session.resetVideoNavigation(vid);
-  }
   const player = getActivePlayer();
   const container = document.getElementById(renderer.containerId);
   renderer.hide(container, player);
+
+  const sessionId = session.nextFetchSessionId();
   console.log('[YT-Dual-Sub] 收到軌道變更:', track.languageCode, 'vid:', vid);
+  console.log('[YT-Dual-Sub] Caption session started:', vid, 'sessionId:', sessionId);
 
   // 核心防禦：立即啟動 Mode 2 作為實時緩衝橋樑 (0 毫秒延遲)
   observeNativePlayerCaptions();
@@ -660,7 +667,7 @@ async function fetchCaptionTextWithFallback(track) {
 function handleVideoChange(vid) {
   if (!vid || vid === session.lastObservedVideoId) return;
   console.log('[YT-Dual-Sub] 檢測到影片跨片切換:', session.lastObservedVideoId, '->', vid);
-  resetSubtitles();
+  cleanupRuntimeUI();
   session.resetVideoNavigation(vid);
   const detectEventName = isShortsPage() ? 'youtube_shorts_detected' : 'youtube_video_detected';
   trackEvent(detectEventName);

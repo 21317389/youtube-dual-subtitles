@@ -431,7 +431,8 @@ async function runExtensionMv3E2ETest() {
     });
     console.log(`  -> Video A 基準紀錄: ID = "${videoAData.vid}", 當前字幕 = "${videoAData.subtitleText.slice(0, 35)}..."`);
 
-    // 2. 尋找 YouTube 側欄真實推薦影片或播放器下一部按鈕進行真實 DOM Click
+    // 2. 紀錄導航前日誌切點與尋找 YouTube 側欄真實推薦影片或播放器下一部按鈕進行真實 DOM Click
+    const logStartIndex = capturedLogs.length;
     let clickedNav = false;
     let expectedNewVid = '';
 
@@ -557,16 +558,38 @@ async function runExtensionMv3E2ETest() {
       throw new Error(`Case 6 失敗: SPA 換片後舊片 A 字幕仍發生殘留污染！("${staleCheck.text}")`);
     }
 
-    // 6. Task 7 核心驗收：驗證新影片狀態獨立建立 (New Session Actually Works)
+    // 6. 核心驗收：拆分驗證 Navigation Detection 與 New Session Established (僅檢視 postNavigationLogs)
     await new Promise(r => setTimeout(r, 2000));
-    const newSessionWorks = capturedLogs.some(l =>
-      (l.includes(newVid) && (l.includes('收到') || l.includes('軌道') || l.includes('InnerTube'))) ||
-      l.includes(`檢測到影片跨片切換: ${videoAData.vid} -> ${newVid}`)
-    );
-    console.log(`  - 新影片獨立會話建立 (New Session Handshake/Track): ${newSessionWorks ? '✅ PASS' : '❌ FAIL'}`);
-    if (!newSessionWorks) {
-      throw new Error(`Case 6 失敗: SPA 換片後未偵測到新影片 ${newVid} 的獨立會話或軌道請求！`);
+    const postNavigationLogs = capturedLogs.slice(logStartIndex);
+
+    // Assertion A: Navigation Detection
+    const navigationDetected = (newVid && newVid !== videoAData.vid && playerVid === newVid) &&
+      postNavigationLogs.some(l =>
+        l.includes(`檢測到影片跨片切換: ${videoAData.vid} -> ${newVid}`) ||
+        l.includes('YT_NAVIGATE_START') ||
+        l.includes('收到 content.js 軌道索取請求') ||
+        l.includes(newVid)
+      );
+    console.log(`  - 跨片切換偵測 (Navigation Detected): ${navigationDetected ? '✅ PASS' : '❌ FAIL'}`);
+    if (!navigationDetected) {
+      throw new Error(`Case 6 失敗: 未偵測到跨片切換事件 (${videoAData.vid} -> ${newVid})！`);
     }
+
+    // Assertion B: New Session Established (獨立於 Navigation Detection，必須有 newVid 專屬軌道/字幕 session 證據)
+    const newSessionEstablished = postNavigationLogs.some(l =>
+      l.includes(newVid) && (
+        l.includes('Caption session started') ||
+        l.includes('收到軌道變更') ||
+        l.includes('收到') ||
+        l.includes('軌道') ||
+        l.includes('InnerTube')
+      )
+    );
+    console.log(`  - 新影片獨立會話建立 (New Session Established): ${newSessionEstablished ? '✅ PASS' : '❌ FAIL'}`);
+    if (!newSessionEstablished) {
+      throw new Error(`Case 6 失敗: SPA 換片後未於 postNavigationLogs 中偵測到新影片 ${newVid} 的獨立會話或軌道請求！`);
+    }
+
     console.log('✅ Case 6 PASS: 真實 YouTube DOM Click 觸發 SPA 換片，舊會話作廢，新影片狀態獨立運作！');
 
     // ==========================================

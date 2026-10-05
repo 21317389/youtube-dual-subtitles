@@ -203,6 +203,38 @@ function runCoreModulesTest() {
   assert.strictEqual(session.telemetry.hasTrackedSubtitleSuccess, false, '換片必須重置遙測標記');
   console.log('  - resetVideoNavigation 換片重置全狀態: ✅ PASS\n');
 
+  // 7. Session Ordering & Lifecycle Transition Invariant Contract (Task 1 & 6)
+  console.log('【7. Session Ordering 會話順序性與狀態移轉防護檢驗】');
+  const sessionOrder = new SessionState({ videoId: 'VideoA' });
+  const oldTrackA = { languageCode: 'en', vssId: '.en', videoId: 'VideoA' };
+  sessionOrder.currentTrack = oldTrackA;
+  sessionOrder.inFlightKey = '.en_VideoA';
+  const oldSessionA = sessionOrder.nextFetchSessionId();
+
+  // 模擬 Video B 新軌道到達 loadCaptionTrack
+  const newTrackB = { languageCode: 'es', vssId: '.es', videoId: 'VideoB' };
+  const vidB = newTrackB.videoId;
+
+  // 1. 偵測到新影片時，navigation reset 必須發生在建立 sessionId 之前
+  if (vidB && sessionOrder.lastObservedVideoId && vidB !== sessionOrder.lastObservedVideoId) {
+    sessionOrder.resetVideoNavigation(vidB);
+  }
+  // 2. 狀態與 inFlightKey 必須在 navigation reset 之後設定
+  const trackKeyB = `${newTrackB.vssId}_${vidB}`;
+  sessionOrder.currentTrack = newTrackB;
+  sessionOrder.inFlightKey = trackKeyB;
+  sessionOrder.sentenceList = [];
+  // 3. 建立全新 fetch session ID
+  const newSessionB = sessionOrder.nextFetchSessionId();
+
+  // 斷言驗證 invariants:
+  assert.strictEqual(sessionOrder.lastObservedVideoId, 'VideoB', '影片 ID 必須更新為 Video B');
+  assert.strictEqual(sessionOrder.currentTrack, newTrackB, 'currentTrack 必須為新軌道，絕不能被 reset 覆蓋為 null');
+  assert.strictEqual(sessionOrder.inFlightKey, '.es_VideoB', 'inFlightKey 必須保留新軌道標記');
+  assert.strictEqual(sessionOrder.isSessionActive(oldSessionA), false, '舊影片會話必須作廢');
+  assert.strictEqual(sessionOrder.isSessionActive(newSessionB), true, '新影片會話在非同步回傳前必須保持活躍 (isSessionActive === true)');
+  console.log('  - navigation reset -> new session -> isSessionActive 狀態序約: ✅ PASS\n');
+
   return { success: true };
 }
 
