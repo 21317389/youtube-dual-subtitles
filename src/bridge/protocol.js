@@ -19,7 +19,6 @@ const WindowMessageType = Object.freeze({
 
 const RuntimeAction = Object.freeze({
   TRANSLATE: 'translate',
-  TRANSLATE_BATCH: 'translateBatch',
   FETCH_CAPTION: 'fetchCaption',
   TELEMETRY_EVENT: 'telemetry_event'
 });

@@ -24,7 +24,6 @@
       });
       var RuntimeAction = Object.freeze({
         TRANSLATE: "translate",
-        TRANSLATE_BATCH: "translateBatch",
         FETCH_CAPTION: "fetchCaption",
         TELEMETRY_EVENT: "telemetry_event"
       });
@@ -66,8 +65,7 @@
           this.mode1 = {
             sentenceList: [],
             lastWindowCheckTime: -999,
-            consecutiveTranslateErrors: 0,
-            lastRenderedSignature: ""
+            consecutiveTranslateErrors: 0
           };
           this.mode2 = {
             speechTokenQueue: [],
@@ -79,25 +77,9 @@
             prevSlotTimeRange: { start: 0, end: 0 },
             currentSentenceStartTime: 0,
             lastFinishedSentence: "",
-            lastFinishedTrans: "",
-            lastRequestedLiveText: "",
-            currentLiveTransId: 0,
-            lastRenderedRollingSig: ""
-          };
-          this.ui = {
-            animationFrameId: null,
-            wasPlayingBeforeHover: false,
-            isHoveringSubtitleOrTooltip: false,
-            hoverResumeTimer: null,
-            snippetPauseTimer: null,
-            toastCooldownTimer: null,
-            lastToastTime: 0
+            lastFinishedTrans: ""
           };
           this.telemetry = {
-            hasTrackedVideoView: false,
-            hasTrackedSubtitleSuccess: false,
-            hasTrackedRateLimit429: false,
-            hasTrackedMode2Fallback: false,
             hasTrackedTranslateError: false
           };
         }
@@ -179,12 +161,6 @@
         set lastWindowCheckTime(v) {
           this.mode1.lastWindowCheckTime = v;
         }
-        get lastRenderedSignature() {
-          return this.mode1.lastRenderedSignature;
-        }
-        set lastRenderedSignature(v) {
-          this.mode1.lastRenderedSignature = v;
-        }
         get consecutiveTranslateErrors() {
           return this.mode1.consecutiveTranslateErrors;
         }
@@ -251,24 +227,6 @@
         set lastFinishedTrans(v) {
           this.mode2.lastFinishedTrans = v;
         }
-        get lastRequestedLiveText() {
-          return this.mode2.lastRequestedLiveText;
-        }
-        set lastRequestedLiveText(v) {
-          this.mode2.lastRequestedLiveText = v;
-        }
-        get currentLiveTransId() {
-          return this.mode2.currentLiveTransId;
-        }
-        set currentLiveTransId(v) {
-          this.mode2.currentLiveTransId = v;
-        }
-        get lastRenderedRollingSig() {
-          return this.mode2.lastRenderedRollingSig;
-        }
-        set lastRenderedRollingSig(v) {
-          this.mode2.lastRenderedRollingSig = v;
-        }
         // ==========================================
         // 生命週期狀態機方法 (Lifecycle State Transitions)
         // ==========================================
@@ -297,17 +255,14 @@
           this.fetch.inFlightKey = "";
           this.mode1.sentenceList = [];
           this.mode1.lastWindowCheckTime = -999;
-          this.mode1.lastRenderedSignature = "";
           this.mode1.consecutiveTranslateErrors = 0;
           this.resetStreaming();
-          this.clearSnippetTimer();
         }
         /**
          * Mode 2 即時串流狀態重置
          * 清空暫存隊列與雙槽雙語內容
          */
         resetStreaming() {
-          this.mode2.lastRenderedRollingSig = "";
           this.mode2.speechTokenQueue = [];
           this.mode2.prevSlot = { orig: "", trans: "" };
           this.mode2.currSlot = { orig: "", trans: "" };
@@ -318,7 +273,6 @@
           this.mode2.currentSentenceStartTime = 0;
           this.mode2.lastFinishedSentence = "";
           this.mode2.lastFinishedTrans = "";
-          this.mode2.lastRequestedLiveText = "";
         }
         /**
          * 進度條跳轉 (Seek) 重置保護
@@ -326,7 +280,6 @@
          * @param {number} currentTime - 跳轉落點當前秒數
          */
         resetSeek(currentTime = 0) {
-          this.clearSnippetTimer();
           this.mode2.speechTokenQueue = [];
           this.mode2.lastLockedCompletedSentence = "";
           this.mode2.lastRawObservedWindowText = "";
@@ -341,39 +294,12 @@
           this.resetSubtitles();
           this.track.lastObservedVideoId = newVideoId || "";
           this.track.currentTrack = null;
-          this.telemetry.hasTrackedVideoView = false;
         }
         /**
          * 重置單片遙測旗標 (每部影片僅追蹤一次)
          */
         resetTelemetry() {
-          this.telemetry.hasTrackedSubtitleSuccess = false;
-          this.telemetry.hasTrackedRateLimit429 = false;
-          this.telemetry.hasTrackedMode2Fallback = false;
           this.telemetry.hasTrackedTranslateError = false;
-        }
-        /**
-         * 清理音訊片段定時器
-         */
-        clearSnippetTimer() {
-          if (this.ui.snippetPauseTimer) {
-            clearInterval(this.ui.snippetPauseTimer);
-            this.ui.snippetPauseTimer = null;
-          }
-        }
-        /**
-         * 清理全部 UI 定時器
-         */
-        clearAllTimers() {
-          this.clearSnippetTimer();
-          if (this.ui.hoverResumeTimer) {
-            clearTimeout(this.ui.hoverResumeTimer);
-            this.ui.hoverResumeTimer = null;
-          }
-          if (this.ui.toastCooldownTimer) {
-            clearTimeout(this.ui.toastCooldownTimer);
-            this.ui.toastCooldownTimer = null;
-          }
         }
       };
       if (typeof module !== "undefined" && module.exports) {
@@ -388,8 +314,6 @@
   var require_sentence_policy = __commonJS({
     "src/core/sentence-policy.js"(exports, module) {
       var SENTENCE_END_REGEX = /(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*$/;
-      var INTRA_SPLIT_REGEX = /(?<=(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*)\s+/;
-      var METADATA_HEADER_REGEX = /(?:Transcriber|Reviewer|Subtitles by):/i;
       var COMMON_CONJUNCTIONS = [
         "and",
         "but",
@@ -463,8 +387,6 @@
       if (typeof module !== "undefined" && module.exports) {
         module.exports = {
           SENTENCE_END_REGEX,
-          INTRA_SPLIT_REGEX,
-          METADATA_HEADER_REGEX,
           COMMON_CONJUNCTIONS,
           SENTENCE_LIMITS,
           FALLBACK_LONG_PAUSE_SECONDS,
@@ -1391,9 +1313,7 @@
       var { SessionState } = require_session_state();
       var {
         cleanSubtitleNoise,
-        isSentenceEnd,
         isConjunction,
-        isTailOfImmediatePrev,
         shouldMergeShortSentence,
         SENTENCE_END_REGEX,
         FALLBACK_LONG_PAUSE_SECONDS,
@@ -1402,28 +1322,15 @@
       } = require_sentence_policy();
       var { StreamingSentenceExtractor } = require_streaming_sentence_extractor();
       var {
-        parseUniversalCaptionText,
-        parseXmlCaptions,
-        parseVttCaptions,
-        decodeHtmlEntities
+        parseUniversalCaptionText
       } = require_caption_parser();
       var { TranslationScheduler } = require_translation_scheduler();
       var {
         SubtitleRenderer,
-        applySubtitleSize,
-        ensureSubtitleContainer,
-        renderDualSlotSubtitle,
-        hideSubtitle,
         DEFAULT_SIZE_MAP
       } = require_subtitle_renderer();
       var {
-        TooltipController,
-        calculateTooltipPosition,
-        ensureTooltipElement,
-        ensureToastElement,
-        playVideoSnippet,
-        speakSelectedWord,
-        HoverPauseManager
+        TooltipController
       } = require_tooltip_controller();
       var CONFIG = {
         PRELOAD_SECONDS: 45,
@@ -1629,6 +1536,8 @@
         onTimeUpdate();
       }
       function cleanupRuntimeUI() {
+        scheduler.cancelActiveLiveRequests();
+        tooltipCtrl.unbindHover();
         streamingExtractor.reset();
         stopNativeCaptionObserver();
         stopSyncLoop();
@@ -1662,7 +1571,7 @@
       }
       if (typeof window !== "undefined") {
         window.addEventListener("message", (event) => {
-          if (event.source !== window || !event.data || !event.data.type) return;
+          if (event.source !== window || !isValidWindowMessage(event.data)) return;
           if (event.data.type === WindowMessageType.NAVIGATE_START) {
             const newVid = event.data.videoId || getCurrentVideoId();
             if (newVid && newVid !== session.lastObservedVideoId) {
@@ -2514,23 +2423,13 @@
           session,
           scheduler,
           renderer,
-          tooltipCtrl,
           streamingExtractor,
           ingestAndExtractSentence: (text) => streamingExtractor.ingest(text),
-          stripOverlappingPrefix: (prev, curr) => renderer.stripOverlappingPrefix(prev, curr),
-          calculateTooltipPosition: (rect, pr) => tooltipCtrl.calculatePosition(rect, pr),
-          safeSendMessage,
-          parseUniversalCaptionText,
           parseCues,
           getActiveCue,
           prioritizeCurrentSentence,
           checkAndTriggerSlidingWindow,
           renderCurrentSubtitle,
-          observeNativePlayerCaptions,
-          stopNativeCaptionObserver,
-          resetSubtitles,
-          handleUserSeek,
-          ensureUIElements,
           debouncedTranslateLiveProgress
         };
       }

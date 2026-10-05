@@ -37,8 +37,7 @@ class SessionState {
     this.mode1 = {
       sentenceList: [],
       lastWindowCheckTime: -999,
-      consecutiveTranslateErrors: 0,
-      lastRenderedSignature: ''
+      consecutiveTranslateErrors: 0
     };
 
     // 5. Mode 2 即時串流斷句與雙槽滾動 (Mode 2 Rolling ASR)
@@ -52,29 +51,11 @@ class SessionState {
       prevSlotTimeRange: { start: 0, end: 0 },
       currentSentenceStartTime: 0,
       lastFinishedSentence: '',
-      lastFinishedTrans: '',
-      lastRequestedLiveText: '',
-      currentLiveTransId: 0,
-      lastRenderedRollingSig: ''
+      lastFinishedTrans: ''
     };
 
-    // 6. UI 動畫幀與定時器 (UI Timers & Animation)
-    this.ui = {
-      animationFrameId: null,
-      wasPlayingBeforeHover: false,
-      isHoveringSubtitleOrTooltip: false,
-      hoverResumeTimer: null,
-      snippetPauseTimer: null,
-      toastCooldownTimer: null,
-      lastToastTime: 0
-    };
-
-    // 7. 遙測事件單次觸發防禦標記 (Per-Video Telemetry Flags)
+    // 6. 遙測事件單次觸發防禦標記 (Per-Video Telemetry Flags)
     this.telemetry = {
-      hasTrackedVideoView: false,
-      hasTrackedSubtitleSuccess: false,
-      hasTrackedRateLimit429: false,
-      hasTrackedMode2Fallback: false,
       hasTrackedTranslateError: false
     };
   }
@@ -119,8 +100,6 @@ class SessionState {
   get lastWindowCheckTime() { return this.mode1.lastWindowCheckTime; }
   set lastWindowCheckTime(v) { this.mode1.lastWindowCheckTime = v; }
 
-  get lastRenderedSignature() { return this.mode1.lastRenderedSignature; }
-  set lastRenderedSignature(v) { this.mode1.lastRenderedSignature = v; }
 
   get consecutiveTranslateErrors() { return this.mode1.consecutiveTranslateErrors; }
   set consecutiveTranslateErrors(v) { this.mode1.consecutiveTranslateErrors = v; }
@@ -155,14 +134,6 @@ class SessionState {
   get lastFinishedTrans() { return this.mode2.lastFinishedTrans; }
   set lastFinishedTrans(v) { this.mode2.lastFinishedTrans = v; }
 
-  get lastRequestedLiveText() { return this.mode2.lastRequestedLiveText; }
-  set lastRequestedLiveText(v) { this.mode2.lastRequestedLiveText = v; }
-
-  get currentLiveTransId() { return this.mode2.currentLiveTransId; }
-  set currentLiveTransId(v) { this.mode2.currentLiveTransId = v; }
-
-  get lastRenderedRollingSig() { return this.mode2.lastRenderedRollingSig; }
-  set lastRenderedRollingSig(v) { this.mode2.lastRenderedRollingSig = v; }
 
   // ==========================================
   // 生命週期狀態機方法 (Lifecycle State Transitions)
@@ -195,10 +166,8 @@ class SessionState {
     this.fetch.inFlightKey = '';
     this.mode1.sentenceList = [];
     this.mode1.lastWindowCheckTime = -999;
-    this.mode1.lastRenderedSignature = '';
     this.mode1.consecutiveTranslateErrors = 0;
     this.resetStreaming();
-    this.clearSnippetTimer();
   }
 
   /**
@@ -206,7 +175,6 @@ class SessionState {
    * 清空暫存隊列與雙槽雙語內容
    */
   resetStreaming() {
-    this.mode2.lastRenderedRollingSig = '';
     this.mode2.speechTokenQueue = [];
     this.mode2.prevSlot = { orig: '', trans: '' };
     this.mode2.currSlot = { orig: '', trans: '' };
@@ -217,7 +185,6 @@ class SessionState {
     this.mode2.currentSentenceStartTime = 0;
     this.mode2.lastFinishedSentence = '';
     this.mode2.lastFinishedTrans = '';
-    this.mode2.lastRequestedLiveText = '';
   }
 
   /**
@@ -226,7 +193,6 @@ class SessionState {
    * @param {number} currentTime - 跳轉落點當前秒數
    */
   resetSeek(currentTime = 0) {
-    this.clearSnippetTimer();
     this.mode2.speechTokenQueue = [];
     this.mode2.lastLockedCompletedSentence = '';
     this.mode2.lastRawObservedWindowText = '';
@@ -242,42 +208,13 @@ class SessionState {
     this.resetSubtitles();
     this.track.lastObservedVideoId = newVideoId || '';
     this.track.currentTrack = null;
-    this.telemetry.hasTrackedVideoView = false;
   }
 
   /**
    * 重置單片遙測旗標 (每部影片僅追蹤一次)
    */
   resetTelemetry() {
-    this.telemetry.hasTrackedSubtitleSuccess = false;
-    this.telemetry.hasTrackedRateLimit429 = false;
-    this.telemetry.hasTrackedMode2Fallback = false;
     this.telemetry.hasTrackedTranslateError = false;
-  }
-
-  /**
-   * 清理音訊片段定時器
-   */
-  clearSnippetTimer() {
-    if (this.ui.snippetPauseTimer) {
-      clearInterval(this.ui.snippetPauseTimer);
-      this.ui.snippetPauseTimer = null;
-    }
-  }
-
-  /**
-   * 清理全部 UI 定時器
-   */
-  clearAllTimers() {
-    this.clearSnippetTimer();
-    if (this.ui.hoverResumeTimer) {
-      clearTimeout(this.ui.hoverResumeTimer);
-      this.ui.hoverResumeTimer = null;
-    }
-    if (this.ui.toastCooldownTimer) {
-      clearTimeout(this.ui.toastCooldownTimer);
-      this.ui.toastCooldownTimer = null;
-    }
   }
 }
 

@@ -197,10 +197,10 @@ function runCoreModulesTest() {
   console.log('  - resetSubtitles 完整清除雙模字幕狀態: ✅ PASS');
 
   // 測試換片重置
-  session.telemetry.hasTrackedSubtitleSuccess = true;
+  session.telemetry.hasTrackedTranslateError = true;
   session.resetVideoNavigation('newVid999');
   assert.strictEqual(session.lastObservedVideoId, 'newVid999');
-  assert.strictEqual(session.telemetry.hasTrackedSubtitleSuccess, false, '換片必須重置遙測標記');
+  assert.strictEqual(session.telemetry.hasTrackedTranslateError, false, '換片必須重置遙測標記');
   console.log('  - resetVideoNavigation 換片重置全狀態: ✅ PASS\n');
 
   // 7. Session Ordering & Lifecycle Transition Invariant Contract (Task 1 & 6)

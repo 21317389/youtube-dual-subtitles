@@ -196,7 +196,7 @@ async function runExtensionMv3E2ETest() {
     console.log('\n--------------------------------------------------------');
     console.log('🧪 【Case 3: CC ON (雙槽渲染、譯文與播放器遮蔽樣式生效)】');
     console.log('--------------------------------------------------------');
-    // 確保點擊 CC 按鈕為開啟狀態且播放器處於播放狀態 (定位在字幕區段 2s)
+    await page.waitForSelector('.ytp-subtitles-button', { timeout: 10000 }).catch(() => {});
     await page.evaluate(() => {
       const video = document.querySelector('video');
       if (video) {
@@ -224,16 +224,11 @@ async function runExtensionMv3E2ETest() {
         const video = document.querySelector('video');
         if (video) {
           video.muted = true;
-          if (video.currentTime > 10) video.currentTime = 2;
           if (video.paused) video.play().catch(() => {});
         }
         const player = document.getElementById('movie_player');
         if (player?.playVideo && player.getPlayerState?.() !== 1) {
           player.playVideo();
-        }
-        const btn = document.querySelector('.ytp-subtitles-button');
-        if (btn && btn.getAttribute('aria-pressed') === 'false') {
-          btn.click();
         }
         const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-ad-skip-button-slot button, .ytp-ad-skip-button-text');
         if (skipBtn) skipBtn.click();

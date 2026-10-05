@@ -18,9 +18,7 @@ const { SessionState } = require('./core/session-state');
 
 const {
   cleanSubtitleNoise,
-  isSentenceEnd,
   isConjunction,
-  isTailOfImmediatePrev,
   shouldMergeShortSentence,
   SENTENCE_END_REGEX,
   FALLBACK_LONG_PAUSE_SECONDS,
@@ -31,31 +29,18 @@ const {
 const { StreamingSentenceExtractor } = require('./core/streaming-sentence-extractor');
 
 const {
-  parseUniversalCaptionText,
-  parseXmlCaptions,
-  parseVttCaptions,
-  decodeHtmlEntities
+  parseUniversalCaptionText
 } = require('./core/caption-parser');
 
 const { TranslationScheduler } = require('./core/translation-scheduler');
 
 const {
   SubtitleRenderer,
-  applySubtitleSize,
-  ensureSubtitleContainer,
-  renderDualSlotSubtitle,
-  hideSubtitle,
   DEFAULT_SIZE_MAP
 } = require('./ui/subtitle-renderer');
 
 const {
-  TooltipController,
-  calculateTooltipPosition,
-  ensureTooltipElement,
-  ensureToastElement,
-  playVideoSnippet,
-  speakSelectedWord,
-  HoverPauseManager
+  TooltipController
 } = require('./ui/tooltip-controller');
 
 // ==========================================
@@ -323,6 +308,8 @@ function handleUserSeek() {
 }
 
 function cleanupRuntimeUI() {
+  scheduler.cancelActiveLiveRequests();
+  tooltipCtrl.unbindHover();
   streamingExtractor.reset();
   stopNativeCaptionObserver();
   stopSyncLoop();
@@ -367,7 +354,7 @@ function stopSyncLoop() {
 // ==========================================
 if (typeof window !== 'undefined') {
   window.addEventListener('message', (event) => {
-    if (event.source !== window || !event.data || !event.data.type) return;
+    if (event.source !== window || !isValidWindowMessage(event.data)) return;
 
     if (event.data.type === WindowMessageType.NAVIGATE_START) {
       const newVid = event.data.videoId || getCurrentVideoId();
@@ -1381,23 +1368,13 @@ if (typeof module !== 'undefined' && module.exports) {
     session,
     scheduler,
     renderer,
-    tooltipCtrl,
     streamingExtractor,
     ingestAndExtractSentence: (text) => streamingExtractor.ingest(text),
-    stripOverlappingPrefix: (prev, curr) => renderer.stripOverlappingPrefix(prev, curr),
-    calculateTooltipPosition: (rect, pr) => tooltipCtrl.calculatePosition(rect, pr),
-    safeSendMessage,
-    parseUniversalCaptionText,
     parseCues,
     getActiveCue,
     prioritizeCurrentSentence,
     checkAndTriggerSlidingWindow,
     renderCurrentSubtitle,
-    observeNativePlayerCaptions,
-    stopNativeCaptionObserver,
-    resetSubtitles,
-    handleUserSeek,
-    ensureUIElements,
     debouncedTranslateLiveProgress
   };
 }

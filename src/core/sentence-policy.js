@@ -11,8 +11,6 @@
  */
 
 const SENTENCE_END_REGEX = /(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*$/;
-const INTRA_SPLIT_REGEX = /(?<=(?:(?<!\.)\.(?!\.)|[?!。？！])["'”’)]*)\s+/;
-const METADATA_HEADER_REGEX = /(?:Transcriber|Reviewer|Subtitles by):/i;
 
 const COMMON_CONJUNCTIONS = [
   'and',
@@ -138,8 +136,6 @@ const MAX_SENTENCE_DURATION = SENTENCE_LIMITS.MAX_SENTENCE_DURATION;
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SENTENCE_END_REGEX,
-    INTRA_SPLIT_REGEX,
-    METADATA_HEADER_REGEX,
     COMMON_CONJUNCTIONS,
     SENTENCE_LIMITS,
     FALLBACK_LONG_PAUSE_SECONDS,
