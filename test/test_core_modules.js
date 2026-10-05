@@ -30,7 +30,13 @@ const {
 const { TranslationScheduler } = require('../src/core/translation-scheduler');
 const { WindowMessageType, RuntimeAction, isValidWindowMessage } = require('../src/bridge/protocol');
 const { SessionState } = require('../src/core/session-state');
-const { parseCues, session: coreSession } = require('../src/content-entry');
+const {
+  parseCues,
+  session: coreSession,
+  jumpToSentence,
+  isUserTyping,
+  handleKeyDown
+} = require('../src/content-entry');
 
 function runCoreModulesTest() {
   console.log('========================================================');
@@ -266,6 +272,112 @@ function runCoreModulesTest() {
   assert.strictEqual(coreSession.sentenceList[1].origText, "That's a line from Sahil Bloom from his book, The 5 Types of Wealth.", '第二句應正確與後續連接');
   assert.ok(coreSession.sentenceList[0].end < coreSession.sentenceList[1].end, '時間戳必須按字數比例正確內插');
   console.log('  - 單片段內部多句拆解與時間戳內插: ✅ PASS\n');
+
+  // 9. Hotkey & Sentence Navigation Regression (A / D / R 鍵盤導航與輸入法相容檢驗)
+  console.log('【9. Hotkey & 鍵盤熱鍵跳轉邏輯檢驗 (A / D / R 導航與 IME 防禦)】');
+
+  // 9.1 isUserTyping 避讓檢驗
+  assert.strictEqual(isUserTyping({ tagName: 'INPUT' }), true, 'input 標籤應判定為打字中');
+  assert.strictEqual(isUserTyping({ tagName: 'TEXTAREA' }), true, 'textarea 標籤應判定為打字中');
+  assert.strictEqual(isUserTyping({ tagName: 'div', isContentEditable: true }), true, 'contentEditable 應判定為打字中');
+  assert.strictEqual(isUserTyping({ tagName: 'div', getAttribute: (attr) => attr === 'role' ? 'textbox' : null }), true, 'role=textbox 應判定為打字中');
+  assert.strictEqual(isUserTyping({ tagName: 'div', closest: (sel) => sel.includes('ytd-comments') ? {} : null }), true, '留言區容器內應判定為打字中');
+  assert.strictEqual(isUserTyping({ tagName: 'div', closest: () => null }), false, '一般播放器 div 不應判定為打字中');
+
+  // 9.2 jumpToSentence 雙向跳轉與連續跳轉非卡死檢驗
+  const mockSentences = [
+    { start: 1.0, end: 4.0, origText: 'Sentence 0', transText: '第0句', status: 'done' },
+    { start: 5.0, end: 9.0, origText: 'Sentence 1', transText: '第1句', status: 'done' },
+    { start: 10.0, end: 14.0, origText: 'Sentence 2', transText: '第2句', status: 'done' }
+  ];
+  coreSession.sentenceList = mockSentences;
+
+  let mockVideoTime = 2.0; // 位於 Sentence 0 (1.0 - 4.0)
+  const mockVideoEl = {
+    get currentTime() { return mockVideoTime; },
+    set currentTime(v) { mockVideoTime = v; }
+  };
+  const mockPlayerEl = {
+    querySelector: (s) => s.includes('video') ? mockVideoEl : null,
+    classList: { contains: () => false },
+    offsetWidth: 800,
+    offsetHeight: 450,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 450 })
+  };
+  global.document = {
+    querySelector: (sel) => {
+      if (sel === '#movie_player') return mockPlayerEl;
+      if (sel && sel.includes('video')) return mockVideoEl;
+      return null;
+    },
+    getElementById: () => null
+  };
+
+  // 按 D 跳至下一句
+  jumpToSentence(1);
+  assert.strictEqual(mockVideoTime >= 5.0 && mockVideoTime <= 5.1, true, '由第0句按 D 應跳轉至第1句起點 (+0.01s)');
+
+  // 連續再按 D 跳至第2句 (驗證杜絕舊版 -0.05 導致卡死同句之問題)
+  jumpToSentence(1);
+  assert.strictEqual(mockVideoTime >= 10.0 && mockVideoTime <= 10.1, true, '再次按 D 應連續跳至第2句起點 (+0.01s)');
+
+  // 在最後一句再按 D，應停留在最後一句
+  jumpToSentence(1);
+  assert.strictEqual(mockVideoTime >= 10.0 && mockVideoTime <= 10.1, true, '在最後一句按 D 應停留在最後一句起點');
+
+  // 按 A 跳回第1句
+  jumpToSentence(-1);
+  assert.strictEqual(mockVideoTime >= 5.0 && mockVideoTime <= 5.1, true, '由第2句按 A 應跳轉至第1句起點');
+
+  // 連續按 A 跳回第0句
+  jumpToSentence(-1);
+  assert.strictEqual(mockVideoTime >= 1.0 && mockVideoTime <= 1.1, true, '由第1句按 A 應跳轉至第0句起點');
+
+  // 在第0句再按 A，應停留在第0句
+  jumpToSentence(-1);
+  assert.strictEqual(mockVideoTime >= 1.0 && mockVideoTime <= 1.1, true, '在第0句按 A 應停留在第0句起點');
+
+  // 9.3 handleKeyDown 快捷鍵觸發與 IME 相容性檢驗
+  let prevented = false;
+  let stopped = false;
+  const createMockEvent = (key, code, extra = {}) => ({
+    key,
+    code,
+    ctrlKey: false,
+    altKey: false,
+    metaKey: false,
+    target: { tagName: 'div', closest: () => null },
+    preventDefault() { prevented = true; },
+    stopPropagation() { stopped = true; },
+    ...extra
+  });
+
+  // Windows 中文輸入法 (Process 鍵值 + KeyD 代碼)
+  mockVideoTime = 2.0;
+  prevented = false;
+  stopped = false;
+  handleKeyDown(createMockEvent('Process', 'KeyD'));
+  assert.strictEqual(prevented, true, 'IME Process 模式下 KeyD 代碼應能正常觸發並阻止預設行為');
+  assert.strictEqual(mockVideoTime >= 5.0 && mockVideoTime <= 5.1, true, 'IME Process 模式下按 D 應成功跳轉至下一句');
+
+  // Windows 中文輸入法 (Process 鍵值 + KeyA 代碼)
+  prevented = false;
+  stopped = false;
+  handleKeyDown(createMockEvent('Process', 'KeyA'));
+  assert.strictEqual(prevented, true, 'IME Process 模式下 KeyA 代碼應能正常觸發並阻止預設行為');
+  assert.strictEqual(mockVideoTime >= 1.0 && mockVideoTime <= 1.1, true, 'IME Process 模式下按 A 應成功跳轉回上一句');
+
+  // 組合鍵防禦 (Ctrl+A, Ctrl+D 不應被誤攔截)
+  mockVideoTime = 2.0;
+  prevented = false;
+  handleKeyDown(createMockEvent('a', 'KeyA', { ctrlKey: true }));
+  assert.strictEqual(prevented, false, 'Ctrl+A 系統熱鍵不應被擴充功能誤攔截');
+  assert.strictEqual(mockVideoTime, 2.0, 'Ctrl+A 不應觸發跳轉');
+
+  console.log('  - isUserTyping 輸入框與留言區避讓: ✅ PASS');
+  console.log('  - jumpToSentence 雙向跳轉與連續跳轉防卡死: ✅ PASS');
+  console.log('  - Windows IME (Process) 輸入法鍵盤相容性: ✅ PASS');
+  console.log('  - Ctrl/Alt/Meta 系統熱鍵組合保護: ✅ PASS\n');
 
   return { success: true };
 }

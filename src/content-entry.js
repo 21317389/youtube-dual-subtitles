@@ -157,10 +157,12 @@ function getActivePlayer() {
 function getActiveVideo() {
   if (typeof document === 'undefined') return null;
   const player = getActivePlayer();
-  return (player && player.querySelector('video')) ||
-         document.querySelector('ytd-reel-video-renderer[is-active] video') ||
-         document.querySelector('#shorts-player video') ||
-         document.querySelector('video');
+  return (player && typeof player.querySelector === 'function' && player.querySelector('video')) ||
+         (typeof document.querySelector === 'function' && (
+           document.querySelector('ytd-reel-video-renderer[is-active] video') ||
+           document.querySelector('#shorts-player video') ||
+           document.querySelector('video')
+         ));
 }
 
 function getCurrentVideoId() {
@@ -1135,76 +1137,113 @@ function handleSubtitleMouseUp(e) {
 }
 
 // ==========================================
-// 11. 鍵盤熱鍵 (Keyboard Controls)
+// 11. 鍵盤熱鍵 (Keyboard Controls: R: 重播 / A: 上一句 / D: 下一句)
 // ==========================================
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', (e) => {
-    if (!session.isExtensionEnabled) return;
-    if (isUserTyping(e.target)) return;
+function handleKeyDown(e) {
+  if (!session.isExtensionEnabled) return;
+  // 避免攔截瀏覽器原生組合鍵 (如 Ctrl+A 全選、Ctrl+D 加入書籤、Alt+D 定位網址列)
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (isUserTyping(e.target)) return;
 
-    const key = e.key.toLowerCase();
-    const video = getActiveVideo();
-    if (!video) return;
+  const key = (e.key || '').toLowerCase();
+  const code = e.code || '';
+  const isKeyA = key === 'a' || code === 'KeyA' || e.keyCode === 65;
+  const isKeyD = key === 'd' || code === 'KeyD' || e.keyCode === 68;
+  const isKeyR = key === 'r' || code === 'KeyR' || e.keyCode === 82;
 
-    if (key === 'r') {
-      e.preventDefault();
-      const active = getActiveCue(video.currentTime);
-      if (active?.currentSentence) {
-        tooltipCtrl.playSnippet(active.currentSentence.start, active.currentSentence.end);
-      } else if (session.prevSlotTimeRange.end > session.prevSlotTimeRange.start) {
-        tooltipCtrl.playSnippet(session.prevSlotTimeRange.start, session.prevSlotTimeRange.end);
-      } else {
-        tooltipCtrl.playSnippet(Math.max(0, video.currentTime - 3.0), video.currentTime);
-      }
-    } else if (key === 'a' && session.sentenceList.length > 0) {
-      e.preventDefault();
-      jumpToSentence(-1);
-    } else if (key === 'd' && session.sentenceList.length > 0) {
-      e.preventDefault();
-      jumpToSentence(1);
+  if (!isKeyA && !isKeyD && !isKeyR) return;
+
+  const video = getActiveVideo();
+  if (!video) return;
+
+  if (isKeyR) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    const active = getActiveCue(video.currentTime);
+    if (active?.currentSentence) {
+      tooltipCtrl.playSnippet(active.currentSentence.start, active.currentSentence.end);
+    } else if (session.prevSlotTimeRange.end > session.prevSlotTimeRange.start) {
+      tooltipCtrl.playSnippet(session.prevSlotTimeRange.start, session.prevSlotTimeRange.end);
+    } else {
+      tooltipCtrl.playSnippet(Math.max(0, video.currentTime - 3.0), video.currentTime);
     }
-  });
+  } else if (isKeyA || isKeyD) {
+    if (session.sentenceList.length === 0) {
+      if (session.isCaptionsEnabled) {
+        tooltipCtrl.showToast('⚠️ 目前字幕尚未載入或為即時語音辨識模式');
+      }
+      return;
+    }
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    jumpToSentence(isKeyD ? 1 : -1);
+  }
+}
+
+// 關鍵防禦：使用 capture: true（捕獲階段）監聽，
+// 確保當使用者焦點位於 YouTube 播放器 (#movie_player) 或任何子元素時，
+// 仍能搶先在 YouTube 內部 stopPropagation 之前攔截 A/D/R 熱鍵！
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', handleKeyDown, true);
 }
 
 function isUserTyping(el) {
   if (!el) return false;
   const tagName = el.tagName?.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || el.isContentEditable || el.getAttribute?.('role') === 'textbox';
+  if (tagName === 'input' || tagName === 'textarea') return true;
+  if (el.isContentEditable) return true;
+  if (el.getAttribute?.('role') === 'textbox') return true;
+  if (typeof el.closest === 'function') {
+    if (el.closest('input, textarea, [contenteditable="true"], [role="textbox"], #search-form, #search-input, ytd-searchbox, ytd-comments')) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function jumpToSentence(direction) {
   const video = getActiveVideo();
   if (!video || session.sentenceList.length === 0) return;
 
-  tooltipCtrl.clearSnippetTimer();
+  tooltipCtrl.clearSnippetTimer?.();
   const currentTime = video.currentTime + session.subtitleOffset;
 
-  let targetIndex = -1;
+  let currentIdx = -1;
   for (let i = 0; i < session.sentenceList.length; i++) {
     const s = session.sentenceList[i];
     if (currentTime >= s.start && currentTime <= s.end) {
-      targetIndex = i;
+      currentIdx = i;
       break;
     }
   }
 
-  if (targetIndex === -1) {
+  let targetIndex = -1;
+  if (currentIdx !== -1) {
+    targetIndex = currentIdx + direction;
+  } else {
+    let nextIdx = -1;
     for (let i = 0; i < session.sentenceList.length; i++) {
       if (session.sentenceList[i].start > currentTime) {
-        targetIndex = direction > 0 ? i : Math.max(0, i - 1);
+        nextIdx = i;
         break;
       }
     }
-    if (targetIndex === -1) targetIndex = session.sentenceList.length - 1;
-  } else {
-    targetIndex += direction;
+    if (nextIdx !== -1) {
+      targetIndex = direction > 0 ? nextIdx : Math.max(0, nextIdx - 1);
+    } else {
+      targetIndex = session.sentenceList.length - 1;
+    }
   }
 
   targetIndex = Math.max(0, Math.min(targetIndex, session.sentenceList.length - 1));
   const targetSentence = session.sentenceList[targetIndex];
 
   if (targetSentence) {
-    video.currentTime = Math.max(0, targetSentence.start - 0.05);
+    // 精確跳轉至句子起點略微向後 10ms，確保 getActiveCue 能精確命中該句，
+    // 解決舊版 -0.05 導致落入無效空檔或卡在上一句無法前進的嚴重問題！
+    video.currentTime = Math.max(0, targetSentence.start + 0.01);
+    prioritizeCurrentSentence(video.currentTime);
+    checkAndTriggerSlidingWindow(video.currentTime);
     renderCurrentSubtitle(video.currentTime);
   }
 }
@@ -1398,6 +1437,9 @@ if (typeof module !== 'undefined' && module.exports) {
     prioritizeCurrentSentence,
     checkAndTriggerSlidingWindow,
     renderCurrentSubtitle,
-    debouncedTranslateLiveProgress
+    debouncedTranslateLiveProgress,
+    jumpToSentence,
+    isUserTyping,
+    handleKeyDown
   };
 }

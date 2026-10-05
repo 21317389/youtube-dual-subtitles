@@ -1263,6 +1263,12 @@
           }
           return tooltip;
         }
+        clearSnippetTimer() {
+          if (this.snippetState && this.snippetState.timer) {
+            clearInterval(this.snippetState.timer);
+            this.snippetState.timer = null;
+          }
+        }
         hideTooltip() {
           const player = this.getPlayer();
           if (!player) return;
@@ -1270,10 +1276,7 @@
           if (tooltip) {
             tooltip.style.display = "none";
           }
-          if (this.snippetState.timer) {
-            clearInterval(this.snippetState.timer);
-            this.snippetState.timer = null;
-          }
+          this.clearSnippetTimer();
         }
         playSnippet(start, end) {
           const video = this.getVideo();
@@ -1420,7 +1423,7 @@
       function getActiveVideo() {
         if (typeof document === "undefined") return null;
         const player = getActivePlayer();
-        return player && player.querySelector("video") || document.querySelector("ytd-reel-video-renderer[is-active] video") || document.querySelector("#shorts-player video") || document.querySelector("video");
+        return player && typeof player.querySelector === "function" && player.querySelector("video") || typeof document.querySelector === "function" && (document.querySelector("ytd-reel-video-renderer[is-active] video") || document.querySelector("#shorts-player video") || document.querySelector("video"));
       }
       function getCurrentVideoId() {
         if (typeof window === "undefined" || !window?.location?.href) return "";
@@ -2227,65 +2230,93 @@
           }
         });
       }
-      if (typeof window !== "undefined") {
-        window.addEventListener("keydown", (e) => {
-          if (!session.isExtensionEnabled) return;
-          if (isUserTyping(e.target)) return;
-          const key = e.key.toLowerCase();
-          const video = getActiveVideo();
-          if (!video) return;
-          if (key === "r") {
-            e.preventDefault();
-            const active = getActiveCue(video.currentTime);
-            if (active?.currentSentence) {
-              tooltipCtrl.playSnippet(active.currentSentence.start, active.currentSentence.end);
-            } else if (session.prevSlotTimeRange.end > session.prevSlotTimeRange.start) {
-              tooltipCtrl.playSnippet(session.prevSlotTimeRange.start, session.prevSlotTimeRange.end);
-            } else {
-              tooltipCtrl.playSnippet(Math.max(0, video.currentTime - 3), video.currentTime);
-            }
-          } else if (key === "a" && session.sentenceList.length > 0) {
-            e.preventDefault();
-            jumpToSentence(-1);
-          } else if (key === "d" && session.sentenceList.length > 0) {
-            e.preventDefault();
-            jumpToSentence(1);
+      function handleKeyDown(e) {
+        if (!session.isExtensionEnabled) return;
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        if (isUserTyping(e.target)) return;
+        const key = (e.key || "").toLowerCase();
+        const code = e.code || "";
+        const isKeyA = key === "a" || code === "KeyA" || e.keyCode === 65;
+        const isKeyD = key === "d" || code === "KeyD" || e.keyCode === 68;
+        const isKeyR = key === "r" || code === "KeyR" || e.keyCode === 82;
+        if (!isKeyA && !isKeyD && !isKeyR) return;
+        const video = getActiveVideo();
+        if (!video) return;
+        if (isKeyR) {
+          if (typeof e.preventDefault === "function") e.preventDefault();
+          if (typeof e.stopPropagation === "function") e.stopPropagation();
+          const active = getActiveCue(video.currentTime);
+          if (active?.currentSentence) {
+            tooltipCtrl.playSnippet(active.currentSentence.start, active.currentSentence.end);
+          } else if (session.prevSlotTimeRange.end > session.prevSlotTimeRange.start) {
+            tooltipCtrl.playSnippet(session.prevSlotTimeRange.start, session.prevSlotTimeRange.end);
+          } else {
+            tooltipCtrl.playSnippet(Math.max(0, video.currentTime - 3), video.currentTime);
           }
-        });
+        } else if (isKeyA || isKeyD) {
+          if (session.sentenceList.length === 0) {
+            if (session.isCaptionsEnabled) {
+              tooltipCtrl.showToast("\u26A0\uFE0F \u76EE\u524D\u5B57\u5E55\u5C1A\u672A\u8F09\u5165\u6216\u70BA\u5373\u6642\u8A9E\u97F3\u8FA8\u8B58\u6A21\u5F0F");
+            }
+            return;
+          }
+          if (typeof e.preventDefault === "function") e.preventDefault();
+          if (typeof e.stopPropagation === "function") e.stopPropagation();
+          jumpToSentence(isKeyD ? 1 : -1);
+        }
+      }
+      if (typeof window !== "undefined") {
+        window.addEventListener("keydown", handleKeyDown, true);
       }
       function isUserTyping(el) {
         if (!el) return false;
         const tagName = el.tagName?.toLowerCase();
-        return tagName === "input" || tagName === "textarea" || el.isContentEditable || el.getAttribute?.("role") === "textbox";
+        if (tagName === "input" || tagName === "textarea") return true;
+        if (el.isContentEditable) return true;
+        if (el.getAttribute?.("role") === "textbox") return true;
+        if (typeof el.closest === "function") {
+          if (el.closest('input, textarea, [contenteditable="true"], [role="textbox"], #search-form, #search-input, ytd-searchbox, ytd-comments')) {
+            return true;
+          }
+        }
+        return false;
       }
       function jumpToSentence(direction) {
         const video = getActiveVideo();
         if (!video || session.sentenceList.length === 0) return;
-        tooltipCtrl.clearSnippetTimer();
+        tooltipCtrl.clearSnippetTimer?.();
         const currentTime = video.currentTime + session.subtitleOffset;
-        let targetIndex = -1;
+        let currentIdx = -1;
         for (let i = 0; i < session.sentenceList.length; i++) {
           const s = session.sentenceList[i];
           if (currentTime >= s.start && currentTime <= s.end) {
-            targetIndex = i;
+            currentIdx = i;
             break;
           }
         }
-        if (targetIndex === -1) {
+        let targetIndex = -1;
+        if (currentIdx !== -1) {
+          targetIndex = currentIdx + direction;
+        } else {
+          let nextIdx = -1;
           for (let i = 0; i < session.sentenceList.length; i++) {
             if (session.sentenceList[i].start > currentTime) {
-              targetIndex = direction > 0 ? i : Math.max(0, i - 1);
+              nextIdx = i;
               break;
             }
           }
-          if (targetIndex === -1) targetIndex = session.sentenceList.length - 1;
-        } else {
-          targetIndex += direction;
+          if (nextIdx !== -1) {
+            targetIndex = direction > 0 ? nextIdx : Math.max(0, nextIdx - 1);
+          } else {
+            targetIndex = session.sentenceList.length - 1;
+          }
         }
         targetIndex = Math.max(0, Math.min(targetIndex, session.sentenceList.length - 1));
         const targetSentence = session.sentenceList[targetIndex];
         if (targetSentence) {
-          video.currentTime = Math.max(0, targetSentence.start - 0.05);
+          video.currentTime = Math.max(0, targetSentence.start + 0.01);
+          prioritizeCurrentSentence(video.currentTime);
+          checkAndTriggerSlidingWindow(video.currentTime);
           renderCurrentSubtitle(video.currentTime);
         }
       }
@@ -2451,7 +2482,10 @@
           prioritizeCurrentSentence,
           checkAndTriggerSlidingWindow,
           renderCurrentSubtitle,
-          debouncedTranslateLiveProgress
+          debouncedTranslateLiveProgress,
+          jumpToSentence,
+          isUserTyping,
+          handleKeyDown
         };
       }
     }

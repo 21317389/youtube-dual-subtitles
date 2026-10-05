@@ -355,6 +355,13 @@ class TooltipController {
     return tooltip;
   }
 
+  clearSnippetTimer() {
+    if (this.snippetState && this.snippetState.timer) {
+      clearInterval(this.snippetState.timer);
+      this.snippetState.timer = null;
+    }
+  }
+
   hideTooltip() {
     const player = this.getPlayer();
     if (!player) return;
@@ -362,10 +369,7 @@ class TooltipController {
     if (tooltip) {
       tooltip.style.display = 'none';
     }
-    if (this.snippetState.timer) {
-      clearInterval(this.snippetState.timer);
-      this.snippetState.timer = null;
-    }
+    this.clearSnippetTimer();
   }
 
   playSnippet(start, end) {
