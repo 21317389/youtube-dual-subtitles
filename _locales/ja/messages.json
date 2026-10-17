@@ -118,5 +118,21 @@
   "rateStoreBtn": {
     "message": "評価する",
     "description": "ストアで評価するボタン"
+  },
+  "milestoneReviewTitle": {
+    "message": "🎉 デュアル字幕をご利用いただきありがとうございます！",
+    "description": "レビュー依頼タイトル"
+  },
+  "milestoneReviewDesc": {
+    "message": "本ツールは100%無料・オープンソースで開発されています。もし学習や動画視聴のお役に立てていれば、10秒で終わる★5レビューで応援していただけませんか？❤️",
+    "description": "レビュー依頼説明"
+  },
+  "milestoneRateNow": {
+    "message": "⭐ ストアで★5評価する",
+    "description": "評価ボタン"
+  },
+  "milestoneRateDismiss": {
+    "message": "今後表示しない",
+    "description": "非表示ボタン"
   }
 }

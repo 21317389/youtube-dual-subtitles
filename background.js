@@ -177,6 +177,9 @@ function handleRuntimeMessage(request, sender, sendResponse) {
 
   if (request.action === 'telemetry_event') {
     sendGA4Event(request.eventName, request.params || {});
+    if (request.eventName === 'subtitle_render_success') {
+      recordRenderSuccessForReviewPrompt();
+    }
     sendResponse({ success: true });
     return true;
   }
@@ -353,13 +356,31 @@ async function sendGA4Event(eventName, params = {}) {
   }
 }
 
+const REVIEW_MILESTONE_COUNT = 8;
+
+async function recordRenderSuccessForReviewPrompt() {
+  try {
+    const stored = await storageLocalGet(['milestoneRenderCount', 'reviewPromptDismissed']);
+    if (stored?.reviewPromptDismissed) return;
+    const nextCount = (Number(stored?.milestoneRenderCount) || 0) + 1;
+    await storageLocalSet({ milestoneRenderCount: nextCount });
+    if (nextCount === REVIEW_MILESTONE_COUNT) {
+      chrome.action?.setBadgeText?.({ text: '★' });
+      chrome.action?.setBadgeBackgroundColor?.({ color: '#eab308' });
+    }
+  } catch (e) {}
+}
+
 async function syncWhatsNewBadge() {
   try {
     const currentVersion = chrome.runtime?.getManifest?.()?.version || '1.4.0';
-    const stored = await storageLocalGet('dismissedWhatsNewVersion');
+    const stored = await storageLocalGet(['dismissedWhatsNewVersion', 'milestoneRenderCount', 'reviewPromptDismissed']);
     if (stored?.dismissedWhatsNewVersion !== currentVersion) {
       chrome.action?.setBadgeText?.({ text: 'NEW' });
       chrome.action?.setBadgeBackgroundColor?.({ color: '#ef4444' });
+    } else if (!stored?.reviewPromptDismissed && (Number(stored?.milestoneRenderCount) || 0) >= REVIEW_MILESTONE_COUNT) {
+      chrome.action?.setBadgeText?.({ text: '★' });
+      chrome.action?.setBadgeBackgroundColor?.({ color: '#eab308' });
     } else {
       chrome.action?.setBadgeText?.({ text: '' });
     }

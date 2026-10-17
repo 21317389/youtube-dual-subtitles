@@ -118,5 +118,21 @@
   "rateStoreBtn": {
     "message": "Rate 5 Stars",
     "description": "Rate on Chrome Web Store button"
+  },
+  "milestoneReviewTitle": {
+    "message": "🎉 Enjoying YouTube Dual Subtitles?",
+    "description": "Milestone review prompt title"
+  },
+  "milestoneReviewDesc": {
+    "message": "You've watched several videos with bilingual captions! Since this is a 100% free & open-source project, a quick 5-star review helps more learners discover it ❤️",
+    "description": "Milestone review prompt description"
+  },
+  "milestoneRateNow": {
+    "message": "⭐ Leave a 5-Star Review",
+    "description": "Rate now CTA"
+  },
+  "milestoneRateDismiss": {
+    "message": "Don't show again",
+    "description": "Dismiss review prompt permanently"
   }
 }

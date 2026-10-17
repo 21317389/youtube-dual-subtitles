@@ -118,5 +118,21 @@
   "rateStoreBtn": {
     "message": "五星好评",
     "description": "前往商店评价按钮"
+  },
+  "milestoneReviewTitle": {
+    "message": "🎉 双语字幕已陪伴您观看多部外语视频！",
+    "description": "黄金时刻评价邀请标题"
+  },
+  "milestoneReviewDesc": {
+    "message": "这是一款 100% 免费开源、无广告的工具。如果对您的观影或外语学习有帮助，能花 10 秒给我们一个五星好评吗？您的支持能让更多学习者发现我们 ❤️",
+    "description": "黄金时刻评价邀请说明"
+  },
+  "milestoneRateNow": {
+    "message": "⭐ 前往给予五星鼓励",
+    "description": "前往评价按钮"
+  },
+  "milestoneRateDismiss": {
+    "message": "不再显示",
+    "description": "永久关闭评价提示"
   }
 }

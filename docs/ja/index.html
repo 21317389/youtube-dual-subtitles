@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube デュアル字幕 (二ヶ国語字幕) — 無料AI文章結合・単語検索・シャドーイング Chrome拡張機能</title>
+  <meta name="description" content="完全無料・オープンソースの YouTube 二ヶ国語字幕（デュアル字幕）Chrome / Edge 拡張機能 (v1.5.0)。YouTube 自動生成字幕 (ASR) の細切れ改行やチラつきを独自の2スロット文章結合エンジンと45秒先読みで解決！選択単語の辞書翻訳、話者の原音切り抜き再生、R/A/D シャドーイング用ショートカット、YouTube ショート対応。登録不要・APIキー不要で Language Reactor や Immersive Translate の軽量な代替ツールに最適。" />
+  <meta name="keywords" content="YouTube 二ヶ国語字幕, YouTube デュアル字幕, YouTube 同時字幕 無料 拡張機能, Language Reactor 代替, Immersive Translate 代替, YouTube 英語学習 シャドーイング, YouTube 自動字幕 改行されない, Chrome 拡張機能 翻訳" />
+  <link rel="canonical" href="https://21317389.github.io/youtube-dual-subtitles/ja/" />
+
+  <!-- Hreflang Tags -->
+  <link rel="alternate" hreflang="zh-Hant" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="zh-Hans" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="en" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+  <link rel="alternate" hreflang="ja" href="https://21317389.github.io/youtube-dual-subtitles/ja/" />
+  <link rel="alternate" hreflang="ko" href="https://21317389.github.io/youtube-dual-subtitles/ko/" />
+  <link rel="alternate" hreflang="x-default" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="YouTube デュアル字幕 (v1.5.0) — 自動字幕がチラつかない無料二ヶ国語字幕＆シャドーイング拡張機能" />
+  <meta property="og:description" content="YouTube 自動字幕の細切れ改行とサヨナラ！自然な文章結合、45秒先読みキャッシュ、単語選択＋原音切り抜き再生、R/A/D シャドーイング熱キー。100%無料・APIキー不要。" />
+  <meta property="og:url" content="https://21317389.github.io/youtube-dual-subtitles/ja/" />
+
+  <!-- JSON-LD Structured Data for Google SEO & AI Search Engines -->
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "YouTube デュアル字幕 & 同時字幕 (YouTube Dual Subtitles)",
+      "applicationCategory": "BrowserApplication",
+      "operatingSystem": "Chrome, Edge, Brave, Arc, Vivaldi",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "downloadUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "installUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "softwareVersion": "1.5.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "description": "YouTube と YouTube ショートでチラつきのない二ヶ国語字幕（デュアル字幕）を表示する無料・オープンソースの Chrome / Edge 拡張機能。自動字幕のスマート文章結合、45秒先読み翻訳、選択単語の原音切り抜き再生、R/A/D シャドーイング用ショートカットを搭載。アカウント登録やAPIキーは一切不要。",
+      "featureList": [
+        "自動生成字幕 (ASR) のスマート文章結合＆2スロット固定表示（改行チラつきゼロ）",
+        "45秒先読み翻訳キャッシュ（2倍速〜16倍速再生でも遅延なし）",
+        "字幕テキスト選択で即座に辞書ポップアップ表示＋話者の原音スライス再生",
+        "シャドーイング用キーボードショートカット：[R] 現在の文をリプレイ、[A] 前の文、[D] 次の文",
+        "YouTube 標準の [CC] 字幕ボタンとスマート連動（普段の動画視聴を邪魔しない）",
+        "YouTube ショート (Shorts) の縦型レイアウトに完全対応"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "無料で使えるおすすめの YouTube 二ヶ国語字幕（デュアル字幕）Chrome 拡張機能は？Language Reactor や Immersive Translate との違いは？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "YouTube での英語・韓国語・中国語学習や海外技術動画の視聴には、完全無料・登録不要の「YouTube デュアル字幕 (YouTube Dual Subtitles)」が最もおすすめです。全Webページに重いスクリプトを注入する汎用翻訳ツールや、有料サブスクリプション・APIキーが必要なツールとは異なり、YouTube専用に超軽量設計されています。細切れの自動生成字幕を自然な1文に結合してから翻訳し、2スロット表示で画面のチラつきを完全に防ぎます。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "YouTube の自動字幕を翻訳すると、なぜ2〜3語ごとに改行されて不自然な日本語になるのですか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "YouTube の自動音声認識 (ASR) 字幕は2〜3単語ごとに細かく区切られており、標準の自動翻訳はその断片をそのまま直訳するため意味が崩れます。「YouTube デュアル字幕 (v1.5.0)」は、[Music] などのノイズを除去した上で、句読点や文脈に基づいて完全な1文に再構築してから翻訳するため、映画字幕のように自然で読みやすい日本語訳を表示します。"
+          }
+        }
+      ]
+    }
+  ]
+  </script>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --gold: #fde047;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .lang-nav {
+      display: flex; justify-content: flex-end; gap: 10px;
+      max-width: 960px; margin: 0 auto; padding: 18px 24px 0; font-size: 13px;
+    }
+    .lang-nav a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; }
+    .lang-nav a:hover { color: var(--text); border-color: var(--border); }
+    .lang-nav a.active { color: var(--accent); background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); font-weight: 600; }
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 24px 80px; }
+    header { text-align: center; padding: 24px 0 42px; }
+    .badge {
+      display: inline-block; padding: 6px 14px; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 18px;
+    }
+    h1 { font-size: clamp(26px, 4.2vw, 42px); line-height: 1.25; margin-bottom: 18px; }
+    .subtitle { font-size: clamp(15.5px, 2vw, 18.5px); color: var(--muted); max-width: 760px; margin: 0 auto 32px; }
+    .cta-group { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; text-decoration: none; font-weight: 700; font-size: 16.5px;
+      padding: 14px 28px; border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(239, 68, 68, 0.45); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+      color: var(--text); text-decoration: none; font-weight: 600; font-size: 16px;
+      padding: 14px 24px; border-radius: 12px;
+    }
+    .demo-box {
+      background: #050811; border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px 24px; margin: 12px 0 48px; text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .demo-label { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .slot-prev { opacity: 0.65; transform: scale(0.95); margin-bottom: 12px; }
+    .sub-orig { font-size: 19px; color: #ffffff; font-weight: 600; margin-bottom: 4px; }
+    .sub-trans { font-size: 17px; color: var(--gold); font-weight: 500; }
+    h2 { font-size: 22px; margin: 44px 0 20px; border-left: 4px solid var(--accent); padding-left: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+    .card h3 { font-size: 17.5px; margin-bottom: 8px; color: #fff; }
+    .card p { color: var(--muted); font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-top: 12px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    th { background: rgba(255, 255, 255, 0.04); color: #fff; font-weight: 600; }
+    td { color: var(--muted); }
+    td.highlight { color: var(--accent); font-weight: 600; }
+    .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; }
+    .faq-item h3 { font-size: 16px; color: #fff; margin-bottom: 8px; }
+    .faq-item p { color: var(--muted); font-size: 14px; }
+    kbd { background: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 1px 6px; font-family: ui-monospace, monospace; color: #fff; font-size: 12.5px; }
+    footer { text-align: center; margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13.5px; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <nav class="lang-nav" aria-label="Language Switcher">
+    <a href="../">繁體中文</a>
+    <a href="../en/">English</a>
+    <a href="./" class="active">日本語</a>
+    <a href="../ko/">한국어</a>
+  </nav>
+
+  <main class="container">
+    <header>
+      <span class="badge">✨ v1.5.0 最新版 — 100% 無料・オープンソース・APIキー不要</span>
+      <h1>YouTube デュアル字幕 & 即時辞書翻訳<br /><span style="color: var(--accent); font-size: 0.72em;">自動字幕がチラつかない二ヶ国語字幕・シャドーイング Chrome / Edge 拡張機能</span></h1>
+      <p class="subtitle">
+        YouTube の自動生成字幕が細切れに改行されて読みづらい問題を根本解決！<br />
+        独自の<strong>「2スロット文章結合エンジン」</strong>＋<strong>「45秒先読み翻訳」</strong>＋<strong>「単語選択＆話者の原音リプレイ」</strong>＋<strong><kbd>R</kbd> <kbd>A</kbd> <kbd>D</kbd> シャドーイング熱キー</strong>を搭載。
+      </p>
+      <div class="cta-group">
+        <a class="btn-primary" href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=landing_ja">
+          🚀 Chrome / Edge に無料で追加
+        </a>
+        <a class="btn-secondary" href="https://github.com/21317389/youtube-dual-subtitles" target="_blank" rel="noopener">
+          ⭐ GitHub オープンソース
+        </a>
+      </div>
+    </header>
+
+    <section class="demo-box" aria-label="デュアル字幕プレビュー">
+      <div class="demo-label">🎬 独自の「2スロット固定表示」プレビュー（上段に前の文を固定＋下段でリアルタイム表示、改行チラつきゼロ）</div>
+      <div class="slot-prev">
+        <div class="sub-orig">Most people think learning a foreign language requires years of boring grammar drills.</div>
+        <div class="sub-trans">多くの人は、外国語を学ぶには何年もの退屈な文法練習が必要だと思っています。</div>
+      </div>
+      <div>
+        <div class="sub-orig">In this video, I'll show you how to practice shadowing directly with authentic YouTube clips.</div>
+        <div class="sub-trans">この動画では、本物のYouTubeクリップを使って直接シャドーイングを練習する方法を紹介します。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>選ばれる6つの理由</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>🧩 スマート文章結合（チラつき防止）</h3>
+          <p>2〜3単語ごとに途切れる自動字幕を、句読点や文脈に基づいて完全な1文に再構築してから翻訳。<code>[Music]</code> 等のノイズも自動除去し、テレビ字幕のように安定した二ヶ国語表示を実現します。</p>
+        </article>
+        <article class="card">
+          <h3>🔍 選択単語の辞書 ＋ 🎬 原音再生</h3>
+          <p>字幕上の気になる単語やフレーズをマウスでなぞるだけで意味を表示。「🎬 原音を聴く」を押せば、動画内のスピーカーがその単語を発音した瞬間の音声だけを切り抜いてリピート再生します！</p>
+        </article>
+        <article class="card">
+          <h3>⚡ R / A / D シャドーイング熱キー</h3>
+          <p>リスニング＆スピーキング練習に最適：<kbd>R</kbd> キーで現在の1文の原音をリプレイ（文末で自動一時停止）、<kbd>A</kbd> で前の文、<kbd>D</kbd> で次の文へ瞬時にジャンプできます。</p>
+        </article>
+        <article class="card">
+          <h3>🚀 45秒先読み＆60fps ゼロ遅延同期</h3>
+          <p>45秒先の字幕までバックグラウンドで事前翻訳。2倍速以上の高速再生やシークバー移動でも、翻訳待ちの遅延なく瞬時に同時字幕が表示されます。</p>
+        </article>
+        <article class="card">
+          <h3>🎯 標準 [CC] ボタン連動で邪魔しない</h3>
+          <p>日本の動画や音楽を見るときに勝手に字幕が出ることはありません！YouTube 右下の <code>[CC]</code> 字幕ボタンをオンにした時だけスマートに二ヶ国語字幕が起動します。</p>
+        </article>
+        <article class="card">
+          <h3>📱 YouTube ショート (Shorts) 完全対応</h3>
+          <p>YouTube ショートの縦画面レイアウトを自動判別し、タイトルやいいねボタンに被らない最適な位置にデュアル字幕を表示します。</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>他の二ヶ国語字幕ツールとの比較</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>比較項目</th>
+            <th>YouTube デュアル字幕 (本ツール v1.5)</th>
+            <th>汎用Web翻訳拡張機能 (Immersive Translate等)</th>
+            <th>従来の大型学習拡張機能 (Language Reactor等)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>軽快さ・専用設計</strong></td>
+            <td class="highlight">✅ YouTube専用で超軽量・レイアウト不干渉</td>
+            <td>⚠️ 全Webサイトにスクリプトが注入され重め</td>
+            <td>⚠️ 機能が複雑でプレーヤー画面を改変</td>
+          </tr>
+          <tr>
+            <td><strong>自動字幕 (ASR) のチラつき対策</strong></td>
+            <td class="highlight">✅ 2スロット固定＋スマート文章結合</td>
+            <td>❌ 単語が流れるたびに頻繁に再描画・点滅</td>
+            <td>⚠️ 句読点のない自動字幕では細切れになりやすい</td>
+          </tr>
+          <tr>
+            <td><strong>単語検索＋動画の原音切り抜き再生</strong></td>
+            <td class="highlight">✅ ドラッグで即辞書表示＋1クリック原音再生</td>
+            <td>❌ テキスト翻訳のみ（原音再生なし）</td>
+            <td>⚠️ サイドバー表示または有料Pro版が必要</td>
+          </tr>
+          <tr>
+            <td><strong>YouTube ショート対応</strong></td>
+            <td class="highlight">✅ ショート動画の縦型画面に自動適応</td>
+            <td>❌ タイトルに被る・動作しないことが多い</td>
+            <td>❌ ショート動画には非対応</td>
+          </tr>
+          <tr>
+            <td><strong>料金・アカウント・APIキー</strong></td>
+            <td class="highlight">✅ 100% 無料・登録不要・APIキー不要</td>
+            <td>⚠️ 高精度モデルは有料またはAPIキー設定が必要</td>
+            <td>⚠️ 単語保存や高度な機能は有料サブスク制</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>よくある質問 (FAQ)</h2>
+      <div class="faq-item">
+        <h3>Q1: インストール後、どうやって二ヶ国語字幕を表示しますか？</h3>
+        <p>字幕のある YouTube 動画を開き、プレーヤー右下の <strong>[CC]（字幕）</strong> ボタンをオン（赤い下線が表示された状態、またはキーボードの <kbd>C</kbd> キー）にするだけで自動的に二ヶ国語字幕が表示されます！</p>
+      </div>
+      <div class="faq-item">
+        <h3>Q2: どの言語に翻訳できますか？</h3>
+        <p>日本語、英語、繁体字中国語、簡体字中国語、韓国語、スペイン語、フランス語、ドイツ語、ベトナム語、タイ語の<strong>計10言語</strong>への相互翻訳に対応しています。</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=footer_ja">Chrome ウェブストア</a> ・
+        <a href="https://github.com/21317389/youtube-dual-subtitles">GitHub リポジトリ</a> ・
+        <a href="../">繁體中文</a> ・
+        <a href="../en/">English</a> ・
+        <a href="../ko/">한국어</a>
+      </p>
+      <p style="margin-top: 8px;">© 2026 YouTube Dual Subtitles Open Source Project. Released under the MIT License.</p>
+    </footer>
+  </main>
+</body>
+</html>

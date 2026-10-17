@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Dual Subtitles — Free Bilingual Captions, Hover Dictionary & Shadowing Chrome Extension</title>
+  <meta name="description" content="Free and open-source YouTube Dual Subtitles Chrome/Edge extension (v1.5.0). Reconstructs fragmented auto-generated (ASR) captions into full sentences with 45s lookahead prefetching, instant word lookup, authentic speaker audio replay, and R/A/D shadowing shortcuts. 100% free, no account or API key required — the best lightweight alternative to Language Reactor and Immersive Translate." />
+  <meta name="keywords" content="YouTube Dual Subtitles, bilingual subtitles YouTube, Language Reactor alternative, Immersive Translate alternative, Trancy alternative, free YouTube bilingual captions extension, YouTube shadowing extension, YouTube ASR sentence merge" />
+  <link rel="canonical" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+
+  <!-- Hreflang Tags -->
+  <link rel="alternate" hreflang="zh-Hant" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="zh-Hans" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="en" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+  <link rel="alternate" hreflang="ja" href="https://21317389.github.io/youtube-dual-subtitles/ja/" />
+  <link rel="alternate" hreflang="ko" href="https://21317389.github.io/youtube-dual-subtitles/ko/" />
+  <link rel="alternate" hreflang="x-default" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="YouTube Dual Subtitles (v1.5.0) — Free Sentence-Merged Bilingual Captions & Shadowing" />
+  <meta property="og:description" content="Stop reading fragmented 3-word auto-captions! Smart sentence merging, 45s lookahead prefetching, word lookup with authentic speaker audio replay, and R/A/D shadowing hotkeys. 100% free & open-source." />
+  <meta property="og:url" content="https://21317389.github.io/youtube-dual-subtitles/en/" />
+
+  <!-- JSON-LD Structured Data for Google SEO & AI Search Engines -->
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "YouTube Dual Subtitles & Bilingual Translate",
+      "applicationCategory": "BrowserApplication",
+      "operatingSystem": "Chrome, Edge, Brave, Arc, Vivaldi",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "downloadUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "installUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "softwareVersion": "1.5.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "description": "Free, open-source Chrome & Edge extension that displays zero-flicker, sentence-merged bilingual subtitles on YouTube and YouTube Shorts. Features 45-second lookahead prefetching, highlight word dictionary with authentic video audio snippet replay, and R/A/D shadowing shortcuts without requiring an account or API key.",
+      "featureList": [
+        "Smart Sentence Merging for fragmented YouTube auto-generated ASR captions",
+        "Dual-Slot Anti-Flicker Engine: locks previous completed sentence in Slot 1 while streaming active speech in Slot 2",
+        "45-second lookahead translation prefetching supporting up to 16x playback speed",
+        "Instant text selection dictionary with 1-click authentic speaker audio snippet replay",
+        "Shadowing keyboard shortcuts: [R] replay sentence, [A] previous sentence, [D] next sentence",
+        "Smart Native [CC] button sync (never forces subtitles on videos where CC is off)",
+        "Full support for YouTube Shorts vertical layout",
+        "10 target languages: English, Traditional Chinese, Simplified Chinese, Japanese, Korean, Spanish, French, German, Vietnamese, Thai"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the best free YouTube dual subtitles Chrome extension without an API key?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "YouTube Dual Subtitles (v1.5.0 on the Chrome Web Store) is a 100% free, open-source Chrome and Edge extension that requires no account registration and no API key. Unlike basic subtitle overlays that translate broken 2–3 word auto-captions line-by-line, it merges fragmented speech tokens into complete sentences before translating, prefetches 45 seconds ahead for zero lag, and includes authentic audio snippet replay and R/A/D shadowing shortcuts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does YouTube Dual Subtitles compare to Language Reactor, Trancy, or Immersive Translate?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "While Language Reactor, Trancy, and Immersive Translate are great multi-purpose tools, they often inject heavy scripts across all websites, alter YouTube's native player layout, flicker on rolling auto-generated (ASR) captions, or lock features behind paid Pro subscriptions/API keys. YouTube Dual Subtitles is purpose-built exclusively for YouTube: it uses a dual-slot anti-flicker engine for live ASR captions, respects your native [CC] toggle, works on YouTube Shorts, and is completely free and open-source."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I practice language shadowing on YouTube with bilingual subtitles?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "With YouTube Dual Subtitles installed, press [R] at any time to replay the exact audio of the current sentence (it automatically pauses at the end of the sentence so you can repeat aloud). Press [A] to jump to the previous sentence or [D] to jump to the next sentence. You can also highlight any word on the subtitle to hear the speaker's original voice slice for that specific word."
+          }
+        }
+      ]
+    }
+  ]
+  </script>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --gold: #fde047;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .lang-nav {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 18px 24px 0;
+      font-size: 13px;
+    }
+    .lang-nav a {
+      color: var(--muted);
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+    .lang-nav a:hover { color: var(--text); border-color: var(--border); }
+    .lang-nav a.active {
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      font-weight: 600;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 24px 80px; }
+    header { text-align: center; padding: 24px 0 42px; }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+    h1 { font-size: clamp(28px, 4.5vw, 44px); line-height: 1.2; margin-bottom: 18px; letter-spacing: -0.02em; }
+    .subtitle { font-size: clamp(16px, 2.2vw, 19.5px); color: var(--muted); max-width: 760px; margin: 0 auto 32px; }
+    .cta-group { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; text-decoration: none; font-weight: 700; font-size: 17px;
+      padding: 14px 28px; border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(239, 68, 68, 0.45); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+      color: var(--text); text-decoration: none; font-weight: 600; font-size: 16px;
+      padding: 14px 24px; border-radius: 12px;
+    }
+    .demo-box {
+      background: #050811; border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px 24px; margin: 12px 0 48px; text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .demo-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; }
+    .slot-prev { opacity: 0.65; transform: scale(0.95); margin-bottom: 12px; }
+    .sub-orig { font-size: 19px; color: #ffffff; font-weight: 600; margin-bottom: 4px; }
+    .sub-trans { font-size: 17px; color: var(--gold); font-weight: 500; }
+    h2 { font-size: 24px; margin: 44px 0 20px; border-left: 4px solid var(--accent); padding-left: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+    .card h3 { font-size: 18px; margin-bottom: 8px; color: #fff; }
+    .card p { color: var(--muted); font-size: 14.5px; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-top: 12px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14.5px; }
+    th { background: rgba(255, 255, 255, 0.04); color: #fff; font-weight: 600; }
+    td { color: var(--muted); }
+    td.highlight { color: var(--accent); font-weight: 600; }
+    .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; }
+    .faq-item h3 { font-size: 16.5px; color: #fff; margin-bottom: 8px; }
+    .faq-item p { color: var(--muted); font-size: 14.5px; }
+    kbd { background: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 1px 6px; font-family: ui-monospace, monospace; color: #fff; font-size: 13px; }
+    footer { text-align: center; margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13.5px; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <nav class="lang-nav" aria-label="Language Switcher">
+    <a href="../">繁體中文</a>
+    <a href="./" class="active">English</a>
+    <a href="../ja/">日本語</a>
+    <a href="../ko/">한국어</a>
+  </nav>
+
+  <main class="container">
+    <header>
+      <span class="badge">✨ v1.5.0 Release — 100% Free, Open-Source & No API Key Required</span>
+      <h1>YouTube Dual Subtitles & Quick Translate<br /><span style="color: var(--accent); font-size: 0.75em;">Zero-Flicker Bilingual Captions & Shadowing for Chrome / Edge</span></h1>
+      <p class="subtitle">
+        Tired of YouTube's fragmented 3-word auto-captions jumping and flickering?<br />
+        Experience <strong>Smart Sentence Merging</strong> + <strong>45s Lookahead Prefetching</strong> + <strong>Instant Word Lookup with Authentic Voice Replay</strong> + <strong><kbd>R</kbd> <kbd>A</kbd> <kbd>D</kbd> Shadowing Shortcuts</strong>.
+      </p>
+      <div class="cta-group">
+        <a class="btn-primary" href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=landing_en">
+          🚀 Add to Chrome / Edge / Brave (Free)
+        </a>
+        <a class="btn-secondary" href="https://github.com/21317389/youtube-dual-subtitles" target="_blank" rel="noopener">
+          ⭐ View on GitHub
+        </a>
+      </div>
+    </header>
+
+    <section class="demo-box" aria-label="Dual-Slot Subtitle Preview">
+      <div class="demo-label">🎬 Exclusive Dual-Slot Symmetric Lock Engine (Zero Flicker on Auto-Generated ASR Captions)</div>
+      <div class="slot-prev">
+        <div class="sub-orig">Most people think learning a foreign language requires years of boring grammar drills.</div>
+        <div class="sub-trans">La mayoría de la gente piensa que aprender un idioma extranjero requiere años de aburridos ejercicios gramaticales.</div>
+      </div>
+      <div>
+        <div class="sub-orig">In this video, I'll show you how to practice shadowing directly with authentic YouTube clips.</div>
+        <div class="sub-trans">En este video, te mostraré cómo practicar shadowing directamente con clips auténticos de YouTube.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Why Choose YouTube Dual Subtitles?</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>🧩 Smart Sentence Merging (Anti-Flicker)</h3>
+          <p>YouTube auto-captions break every 2–3 words, causing standard translators to mistranslate and flicker. We purge <code>[Music]</code> noise, reconstruct complete sentences, and lock the previous sentence in Slot 1 while streaming Slot 2.</p>
+        </article>
+        <article class="card">
+          <h3>🔍 Word Lookup + 🎬 Authentic Audio Replay</h3>
+          <p>Highlight any word or phrase on the subtitle to open a glassmorphic dictionary tooltip. Click <strong>"🎬 Play Snippet"</strong> to rewind and replay the speaker's exact original voice slice for that word!</p>
+        </article>
+        <article class="card">
+          <h3>⚡ R / A / D Shadowing Hotkeys</h3>
+          <p>Built for active listening & speaking practice: Press <kbd>R</kbd> to replay the current sentence audio (auto-pauses at the end), <kbd>A</kbd> for previous sentence, <kbd>D</kbd> for next sentence, plus optional hover-to-pause.</p>
+        </article>
+        <article class="card">
+          <h3>🚀 45s Prefetching & 60fps Sync</h3>
+          <p>Powered by a native main-world InnerTube channel and 45-second lookahead sliding window. Even at 2x–16x playback speed, bilingual subtitles appear with zero lag.</p>
+        </article>
+        <article class="card">
+          <h3>🎯 Respects Native [CC] Toggle</h3>
+          <p>Never forces captions onto your casual or native-language videos! Dual subtitles only render when YouTube's built-in <code>[CC]</code> button is turned ON.</p>
+        </article>
+        <article class="card">
+          <h3>📱 Native YouTube Shorts Support</h3>
+          <p>Automatically detects YouTube Shorts vertical layout and positions bilingual captions cleanly without blocking video titles or action buttons.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Comparison with Other YouTube Subtitle Extensions</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>YouTube Dual Subtitles (v1.5)</th>
+            <th>General Web Translators (e.g. Immersive Translate)</th>
+            <th>Heavy Learning Suites (e.g. Language Reactor)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Lightweight & Purpose-Built</strong></td>
+            <td class="highlight">✅ Dedicated to YouTube, ultra-lightweight</td>
+            <td>⚠️ Injects scripts across all websites</td>
+            <td>⚠️ Heavy UI that alters YouTube's player layout</td>
+          </tr>
+          <tr>
+            <td><strong>Live ASR Anti-Flicker</strong></td>
+            <td class="highlight">✅ Dual-Slot Sentence Lock + Smart Merge</td>
+            <td>❌ Often flickers as words roll in</td>
+            <td>⚠️ Unpunctuated ASR tracks often break into fragments</td>
+          </tr>
+          <tr>
+            <td><strong>Word Lookup + Original Voice Slice</strong></td>
+            <td class="highlight">✅ Built-in Tooltip + 1-click speaker audio replay</td>
+            <td>❌ Text translation only, no audio replay</td>
+            <td>⚠️ Requires sidebar or paid Pro subscription</td>
+          </tr>
+          <tr>
+            <td><strong>Zero Distraction on Casual Videos</strong></td>
+            <td class="highlight">✅ Synced with native [CC] button</td>
+            <td>⚠️ Often overrides captions automatically</td>
+            <td>⚠️ Takes over player caption controls</td>
+          </tr>
+          <tr>
+            <td><strong>YouTube Shorts Support</strong></td>
+            <td class="highlight">✅ Native vertical layout adaptation</td>
+            <td>❌ Often blocks titles or fails to trigger</td>
+            <td>❌ Limited Shorts support</td>
+          </tr>
+          <tr>
+            <td><strong>Cost & Account Requirement</strong></td>
+            <td class="highlight">✅ 100% Free, Open-Source, No Login / No API Key</td>
+            <td>⚠️ Pro models require subscription or API Key</td>
+            <td>⚠️ Saved words & advanced features require Pro</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Frequently Asked Questions (FAQ)</h2>
+      <div class="faq-item">
+        <h3>Q1: How do I activate dual subtitles after installing?</h3>
+        <p>Open any YouTube video or Short with captions, and click the native <strong>[CC]</strong> button at the bottom-right of the YouTube player (or press <kbd>C</kbd>). Dual subtitles will appear immediately! Turn off the extension switch anytime to restore standard single-language YouTube captions.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Q2: Which languages are supported?</h3>
+        <p>You can translate any YouTube caption track into <strong>10 target languages</strong>: English, Traditional Chinese, Simplified Chinese, Japanese, Korean, Spanish, French, German, Vietnamese, and Thai.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Q3: Is my browsing data private?</h3>
+        <p>Yes. The extension is 100% open-source under the MIT License and strictly adheres to Chrome Manifest V3 security policies. We never collect, store, or transmit your browsing history, video IDs, cookies, or personal data.</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=footer_en">Chrome Web Store</a> ・
+        <a href="https://github.com/21317389/youtube-dual-subtitles">GitHub Repository</a> ・
+        <a href="../">繁體中文</a> ・
+        <a href="../ja/">日本語</a> ・
+        <a href="../ko/">한국어</a>
+      </p>
+      <p style="margin-top: 8px;">© 2026 YouTube Dual Subtitles Open Source Project. Released under the MIT License.</p>
+    </footer>
+  </main>
+</body>
+</html>

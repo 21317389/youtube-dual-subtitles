@@ -118,5 +118,21 @@
   "rateStoreBtn": {
     "message": "五星好評",
     "description": "前往商店評價按鈕"
+  },
+  "milestoneReviewTitle": {
+    "message": "🎉 雙語字幕已陪伴您觀看多部外語影片！",
+    "description": "黃金時刻評價邀請標題"
+  },
+  "milestoneReviewDesc": {
+    "message": "這是一款 100% 免費開源、無廣告的小工具。如果對您的觀影或外語學習有幫助，能花 10 秒給我們一個五星好評嗎？您的支持能讓更多學習者發現我們 ❤️",
+    "description": "黃金時刻評價邀請說明"
+  },
+  "milestoneRateNow": {
+    "message": "⭐ 前往給予五星鼓勵",
+    "description": "前往評價按鈕"
+  },
+  "milestoneRateDismiss": {
+    "message": "不再顯示",
+    "description": "永久關閉評價提示"
   }
 }

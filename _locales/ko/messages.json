@@ -118,5 +118,21 @@
   "rateStoreBtn": {
     "message": "별점 5점 평가",
     "description": "스토어 평가 버튼"
+  },
+  "milestoneReviewTitle": {
+    "message": "🎉 유튜브 이중 자막이 도움이 되셨나요?",
+    "description": "리뷰 요청 제목"
+  },
+  "milestoneReviewDesc": {
+    "message": "이 확장 프로그램은 100% 무료 오픈소스 프로젝트입니다. 외국어 학습이나 영상 시청에 도움이 되었다면 10초만 투자해 별점 5점 리뷰로 응원해 주세요! ❤️",
+    "description": "리뷰 요청 설명"
+  },
+  "milestoneRateNow": {
+    "message": "⭐ 별점 5점 남기기",
+    "description": "리뷰 작성 버튼"
+  },
+  "milestoneRateDismiss": {
+    "message": "다시 보지 않기",
+    "description": "닫기 버튼"
   }
 }

@@ -192,6 +192,69 @@
       color: #e4e4e7;
     }
 
+    /* ⭐ 黃金時刻五星評價溫馨邀請卡 */
+    .milestone-review-card {
+      display: none;
+      margin-bottom: 12px;
+      padding: 11px 12px;
+      background: linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(56, 189, 248, 0.08));
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      border-radius: 9px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: #f4f4f5;
+      animation: popFade 0.2s ease-out;
+    }
+    .milestone-review-title {
+      font-weight: 700;
+      font-size: 12px;
+      color: #fde047;
+      margin-bottom: 4px;
+    }
+    .milestone-review-desc {
+      color: #d4d4d8;
+      margin-bottom: 9px;
+      font-size: 11.5px;
+    }
+    .milestone-review-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .milestone-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 26px;
+      padding: 0 11px;
+      background: #eab308;
+      color: #18181b;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .milestone-btn-primary:hover {
+      background: #facc15;
+    }
+    .milestone-btn-dismiss {
+      height: 26px;
+      padding: 0 9px;
+      background: transparent;
+      color: #a1a1aa;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .milestone-btn-dismiss:hover {
+      color: #ffffff;
+      border-color: #52525b;
+    }
+
     /* 主設定區塊 */
     .settings-content {
       transition: opacity 0.2s ease;
@@ -383,6 +446,16 @@
       <li data-i18n="whatsNewItem1">🎯 智慧連動 YouTube CC：開啟播放器右下角「CC 字幕」即自動顯示雙語字幕，一般觀看零打擾！</li>
       <li data-i18n="whatsNewItem2">⚡ 翻譯穩定度大升級：全新多通道字幕抓取與防卡死翻譯引擎，長片與倍速播放更流暢！</li>
     </ul>
+  </div>
+
+  <!-- ⭐ 黃金時刻五星好評溫柔邀請卡 (僅在累積成功觀看滿 8 部雙語影片且未關閉過時出現) -->
+  <div id="milestoneReviewCard" class="milestone-review-card">
+    <div class="milestone-review-title" data-i18n="milestoneReviewTitle">🎉 雙語字幕已陪伴您觀看多部外語影片！</div>
+    <div class="milestone-review-desc" data-i18n="milestoneReviewDesc">這是一款 100% 免費開源、無廣告的小工具。如果對您的觀影或外語學習有幫助，能花 10 秒給我們一個五星好評嗎？您的支持能讓更多學習者發現我們 ❤️</div>
+    <div class="milestone-review-actions">
+      <a id="milestoneRateBtn" class="milestone-btn-primary" href="https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig/reviews" target="_blank" rel="noopener noreferrer" data-i18n="milestoneRateNow">⭐ 前往給予五星鼓勵</a>
+      <button id="milestoneDismissBtn" class="milestone-btn-dismiss" type="button" data-i18n="milestoneRateDismiss">不再顯示</button>
+    </div>
   </div>
 
   <div id="settingsContent" class="settings-content">

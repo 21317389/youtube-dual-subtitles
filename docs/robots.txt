@@ -19,4 +19,8 @@ Allow: /
 User-agent: Googlebot
 Allow: /
 
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://21317389.github.io/youtube-dual-subtitles/sitemap.xml
+# LLMs summary: https://21317389.github.io/youtube-dual-subtitles/llms.txt

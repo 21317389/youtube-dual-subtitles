@@ -110,13 +110,73 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const rateStoreBtn = document.getElementById('rateStoreBtn');
+  const milestoneReviewCard = document.getElementById('milestoneReviewCard');
+  const milestoneRateBtn = document.getElementById('milestoneRateBtn');
+  const milestoneDismissBtn = document.getElementById('milestoneDismissBtn');
+  const REVIEW_MILESTONE_COUNT = 8;
+
+  function dismissMilestoneReviewPrompt() {
+    if (milestoneReviewCard) milestoneReviewCard.style.display = 'none';
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      chrome.storage.local.set({ reviewPromptDismissed: true });
+    }
+  }
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.get({ milestoneRenderCount: 0, reviewPromptDismissed: false }, (res) => {
+      if (!res.reviewPromptDismissed && (Number(res.milestoneRenderCount) || 0) >= REVIEW_MILESTONE_COUNT) {
+        if (milestoneReviewCard) {
+          milestoneReviewCard.style.display = 'block';
+          try {
+            chrome.runtime?.sendMessage?.({
+              action: 'telemetry_event',
+              eventName: 'milestone_review_shown',
+              params: { version: currentVersion, count: res.milestoneRenderCount }
+            });
+          } catch (e) {}
+        }
+      }
+    });
+  }
+
   if (rateStoreBtn) {
     rateStoreBtn.addEventListener('click', () => {
+      dismissMilestoneReviewPrompt();
       try {
         if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
           chrome.runtime.sendMessage({
             action: 'telemetry_event',
             eventName: 'popup_rate_clicked',
+            params: { version: currentVersion, source: 'header_btn' }
+          });
+        }
+      } catch (e) {}
+    });
+  }
+
+  if (milestoneRateBtn) {
+    milestoneRateBtn.addEventListener('click', () => {
+      dismissMilestoneReviewPrompt();
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+          chrome.runtime.sendMessage({
+            action: 'telemetry_event',
+            eventName: 'popup_rate_clicked',
+            params: { version: currentVersion, source: 'milestone_card' }
+          });
+        }
+      } catch (e) {}
+    });
+  }
+
+  if (milestoneDismissBtn) {
+    milestoneDismissBtn.addEventListener('click', () => {
+      dismissMilestoneReviewPrompt();
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+          chrome.runtime.sendMessage({
+            action: 'telemetry_event',
+            eventName: 'milestone_review_dismissed',
             params: { version: currentVersion }
           });
         }

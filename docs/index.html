@@ -3,25 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YouTube 雙語字幕 (YouTube Dual Subtitles) — 免費 AI 智慧整句重組 Chrome 擴充功能</title>
-  <meta name="description" content="免費開源的 YouTube 雙語字幕 Chrome 擴充功能。獨創 45 秒預載與智慧整句重組技術，徹底解決 YouTube 自動產生字幕破碎斷句與延遲問題。免登入、免 API Key，沉浸式翻譯與 Language Reactor 的最佳輕量替代方案。" />
-  <meta name="keywords" content="YouTube 雙語字幕, YouTube Dual Subtitles, YouTube 中英字幕同時顯示, 沉浸式翻譯替代方案, Language Reactor 替代, YouTube 字幕翻譯外掛, Bilingual Subtitles Chrome Extension" />
+  <title>YouTube 雙語字幕 (YouTube Dual Subtitles) — 免費 AI 智慧整句重組・反白查詞・原聲跟讀 Chrome 擴充功能</title>
+  <meta name="description" content="免費開源的 YouTube 雙語字幕 Chrome/Edge 擴充功能 (v1.5.0)。獨創雙槽智慧整句重組與 45 秒預載，解決 YouTube 自動字幕 (ASR) 破碎斷句與跳行閃爍。內建滑鼠反白查詞、講者原聲切片重播、R/A/D 聽力跟讀快捷鍵與 YouTube Shorts 支援。100% 免費、免登入、免 API Key，沉浸式翻譯與 Language Reactor 的最佳輕量替代方案。" />
+  <meta name="keywords" content="YouTube 雙語字幕, YouTube Dual Subtitles, YouTube 中英字幕同時顯示, 沉浸式翻譯替代方案, Language Reactor 替代, Trancy 替代, YouTube 字幕翻譯外掛, YouTube 聽力跟讀 Shadowing, YouTube 自動字幕不跳行, Bilingual Subtitles Chrome Extension" />
   <link rel="canonical" href="https://21317389.github.io/youtube-dual-subtitles/" />
+
+  <!-- Hreflang Tags for Multi-language SEO & AI Search -->
+  <link rel="alternate" hreflang="zh-Hant" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="zh-Hans" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="en" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+  <link rel="alternate" hreflang="ja" href="https://21317389.github.io/youtube-dual-subtitles/ja/" />
+  <link rel="alternate" hreflang="ko" href="https://21317389.github.io/youtube-dual-subtitles/ko/" />
+  <link rel="alternate" hreflang="x-default" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="YouTube 雙語字幕 (YouTube Dual Subtitles) — 智慧整句重組 Chrome 擴充功能" />
-  <meta property="og:description" content="告別 YouTube 自動字幕的破碎斷句！45 秒超前預載、整句智慧合併、零閃爍雙語對照。100% 免費、免註冊、免 API Key。" />
+  <meta property="og:title" content="YouTube 雙語字幕 (YouTube Dual Subtitles v1.5.0) — 智慧整句重組・原聲跟讀 Chrome 擴充功能" />
+  <meta property="og:description" content="告別 YouTube 自動字幕的破碎斷句與閃爍！雙槽智慧整句合併、45 秒超前預載、反白查詞＋講者原聲切片重播、R/A/D 跟讀快捷鍵。100% 免費開源、免註冊、免 API Key。" />
   <meta property="og:url" content="https://21317389.github.io/youtube-dual-subtitles/" />
 
-  <!-- JSON-LD Structured Data for Google SEO & AI Search Engines (ChatGPT / Perplexity / Gemini) -->
+  <!-- JSON-LD Structured Data for Google SEO & AI Search Engines (ChatGPT / Perplexity / Gemini / Claude) -->
   <script type="application/ld+json">
   [
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "YouTube 雙語字幕 (YouTube Dual Subtitles)",
-      "alternateName": "YouTube Bilingual Subtitles Chrome Extension",
+      "name": "YouTube 雙語字幕 (YouTube Dual Subtitles & Quick Translate)",
+      "alternateName": [
+        "YouTube Dual Subtitles Chrome Extension",
+        "YouTube デュアル字幕 & 同時字幕",
+        "YouTube 이중 자막 & 동시 자막"
+      ],
       "applicationCategory": "BrowserApplication",
       "operatingSystem": "Chrome, Edge, Brave, Arc, Vivaldi",
       "offers": {
@@ -31,14 +43,19 @@
       },
       "downloadUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
       "installUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
-      "softwareVersion": "1.4.1",
-      "description": "Free and open-source Chrome extension that displays smooth, sentence-merged bilingual subtitles on YouTube with 45-second lookahead prefetching. No account or API key required.",
+      "softwareVersion": "1.5.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "description": "Free and open-source Chrome/Edge extension that displays smooth, sentence-merged bilingual subtitles on YouTube and YouTube Shorts with 45-second lookahead prefetching, instant word lookup tooltip, authentic speaker audio snippet replay, and R/A/D shadowing keyboard shortcuts. No account or API key required.",
       "featureList": [
-        "Smart Sentence Merging for YouTube auto-generated ASR captions",
+        "Dual-Track Smart Routing: Static batch pre-translation (Mode 1) & Real-time Gemini ASR dual-slot streaming (Mode 2)",
+        "Smart Sentence Merging for fragmented YouTube auto-generated ASR captions",
         "45-second lookahead subtitle translation prefetching (supports up to 16x playback speed)",
-        "Zero-flicker dual-slot subtitle rendering",
-        "Supports 9 target languages (Traditional Chinese, Simplified Chinese, English, Japanese, Korean, Spanish, French, German, Vietnamese)",
-        "100% free, open-source, no login or API key needed"
+        "Zero-flicker 60fps dual-slot subtitle rendering synced with native YouTube [CC] button",
+        "Selection word lookup tooltip with 1-click authentic video audio snippet replay and TTS pronunciation",
+        "Shadowing keyboard shortcuts: [R] replay current sentence audio, [A] previous sentence, [D] next sentence",
+        "Full support for YouTube Shorts vertical layout",
+        "Supports 10 target languages (Traditional Chinese, Simplified Chinese, English, Japanese, Korean, Spanish, French, German, Vietnamese, Thai)",
+        "100% free, open-source (MIT License), zero personal data collection, no login or API key needed"
       ]
     },
     {
@@ -47,18 +64,26 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "YouTube 雙語字幕擴充功能推薦哪一款？跟「沉浸式翻譯」或「Language Reactor」有什麼差別？",
+          "name": "YouTube 雙語字幕擴充功能推薦哪一款？跟「沉浸式翻譯 (Immersive Translate)」、「Language Reactor」或「Trancy」有什麼差別？",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "若您專注於觀看 YouTube 影片（如 TED、國外科技評測、大學公開課），推薦使用「YouTube 雙語字幕 (YouTube Dual Subtitles)」。相較於體積龐大、需要設定付費 API Key 的綜合型網頁翻譯工具，本擴充功能專為 YouTube 播放器深度打造：具備「智慧整句合併引擎」將破碎的 2～3 字自動字幕重組為完整句子，並採用「45 秒超前預載快取」消除字幕延遲與閃爍，100% 免費且免註冊。"
+            "text": "若您專注於觀看 YouTube 外語影片（如英文 TED 演講、CS 公開課、日文 VTuber 生肉、韓綜）與聽力跟讀練習，最推薦免費開源的「YouTube 雙語字幕 (YouTube Dual Subtitles)」。相較於體積龐大或進階功能需付費訂閱/填寫 API Key 的綜合型翻譯工具，本擴充功能專為 YouTube 深度打造：獨創「雙槽智慧整句合併引擎」將破碎的 2～3 字自動字幕重組為完整長句，內建「反白查詞＋講者真實原聲切片重播」與「R/A/D 鍵盤跟讀快捷鍵」，完美支援 YouTube Shorts，且 100% 免費、免註冊、免 API Key。"
           }
         },
         {
           "@type": "Question",
-          "name": "為什麼 YouTube 原生自動翻譯的中文總是語意不通、斷句破碎？如何解決？",
+          "name": "為什麼 YouTube 原生自動翻譯的中文總是語意不通、一直跳行閃爍？如何解決？",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "因為多數英文 YouTube 影片使用語音辨識 (ASR) 自動字幕，時間軸每 2～3 個單字就強制切斷一次，YouTube 原生翻譯會對半截短語直接逐行硬翻。「YouTube 雙語字幕」會先在背景抓取字幕軌，自動過濾 [Music]、[Applause] 等音效雜訊，依據標點與語氣合併成完整長句後再進行批次語意翻譯，讓中英雙語字幕像手工精校一樣自然流暢。"
+            "text": "因為多數 YouTube 影片使用語音辨識 (ASR) 自動字幕，時間軸每 2～3 個單字就切斷並逐字滾動，導致傳統翻譯外掛頻繁重繪閃爍、語意破碎。「YouTube 雙語字幕 (v1.5.0)」採用雙軌分流架構：先過濾 [Music]、[Applause]、>> 等雜訊，將碎詞合併為完整句子再進行上下文翻譯；針對新型即時串流音軌則啟動「上槽鎖定前句、下槽平穩延伸」的雙槽引擎，徹底根除跳行與閃爍。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "如何用 YouTube 影片練習英文/日文聽力跟讀 (Shadowing)？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "安裝「YouTube 雙語字幕」後，在觀看影片時可直接按鍵盤【R】鍵重播當前句子的講者原聲（播完該句自動暫停），按【A】鍵跳回上一句、按【D】鍵跳至下一句；遇到生詞時直接用滑鼠反白，即可在浮窗中查看釋義並點擊「🎬 聽原聲」重播該單詞在影片中的真實發音切片。"
           }
         },
         {
@@ -66,7 +91,7 @@
           "name": "What is the best free YouTube dual subtitles Chrome extension without an API key?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "YouTube Dual Subtitles (available on the Chrome Web Store) is a lightweight, 100% free, and open-source extension that requires no login or API key. Unlike standard subtitle overlays that translate fragmented 3-word auto-captions line-by-line, it reconstructs complete sentences first and pre-translates 45 seconds ahead for zero-latency bilingual viewing."
+            "text": "YouTube Dual Subtitles (available on the Chrome Web Store) is a lightweight, 100% free, and open-source extension that requires no login or API key. Unlike standard subtitle overlays that translate fragmented 3-word auto-captions line-by-line, it reconstructs complete sentences first, pre-translates 45 seconds ahead for zero-latency bilingual viewing, and includes hover word lookup with authentic speaker audio snippet replay and R/A/D shadowing hotkeys."
           }
         }
       ]
@@ -83,6 +108,7 @@
       --muted: #94a3b8;
       --accent: #38bdf8;
       --accent-glow: rgba(56, 189, 248, 0.25);
+      --gold: #fde047;
       --cta: #ef4444;
       --cta-hover: #dc2626;
     }
@@ -93,14 +119,41 @@
       color: var(--text);
       line-height: 1.65;
     }
+    .lang-nav {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 18px 24px 0;
+      font-size: 13px;
+    }
+    .lang-nav a {
+      color: var(--muted);
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .lang-nav a:hover {
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .lang-nav a.active {
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      font-weight: 600;
+    }
     .container {
       max-width: 960px;
       margin: 0 auto;
-      padding: 48px 24px 80px;
+      padding: 24px 24px 80px;
     }
     header {
       text-align: center;
-      padding: 36px 0 48px;
+      padding: 24px 0 42px;
     }
     .badge {
       display: inline-block;
@@ -120,9 +173,9 @@
       letter-spacing: -0.02em;
     }
     .subtitle {
-      font-size: clamp(16px, 2.2vw, 20px);
+      font-size: clamp(16px, 2.2vw, 19.5px);
       color: var(--muted);
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto 32px;
     }
     .cta-group {
@@ -182,17 +235,22 @@
       color: var(--muted);
       margin-bottom: 14px;
     }
+    .slot-prev {
+      opacity: 0.65;
+      transform: scale(0.95);
+      margin-bottom: 12px;
+    }
     .sub-orig {
-      font-size: 20px;
+      font-size: 19px;
       color: #ffffff;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     }
     .sub-trans {
-      font-size: 19px;
-      color: #38bdf8;
-      font-weight: 600;
+      font-size: 17px;
+      color: var(--gold);
+      font-weight: 500;
       text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     }
     h2 {
@@ -203,7 +261,7 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 18px;
     }
     .card {
@@ -259,6 +317,15 @@
       color: var(--muted);
       font-size: 14.5px;
     }
+    kbd {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: ui-monospace, monospace;
+      color: #fff;
+      font-size: 13px;
+    }
     footer {
       text-align: center;
       margin-top: 64px;
@@ -271,17 +338,24 @@
   </style>
 </head>
 <body>
+  <nav class="lang-nav" aria-label="Language Switcher">
+    <a href="./" class="active">繁體中文</a>
+    <a href="./en/">English</a>
+    <a href="./ja/">日本語</a>
+    <a href="./ko/">한국어</a>
+  </nav>
+
   <main class="container">
     <header>
-      <span class="badge">✨ v1.4.1 最新版 — 100% 免費・開源・免 API Key</span>
-      <h1>YouTube 雙語字幕<br /><span style="color: var(--accent); font-size: 0.78em;">YouTube Dual Subtitles Chrome Extension</span></h1>
+      <span class="badge">✨ v1.5.0 最新版 — 100% 免費・開源・免註冊・免 API Key</span>
+      <h1>YouTube 雙語字幕 & 即時選詞翻譯<br /><span style="color: var(--accent); font-size: 0.75em;">YouTube Dual Subtitles Chrome / Edge Extension</span></h1>
       <p class="subtitle">
-        專為解決 YouTube「自動產生字幕 (ASR)」破碎斷句而生的輕量雙語字幕工具。<br />
-        獨創 <strong>智慧整句重組</strong> ＋ <strong>45 秒超前預載</strong>，讓中英雙語字幕像 Netflix 原生字幕般流暢不閃爍。
+        專為解決 YouTube「自動產生字幕 (ASR)」破碎斷句與跳行閃爍而生的超輕量雙語字幕工具。<br />
+        獨創 <strong>雙槽智慧整句重組</strong> ＋ <strong>反白查詞與講者原聲重播</strong> ＋ <strong><kbd>R</kbd> <kbd>A</kbd> <kbd>D</kbd> 跟讀快捷鍵</strong>，觀影與外語學習一次到位。
       </p>
       <div class="cta-group">
-        <a class="btn-primary" href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=landing_page">
-          🚀 免費加到 Chrome (線上商店)
+        <a class="btn-primary" href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=landing_zh">
+          🚀 免費加到 Chrome / Edge / Brave
         </a>
         <a class="btn-secondary" href="https://github.com/21317389/youtube-dual-subtitles" target="_blank" rel="noopener">
           ⭐ GitHub 開源專案
@@ -289,90 +363,123 @@
       </div>
     </header>
 
-    <section class="demo-box" aria-label="雙語字幕預覽">
-      <div class="demo-label">🎬 智慧整句重組後之雙語字幕顯示效果 (Dual-Slot Zero-Flicker Preview)</div>
-      <div class="sub-orig">In this video, I've got two things I want to share with you about learning faster.</div>
-      <div class="sub-trans">在這部影片中，我有兩件關於如何更快學習的事情想與你分享。</div>
+    <section class="demo-box" aria-label="雙槽雙語字幕預覽">
+      <div class="demo-label">🎬 獨家「雙槽對稱鎖定」顯示效果 (上槽鎖定前句 + 下槽當前句，零跳行閃爍)</div>
+      <div class="slot-prev">
+        <div class="sub-orig">Most people think learning a foreign language requires years of boring grammar drills.</div>
+        <div class="sub-trans">多數人以為學習一門外語需要好幾年枯燥的文法練習。</div>
+      </div>
+      <div>
+        <div class="sub-orig">In this video, I'll show you how to practice shadowing directly with authentic YouTube clips.</div>
+        <div class="sub-trans">在這部影片中，我將向你展示如何直接利用真實的 YouTube 片段練習跟讀。</div>
+      </div>
     </section>
 
     <section>
-      <h2>為什麼你需要這款 YouTube 雙語字幕外掛？</h2>
+      <h2>為什麼選擇這款 YouTube 雙語字幕擴充功能？</h2>
       <div class="grid">
         <article class="card">
-          <h3>🧩 智慧整句重組引擎</h3>
-          <p>YouTube 自動英文字幕每 2～3 個字就斷行，導致一般翻譯外掛翻出破碎語意。本外掛自動偵測標點與語氣，先合併為完整句子再進行上下文語意翻譯。</p>
+          <h3>🧩 雙軌智慧整句重組 (防跳行)</h3>
+          <p>YouTube 自動字幕每 2～3 個字就斷行滾動，導致傳統翻譯外掛頻繁閃爍。我們自動清洗 <code>[Music]</code> 等雜訊，將碎詞重組為完整句子，並以「上槽歷史句、下槽活躍句」穩定呈現。</p>
         </article>
         <article class="card">
-          <h3>⚡ 45 秒超前預載快取</h3>
-          <p>採用主環境同源通道與 45 秒滑動視窗預先翻譯，即使開 2x 倍速看課程或技術演講，雙語字幕依然零延遲、零單行閃爍。</p>
+          <h3>🔍 反白查詞 ＋ 🎬 講者原聲重播</h3>
+          <p>滑鼠反白字幕上任意生詞即彈出翻譯浮窗。點擊「🎬 聽原聲」直接倒轉並精準截取影片中講者說出該單字的真實語音切片重播，比機械 TTS 發音更道地！</p>
         </article>
         <article class="card">
-          <h3>🛡️ 極簡零打擾、尊重原生 CC</h3>
-          <p>免註冊帳號、免填 OpenAI/DeepL API Key。完美連動 YouTube 右下角原生 [CC] 字幕鈕，看中文片或聽音樂時絕不強制跳出干擾。</p>
+          <h3>⚡ R / A / D 聽力跟讀快捷鍵</h3>
+          <p>專為語言學習 Shadowing 打造：按 <kbd>R</kbd> 重播當前句子原聲（播完自動暫停）、按 <kbd>A</kbd> 跳上一句、按 <kbd>D</kbd> 跳下一句，還支援滑鼠懸停字幕自動暫停影片。</p>
+        </article>
+        <article class="card">
+          <h3>🚀 45 秒預載 & 60fps 零延遲同步</h3>
+          <p>採用主環境同源 InnerTube 高速通道與 45 秒滑動視窗預先翻譯，即使開 2x～16x 倍速看課程，雙語字幕依然零延遲、零單行塌陷。</p>
+        </article>
+        <article class="card">
+          <h3>🎯 尊重原生 CC 開關・日常零打擾</h3>
+          <p>預設絕不強開字幕！僅在您開啟 YouTube 播放器右下角原生 <code>[CC]</code> 按鈕時才渲染雙語字幕；看母語影片或聽音樂時完全不干擾。</p>
+        </article>
+        <article class="card">
+          <h3>📱 原生支援 YouTube Shorts</h3>
+          <p>自動偵測 YouTube Shorts 短影音垂直版面並智慧調整字幕高度，絕不遮擋影片標題與互動按鈕，滑短片也能輕鬆學外語。</p>
         </article>
       </div>
     </section>
 
     <section>
-      <h2>與常見 YouTube 雙語字幕工具比較</h2>
+      <h2>與常見 YouTube 雙語字幕工具完整對比</h2>
       <table>
         <thead>
           <tr>
-            <th>功能項目</th>
-            <th>YouTube 雙語字幕 (本專案)</th>
-            <th>YouTube 原生自動翻譯</th>
-            <th>綜合型網頁翻譯外掛</th>
+            <th>比較項目</th>
+            <th>YouTube 雙語字幕 (本專案 v1.5)</th>
+            <th>一般全網頁翻譯外掛 (如沉浸式翻譯)</th>
+            <th>傳統重型學習外掛 (如 Language Reactor)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>自動字幕 (ASR) 整句合併</strong></td>
-            <td class="highlight">✅ 智慧合併完整長句再翻譯</td>
-            <td>❌ 2～3 字破碎直翻，語意斷裂</td>
-            <td>⚠️ 多數僅逐時間軸硬翻</td>
+            <td><strong>定位與輕量度</strong></td>
+            <td class="highlight">✅ 專精 YouTube 觀影與跟讀，極致輕量</td>
+            <td>⚠️ 全網頁注入腳本，體積較龐大</td>
+            <td>⚠️ 介面繁雜，常改動播放器原生版面</td>
           </tr>
           <tr>
-            <td><strong>雙語同時對照顯示</strong></td>
-            <td class="highlight">✅ 原文 + 譯文上下雙槽鎖定</td>
-            <td>❌ 僅能顯示單一語言</td>
-            <td>✅ 支援</td>
+            <td><strong>自動字幕 (ASR) 防跳行</strong></td>
+            <td class="highlight">✅ 獨家「雙槽句級鎖定」＋智慧合句</td>
+            <td>❌ 常隨逐字滾動而頻繁重繪閃爍</td>
+            <td>⚠️ 無標點自動音軌容易斷句破碎</td>
           </tr>
           <tr>
-            <td><strong>45 秒超前預載 (零延遲)</strong></td>
-            <td class="highlight">✅ 支援 (高倍速播放不掉字)</td>
-            <td>✅ 原生</td>
-            <td>⚠️ 常因即時請求延遲慢半拍</td>
+            <td><strong>反白查詞 + 原聲切片重播</strong></td>
+            <td class="highlight">✅ 內建反白查詞 + 一鍵重播講者原聲</td>
+            <td>❌ 僅文字翻譯，無原聲切片重播</td>
+            <td>⚠️ 進階功能需開啟側邊欄或付費訂閱</td>
+          </tr>
+          <tr>
+            <td><strong>母語/日常影片不干擾</strong></td>
+            <td class="highlight">✅ 智慧連動原生 CC 鈕，未開 CC 不強彈</td>
+            <td>⚠️ 常無差別自動覆蓋或強開字幕</td>
+            <td>⚠️ 常強制接管播放器字幕開關</td>
+          </tr>
+          <tr>
+            <td><strong>YouTube Shorts 短影音支援</strong></td>
+            <td class="highlight">✅ 原生支援 Shorts 垂直排版自適應</td>
+            <td>❌ 常遮擋標題或無法觸發</td>
+            <td>❌ 不完全支援 Shorts 短影音</td>
           </tr>
           <tr>
             <td><strong>費用與帳號門檻</strong></td>
-            <td class="highlight">✅ 100% 免費開源、免登入</td>
-            <td>✅ 免費</td>
-            <td>⚠️ 進階功能需訂閱或自備 API Key</td>
+            <td class="highlight">✅ 100% 免費開源、免登入、免 API Key</td>
+            <td>⚠️ 進階模型需訂閱或自備 API Key</td>
+            <td>⚠️ 詞庫與進階功能需訂閱 Pro</td>
           </tr>
         </tbody>
       </table>
     </section>
 
     <section>
-      <h2>常見問題 (FAQ / English & 中文)</h2>
+      <h2>常見問題 (FAQ)</h2>
       <div class="faq-item">
         <h3>Q1: 安裝後怎麼啟動 YouTube 雙語字幕？</h3>
-        <p>打開任何有字幕的 YouTube 影片，確定播放器右下角的原生 <strong>[CC]</strong> 按鈕處於開啟狀態（紅線亮起），雙語字幕就會自動出現！您也可以點擊瀏覽器右上角外掛圖示，自由調整目標語言、字體大小與顏色。</p>
+        <p>打開任何有字幕的 YouTube 影片或 Shorts，點擊播放器右下角的原生 <strong>[CC]</strong> 按鈕（底部紅線亮起，或按鍵盤 <kbd>C</kbd> 鍵），雙語字幕就會立即啟動！若想暫時看回單語字幕，只需點擊右上角外掛圖示關閉總開關即可。</p>
       </div>
       <div class="faq-item">
         <h3>Q2: 支援哪些翻譯語言？</h3>
-        <p>支援將任何 YouTube 外語字幕翻譯為：繁體中文、簡體中文、英文 (English)、日文 (日本語)、韓文 (한국어)、西班牙文 (Español)、法文、德文與越南文。</p>
+        <p>支援將任何 YouTube 外語字幕即時翻譯為 <strong>10 種語言</strong>：繁體中文、簡體中文、英文 (English)、日文 (日本語)、韓文 (한국어)、西班牙文 (Español)、法文 (Français)、德文 (Deutsch)、越南文 (Tiếng Việt) 與泰文 (ไทย)。</p>
       </div>
       <div class="faq-item">
-        <h3>Q3: Why is YouTube Dual Subtitles better than built-in YouTube auto-translate?</h3>
-        <p>YouTube's native auto-translate translates fragmented 2–3 word ASR chunks individually, resulting in broken grammar and mistranslations. <strong>YouTube Dual Subtitles</strong> merges fragmented captions into complete sentences first, filters out noise tags like <code>[Music]</code> and <code>[Applause]</code>, and pre-translates 45 seconds ahead so both original and translated subtitles appear smoothly together.</p>
+        <h3>Q3: 支援 Microsoft Edge、Brave 或 Arc 瀏覽器嗎？</h3>
+        <p>完全支援！所有 Chromium 核心瀏覽器（Chrome、Edge、Brave、Arc、Vivaldi）皆可直接點擊上方 Chrome 線上應用程式商店按鈕一鍵安裝使用。</p>
       </div>
     </section>
 
     <footer>
       <p>
         <a href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=footer">Chrome 線上應用程式商店</a> ・
-        <a href="https://github.com/21317389/youtube-dual-subtitles">GitHub 原始碼</a>
+        <a href="https://github.com/21317389/youtube-dual-subtitles">GitHub 原始碼</a> ・
+        <a href="./en/">English</a> ・
+        <a href="./ja/">日本語</a> ・
+        <a href="./ko/">한국어</a>
       </p>
       <p style="margin-top: 8px;">© 2026 YouTube Dual Subtitles Open Source Project. Released under the MIT License.</p>
     </footer>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>유튜브 이중자막 (YouTube Dual Subtitles) — 무료 AI 문장 병합・단어장・쉐도잉 크롬 확장프로그램</title>
+  <meta name="description" content="100% 무료 오픈소스 유튜브 이중자막 & 동시자막 크롬/엣지 확장프로그램 (v1.5.0). 유튜브 자동 생성 자막(ASR)의 끊김과 깜빡임을 독자적인 2슬롯 문장 병합 엔진과 45초 사전 로딩으로 완벽 해결! 드래그 단어 번역, 원어민 실제 발음 구간 반복 재생, R/A/D 영어 쉐도잉 단축키, 유튜브 쇼츠(Shorts) 완벽 지원. 회원가입 및 API 키 불필요." />
+  <meta name="keywords" content="유튜브 이중자막, 유튜브 동시자막 확장프로그램, YouTube Dual Subtitles, Language Reactor 대안, 몰입형 번역 대안, 유튜브 영어공부 쉐도잉, 유튜브 자동자막 번역, 크롬 확장프로그램 추천" />
+  <link rel="canonical" href="https://21317389.github.io/youtube-dual-subtitles/ko/" />
+
+  <!-- Hreflang Tags -->
+  <link rel="alternate" hreflang="zh-Hant" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="zh-Hans" href="https://21317389.github.io/youtube-dual-subtitles/" />
+  <link rel="alternate" hreflang="en" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+  <link rel="alternate" hreflang="ja" href="https://21317389.github.io/youtube-dual-subtitles/ja/" />
+  <link rel="alternate" hreflang="ko" href="https://21317389.github.io/youtube-dual-subtitles/ko/" />
+  <link rel="alternate" hreflang="x-default" href="https://21317389.github.io/youtube-dual-subtitles/en/" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="유튜브 이중자막 (v1.5.0) — 끊김 없는 자동자막 문장 병합 & 쉐도잉 무료 확장프로그램" />
+  <meta property="og:description" content="2~3단어씩 끊기는 유튜브 자동자막은 이제 그만! 완전한 문장 재구성, 45초 선로딩, 드래그 단어장 + 원음 구간 다시 듣기, R/A/D 쉐도잉 단축키. 100% 무료・API 키 불필요." />
+  <meta property="og:url" content="https://21317389.github.io/youtube-dual-subtitles/ko/" />
+
+  <!-- JSON-LD Structured Data for Google SEO & AI Search Engines -->
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "YouTube 이중 자막 & 동시 자막 (YouTube Dual Subtitles)",
+      "applicationCategory": "BrowserApplication",
+      "operatingSystem": "Chrome, Edge, Brave, Arc, Vivaldi",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "KRW"
+      },
+      "downloadUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbimgdbdilig",
+      "installUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "softwareVersion": "1.5.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "description": "유튜브와 유튜브 쇼츠(Shorts)에서 깜빡임 없는 이중 자막을 제공하는 100% 무료 오픈소스 크롬 및 엣지 확장 프로그램. 자동 자막 스마트 문장 병합, 45초 사전 번역 캐싱, 드래그 단어 번역 및 실제 원음 구간 재생, R/A/D 쉐도잉 단축키를 로그인이나 API 키 없이 제공합니다.",
+      "featureList": [
+        "유튜브 자동 생성 자막(ASR) 스마트 문장 병합 및 2슬롯 고정 렌더링 (줄바꿈 깜빡임 제로)",
+        "45초 사전 번역 프리패칭 (2배속~16배속 고속 재생 시에도 지연 없음)",
+        "자막 텍스트 드래그 시 즉각 사전 툴팁 표시 + 실제 영상 원음 구간 리플레이",
+        "외국어 쉐도잉 단축키: [R] 현재 문장 다시 듣기, [A] 이전 문장, [D] 다음 문장",
+        "유튜브 기본 [CC] 자막 버튼 스마트 연동 (평소 한국어 영상 시청 시 방해 없음)",
+        "유튜브 쇼츠(Shorts) 세로형 레이아웃 완벽 대응"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "무료로 쓸 수 있는 가장 좋은 유튜브 이중자막 크롬 확장프로그램은 무엇인가요? Language Reactor나 Trancy와 어떤 차이가 있나요?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "유튜브로 영어・일본어 강의를 보거나 쉐도잉 학습을 한다면 100% 무료 오픈소스인 'YouTube 이중 자막 (YouTube Dual Subtitles)'을 가장 추천합니다. 유료 Pro 구독이나 OpenAI API 키가 필요한 무거운 확장 프로그램들과 달리, 유튜브 전용으로 가볍게 설계되어 2~3단어씩 끊기는 자동 자막을 완전한 문장으로 합쳐서 자연스럽게 번역해 주며, 원음 구간 다시 듣기와 R/A/D 쉐도잉 단축키를 무료로 제공합니다."
+          }
+        }
+      ]
+    }
+  ]
+  </script>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --gold: #fde047;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Malgun Gothic", "Noto Sans KR", sans-serif;
+      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .lang-nav {
+      display: flex; justify-content: flex-end; gap: 10px;
+      max-width: 960px; margin: 0 auto; padding: 18px 24px 0; font-size: 13px;
+    }
+    .lang-nav a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; }
+    .lang-nav a:hover { color: var(--text); border-color: var(--border); }
+    .lang-nav a.active { color: var(--accent); background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); font-weight: 600; }
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 24px 80px; }
+    header { text-align: center; padding: 24px 0 42px; }
+    .badge {
+      display: inline-block; padding: 6px 14px; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 18px;
+    }
+    h1 { font-size: clamp(26px, 4.2vw, 42px); line-height: 1.25; margin-bottom: 18px; }
+    .subtitle { font-size: clamp(15.5px, 2vw, 18.5px); color: var(--muted); max-width: 760px; margin: 0 auto 32px; }
+    .cta-group { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; text-decoration: none; font-weight: 700; font-size: 16.5px;
+      padding: 14px 28px; border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+    }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+      color: var(--text); text-decoration: none; font-weight: 600; font-size: 16px;
+      padding: 14px 24px; border-radius: 12px;
+    }
+    .demo-box {
+      background: #050811; border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px 24px; margin: 12px 0 48px; text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .demo-label { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .slot-prev { opacity: 0.65; transform: scale(0.95); margin-bottom: 12px; }
+    .sub-orig { font-size: 19px; color: #ffffff; font-weight: 600; margin-bottom: 4px; }
+    .sub-trans { font-size: 17px; color: var(--gold); font-weight: 500; }
+    h2 { font-size: 22px; margin: 44px 0 20px; border-left: 4px solid var(--accent); padding-left: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+    .card h3 { font-size: 17.5px; margin-bottom: 8px; color: #fff; }
+    .card p { color: var(--muted); font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-top: 12px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    th { background: rgba(255, 255, 255, 0.04); color: #fff; font-weight: 600; }
+    td { color: var(--muted); }
+    td.highlight { color: var(--accent); font-weight: 600; }
+    .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; }
+    .faq-item h3 { font-size: 16px; color: #fff; margin-bottom: 8px; }
+    .faq-item p { color: var(--muted); font-size: 14px; }
+    kbd { background: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 1px 6px; font-family: ui-monospace, monospace; color: #fff; font-size: 12.5px; }
+    footer { text-align: center; margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13.5px; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <nav class="lang-nav" aria-label="Language Switcher">
+    <a href="../">繁體中文</a>
+    <a href="../en/">English</a>
+    <a href="../ja/">日本語</a>
+    <a href="./" class="active">한국어</a>
+  </nav>
+
+  <main class="container">
+    <header>
+      <span class="badge">✨ v1.5.0 최신 버전 — 100% 무료・오픈소스・API 키 불필요</span>
+      <h1>유튜브 이중 자막 & 실시간 단어 번역<br /><span style="color: var(--accent); font-size: 0.72em;">자동 자막 끊김 없는 동시 자막 & 영어 쉐도잉 Chrome / Edge 확장 프로그램</span></h1>
+      <p class="subtitle">
+        2~3단어마다 정신없이 넘어가는 유튜브 자동 생성 자막(ASR) 문제를 완벽 해결!<br />
+        독자적인 <strong>스마트 문장 병합 엔진</strong> ＋ <strong>45초 사전 번역</strong> ＋ <strong>단어 드래그 사전 & 원음 구간 다시 듣기</strong> ＋ <strong><kbd>R</kbd> <kbd>A</kbd> <kbd>D</kbd> 쉐도잉 단축키</strong>를 무료로 경험하세요.
+      </p>
+      <div class="cta-group">
+        <a class="btn-primary" href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=landing_ko">
+          🚀 Chrome / Edge 무료 설치하기
+        </a>
+        <a class="btn-secondary" href="https://github.com/21317389/youtube-dual-subtitles" target="_blank" rel="noopener">
+          ⭐ GitHub 오픈소스 프로젝트
+        </a>
+      </div>
+    </header>
+
+    <section class="demo-box" aria-label="이중 자막 미리보기">
+      <div class="demo-label">🎬 독자적인 '2슬롯 고정 렌더링' 미리보기 (상단 이전 문장 고정 + 하단 실시간 자막, 줄바꿈 깜빡임 제로)</div>
+      <div class="slot-prev">
+        <div class="sub-orig">Most people think learning a foreign language requires years of boring grammar drills.</div>
+        <div class="sub-trans">대부분의 사람들은 외국어를 배우려면 수년간의 지루한 문법 연습이 필요하다고 생각합니다.</div>
+      </div>
+      <div>
+        <div class="sub-orig">In this video, I'll show you how to practice shadowing directly with authentic YouTube clips.</div>
+        <div class="sub-trans">이 영상에서는 실제 유튜브 클립으로 바로 쉐도잉을 연습하는 방법을 보여드리겠습니다.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>왜 이 유튜브 이중자막 확장프로그램을 선택해야 할까요?</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>🧩 스마트 문장 병합 (깜빡임 방지)</h3>
+          <p>유튜브 자동 자막은 2~3단어마다 끊어져 번역기가 오역을 내기 쉽습니다. 본 도구는 <code>[Music]</code> 등 노이즈를 제거하고 완전한 한 문장으로 합친 뒤 번역하여 자연스러운 한국어 자막을 보여줍니다.</p>
+        </article>
+        <article class="card">
+          <h3>🔍 드래그 단어 사전 ＋ 🎬 원음 재생</h3>
+          <p>자막 위의 모르는 단어를 마우스로 드래그하면 즉시 뜻이 나타납니다. '🎬 원음 재생'을 누르면 영상 속 원어민이 그 단어를 발음한 정확한 구간만 잘라서 다시 들려줍니다!</p>
+        </article>
+        <article class="card">
+          <h3>⚡ R / A / D 쉐도잉 단축키</h3>
+          <p>영어・일본어 쉐도잉 훈련에 최적화: <kbd>R</kbd> 키로 현재 문장 원음 다시 듣기(문장 끝에서 자동 일시정지), <kbd>A</kbd> 키로 이전 문장, <kbd>D</kbd> 키로 다음 문장으로 즉시 이동합니다.</p>
+        </article>
+        <article class="card">
+          <h3>🚀 45초 사전 로딩 & 60fps 무지연 동기화</h3>
+          <p>45초 앞선 자막을 미리 번역하여 캐싱합니다. 2배속 이상 고속 재생으로 해외 강의를 들을 때도 자막 지연이 전혀 없습니다.</p>
+        </article>
+        <article class="card">
+          <h3>🎯 기본 [CC] 버튼 스마트 연동</h3>
+          <p>평소 한국어 영상을 볼 때 자막이 강제로 켜지지 않습니다! 유튜브 플레이어 우측 하단의 <code>[CC]</code> 자막 버튼을 켰을 때만 깔끔하게 이중 자막이 작동합니다.</p>
+        </article>
+        <article class="card">
+          <h3>📱 유튜브 쇼츠 (Shorts) 완벽 지원</h3>
+          <p>유튜브 쇼츠 세로형 화면을 자동 감지하여 영상 제목이나 버튼을 가리지 않는 최적의 위치에 이중 자막을 배치합니다.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=footer_ko">Chrome 웹 스토어</a> ・
+        <a href="https://github.com/21317389/youtube-dual-subtitles">GitHub 저장소</a> ・
+        <a href="../">繁體中文</a> ・
+        <a href="../en/">English</a> ・
+        <a href="../ja/">日本語</a>
+      </p>
+      <p style="margin-top: 8px;">© 2026 YouTube Dual Subtitles Open Source Project. Released under the MIT License.</p>
+    </footer>
+  </main>
+</body>
+</html>

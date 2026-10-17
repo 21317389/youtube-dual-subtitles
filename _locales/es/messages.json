@@ -118,5 +118,21 @@
   "rateStoreBtn": {
     "message": "Calificar 5★",
     "description": "Botón de calificar en la tienda"
+  },
+  "milestoneReviewTitle": {
+    "message": "🎉 ¿Te gusta Subtítulos Dobles para YouTube?",
+    "description": "Título de solicitud de reseña"
+  },
+  "milestoneReviewDesc": {
+    "message": "¡Ya has visto varios videos con subtítulos bilingües! Como proyecto 100% gratuito y de código abierto, una reseña de 5 estrellas nos ayuda muchísimo ❤️",
+    "description": "Descripción de solicitud de reseña"
+  },
+  "milestoneRateNow": {
+    "message": "⭐ Dejar 5 estrellas",
+    "description": "Botón calificar ahora"
+  },
+  "milestoneRateDismiss": {
+    "message": "No volver a mostrar",
+    "description": "Botón descartar"
   }
 }
