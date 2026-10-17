@@ -104,11 +104,11 @@
     "description": "Dismiss what's new button"
   },
   "whatsNewItem1": {
-    "message": "🎯 Smart CC Sync: Dual subtitles now appear only when YouTube's CC button is ON — zero interruption on casual videos!",
+    "message": "🎯 Smart YouTube CC Sync: Turn on the player [CC] button to show dual subtitles — zero distraction otherwise!",
     "description": "What's new item 1"
   },
   "whatsNewItem2": {
-    "message": "🔄 Native CC Restore: Turning off the switch above immediately restores YouTube's original CC captions.",
+    "message": "⚡ Faster & More Reliable: Upgraded multi-channel caption loader and anti-freeze translation engine!",
     "description": "What's new item 2"
   },
   "whatsNewFooterBtn": {

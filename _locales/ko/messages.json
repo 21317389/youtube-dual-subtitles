@@ -104,11 +104,11 @@
     "description": "닫기 버튼"
   },
   "whatsNewItem1": {
-    "message": "🎯 스마트 CC 연동: 이제 YouTube 'CC 자막'이 켜져 있을 때만 이중 자막이 표시되어 일반 시청을 방해하지 않습니다!",
+    "message": "🎯 YouTube CC 스마트 연동: 플레이어 우측 하단의 [CC 자막]을 켜면 이중 자막이 자동 표시됩니다!",
     "description": "업데이트 항목 1"
   },
   "whatsNewItem2": {
-    "message": "🔄 기본 자막 즉시 복원: 상단 스위치를 끄면 즉시 YouTube 기본 CC 자막으로 복원됩니다.",
+    "message": "⚡ 번역 안정성 대폭 업그레이드: 멀티 채널 자막 로더와 끊김 방지 번역 엔진으로 배속 재생도 매끄럽게!",
     "description": "업데이트 항목 2"
   },
   "whatsNewFooterBtn": {

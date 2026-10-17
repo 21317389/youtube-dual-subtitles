@@ -104,11 +104,11 @@
     "description": "關閉更新重點按鈕"
   },
   "whatsNewItem1": {
-    "message": "🎯 智慧連動 YouTube CC：現在起僅在開啟 YouTube「CC 字幕」時顯示雙語字幕，一般觀看零打擾！",
+    "message": "🎯 智慧連動 YouTube CC：開啟播放器右下角「CC 字幕」即自動顯示雙語字幕，一般觀看零打擾！",
     "description": "更新項目 1"
   },
   "whatsNewItem2": {
-    "message": "🔄 原生字幕無縫切換：關閉上方總開關時，立即恢復 YouTube 原始 CC 字幕。",
+    "message": "⚡ 翻譯穩定度大升級：全新多通道字幕抓取與防卡死翻譯引擎，長片與倍速播放更流暢！",
     "description": "更新項目 2"
   },
   "whatsNewFooterBtn": {

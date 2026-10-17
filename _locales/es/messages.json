@@ -104,11 +104,11 @@
     "description": "Botón cerrar novedades"
   },
   "whatsNewItem1": {
-    "message": "🎯 Sincronización inteligente con CC: Los subtítulos dobles ahora solo aparecen cuando activas el botón CC de YouTube.",
+    "message": "🎯 Sincronización inteligente con CC: ¡Activa el botón [CC] del reproductor para mostrar subtítulos bilingües!",
     "description": "Novedad 1"
   },
   "whatsNewItem2": {
-    "message": "🔄 Restauración de CC nativo: Al apagar el interruptor superior, vuelves al instante a los subtítulos originales de YouTube.",
+    "message": "⚡ Mayor velocidad y estabilidad: ¡Nuevo motor de carga multicanal y traducción sin bloqueos!",
     "description": "Novedad 2"
   },
   "whatsNewFooterBtn": {
