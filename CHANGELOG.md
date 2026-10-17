@@ -4,6 +4,26 @@
 
 ---
 
+## [v1.5.0] - 2026-10-17
+
+### 🚀 核心架構模組化重構、切換語言零競態與跟讀快捷鍵全面升級 (Modular Architecture, Async Race Elimination & Hotkey Overhaul)
+
+* **核心架構全面解耦與 `esbuild` 高速封裝 (`src/core`, `src/ui`, `src/bridge`)**：
+  * 將原本超過 2,200 行的單體 `content.js` 拆解為獨立職責模組：`SessionState` 會話狀態機、`CaptionParser` 字幕解析器、`SentencePolicy` 智慧合句策略、`StreamingSentenceExtractor` 串流斷句器、`TranslationScheduler` 翻譯排程器、`SubtitleRenderer` 雙槽渲染器與 `TooltipController` 選詞控制器。
+  * 徹底消除 YouTube SPA 跨片切換時的計時器與 DOM 記憶體洩漏，並建立 18 大項自動化單元與整合測試防線。
+* **消除切換目標語言的非同步競態條件 (Async Stale-Response Race Fixed)**：
+  * 修復在播放途中切換目標翻譯語言時，仍在飛行中的舊語言批次請求返回後覆蓋新語言譯文的問題（涵蓋 Mode 1 單句、批次、降級通道與 Mode 2 即時串流雙槽）。
+* **鍵盤跟讀快捷鍵 (`R` / `A` / `D`) Capture-Phase 攔截與防呆強化**：
+  * 改採 Capture-Phase 事件監聽，解決 YouTube 播放器特定焦點狀態下按 `R`（重播原聲）、`A`（上一句）、`D`（下一句）無反應的問題，並修復無字幕狀態下觸發跳句的邊界錯誤。
+* **同語言多字幕軌切換 (`vssId`) 與段內長句比例插值切分**：
+  * 支援同語言不同軌道（如 `en` 手動字幕切換至 `a.en` 自動字幕）精準識別與即時重載。
+  * 恢復單一時間片段內包含多句標點時的自動切分與時間軸比例插值，長句排版更清爽。
+* **GA4 隱私脫敏與唯讀資源 `pageTitle` 診斷通道**：
+  * 全面移除 `video_id` 等個人觀看歷史欄位，100% 符合 Chrome Web Store 隱私規範；自動攔截本機開發與 E2E 測試流量。
+  * 針對 CWS 託管之唯讀 GA4 資源，改以原生 `dt (pageTitle)` 維度承載卸載問卷文字留言與匿名診斷參數。
+
+---
+
 ## [v1.4.1] - 2026-10-02
 
 ### 🎯 尊重原生 CC 開關、Popup 懸浮更新卡片與留存診斷升級 (Smart CC Sync, Popup Redesign & Retention Diagnostics)
