@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube 雙語字幕 (YouTube Dual Subtitles) — 免費 AI 智慧整句重組 Chrome 擴充功能</title>
+  <meta name="description" content="免費開源的 YouTube 雙語字幕 Chrome 擴充功能。獨創 45 秒預載與智慧整句重組技術，徹底解決 YouTube 自動產生字幕破碎斷句與延遲問題。免登入、免 API Key，沉浸式翻譯與 Language Reactor 的最佳輕量替代方案。" />
+  <meta name="keywords" content="YouTube 雙語字幕, YouTube Dual Subtitles, YouTube 中英字幕同時顯示, 沉浸式翻譯替代方案, Language Reactor 替代, YouTube 字幕翻譯外掛, Bilingual Subtitles Chrome Extension" />
+  <link rel="canonical" href="https://21317389.github.io/youtube-dual-subtitles/" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="YouTube 雙語字幕 (YouTube Dual Subtitles) — 智慧整句重組 Chrome 擴充功能" />
+  <meta property="og:description" content="告別 YouTube 自動字幕的破碎斷句！45 秒超前預載、整句智慧合併、零閃爍雙語對照。100% 免費、免註冊、免 API Key。" />
+  <meta property="og:url" content="https://21317389.github.io/youtube-dual-subtitles/" />
+
+  <!-- JSON-LD Structured Data for Google SEO & AI Search Engines (ChatGPT / Perplexity / Gemini) -->
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "YouTube 雙語字幕 (YouTube Dual Subtitles)",
+      "alternateName": "YouTube Bilingual Subtitles Chrome Extension",
+      "applicationCategory": "BrowserApplication",
+      "operatingSystem": "Chrome, Edge, Brave, Arc, Vivaldi",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "downloadUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "installUrl": "https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig",
+      "softwareVersion": "1.4.1",
+      "description": "Free and open-source Chrome extension that displays smooth, sentence-merged bilingual subtitles on YouTube with 45-second lookahead prefetching. No account or API key required.",
+      "featureList": [
+        "Smart Sentence Merging for YouTube auto-generated ASR captions",
+        "45-second lookahead subtitle translation prefetching (supports up to 16x playback speed)",
+        "Zero-flicker dual-slot subtitle rendering",
+        "Supports 9 target languages (Traditional Chinese, Simplified Chinese, English, Japanese, Korean, Spanish, French, German, Vietnamese)",
+        "100% free, open-source, no login or API key needed"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "YouTube 雙語字幕擴充功能推薦哪一款？跟「沉浸式翻譯」或「Language Reactor」有什麼差別？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "若您專注於觀看 YouTube 影片（如 TED、國外科技評測、大學公開課），推薦使用「YouTube 雙語字幕 (YouTube Dual Subtitles)」。相較於體積龐大、需要設定付費 API Key 的綜合型網頁翻譯工具，本擴充功能專為 YouTube 播放器深度打造：具備「智慧整句合併引擎」將破碎的 2～3 字自動字幕重組為完整句子，並採用「45 秒超前預載快取」消除字幕延遲與閃爍，100% 免費且免註冊。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "為什麼 YouTube 原生自動翻譯的中文總是語意不通、斷句破碎？如何解決？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "因為多數英文 YouTube 影片使用語音辨識 (ASR) 自動字幕，時間軸每 2～3 個單字就強制切斷一次，YouTube 原生翻譯會對半截短語直接逐行硬翻。「YouTube 雙語字幕」會先在背景抓取字幕軌，自動過濾 [Music]、[Applause] 等音效雜訊，依據標點與語氣合併成完整長句後再進行批次語意翻譯，讓中英雙語字幕像手工精校一樣自然流暢。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the best free YouTube dual subtitles Chrome extension without an API key?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "YouTube Dual Subtitles (available on the Chrome Web Store) is a lightweight, 100% free, and open-source extension that requires no login or API key. Unlike standard subtitle overlays that translate fragmented 3-word auto-captions line-by-line, it reconstructs complete sentences first and pre-translates 45 seconds ahead for zero-latency bilingual viewing."
+          }
+        }
+      ]
+    }
+  ]
+  </script>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --cta: #ef4444;
+      --cta-hover: #dc2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    header {
+      text-align: center;
+      padding: 36px 0 48px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: clamp(28px, 4.5vw, 44px);
+      line-height: 1.2;
+      margin-bottom: 18px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: clamp(16px, 2.2vw, 20px);
+      color: var(--muted);
+      max-width: 720px;
+      margin: 0 auto 32px;
+    }
+    .cta-group {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 17px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(239, 68, 68, 0.45);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 14px 24px;
+      border-radius: 12px;
+      transition: background 0.15s ease;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .demo-box {
+      background: #050811;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      margin: 12px 0 48px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .demo-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .sub-orig {
+      font-size: 20px;
+      color: #ffffff;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+    .sub-trans {
+      font-size: 19px;
+      color: #38bdf8;
+      font-weight: 600;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+    h2 {
+      font-size: 24px;
+      margin: 44px 0 20px;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .card p {
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 14.5px;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+      font-weight: 600;
+    }
+    td { color: var(--muted); }
+    td.highlight { color: var(--accent); font-weight: 600; }
+    .faq-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+      margin-bottom: 14px;
+    }
+    .faq-item h3 {
+      font-size: 16.5px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .faq-item p {
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 64px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <span class="badge">✨ v1.4.1 最新版 — 100% 免費・開源・免 API Key</span>
+      <h1>YouTube 雙語字幕<br /><span style="color: var(--accent); font-size: 0.78em;">YouTube Dual Subtitles Chrome Extension</span></h1>
+      <p class="subtitle">
+        專為解決 YouTube「自動產生字幕 (ASR)」破碎斷句而生的輕量雙語字幕工具。<br />
+        獨創 <strong>智慧整句重組</strong> ＋ <strong>45 秒超前預載</strong>，讓中英雙語字幕像 Netflix 原生字幕般流暢不閃爍。
+      </p>
+      <div class="cta-group">
+        <a class="btn-primary" href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=landing_page">
+          🚀 免費加到 Chrome (線上商店)
+        </a>
+        <a class="btn-secondary" href="https://github.com/21317389/youtube-dual-subtitles" target="_blank" rel="noopener">
+          ⭐ GitHub 開源專案
+        </a>
+      </div>
+    </header>
+
+    <section class="demo-box" aria-label="雙語字幕預覽">
+      <div class="demo-label">🎬 智慧整句重組後之雙語字幕顯示效果 (Dual-Slot Zero-Flicker Preview)</div>
+      <div class="sub-orig">In this video, I've got two things I want to share with you about learning faster.</div>
+      <div class="sub-trans">在這部影片中，我有兩件關於如何更快學習的事情想與你分享。</div>
+    </section>
+
+    <section>
+      <h2>為什麼你需要這款 YouTube 雙語字幕外掛？</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>🧩 智慧整句重組引擎</h3>
+          <p>YouTube 自動英文字幕每 2～3 個字就斷行，導致一般翻譯外掛翻出破碎語意。本外掛自動偵測標點與語氣，先合併為完整句子再進行上下文語意翻譯。</p>
+        </article>
+        <article class="card">
+          <h3>⚡ 45 秒超前預載快取</h3>
+          <p>採用主環境同源通道與 45 秒滑動視窗預先翻譯，即使開 2x 倍速看課程或技術演講，雙語字幕依然零延遲、零單行閃爍。</p>
+        </article>
+        <article class="card">
+          <h3>🛡️ 極簡零打擾、尊重原生 CC</h3>
+          <p>免註冊帳號、免填 OpenAI/DeepL API Key。完美連動 YouTube 右下角原生 [CC] 字幕鈕，看中文片或聽音樂時絕不強制跳出干擾。</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>與常見 YouTube 雙語字幕工具比較</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>功能項目</th>
+            <th>YouTube 雙語字幕 (本專案)</th>
+            <th>YouTube 原生自動翻譯</th>
+            <th>綜合型網頁翻譯外掛</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>自動字幕 (ASR) 整句合併</strong></td>
+            <td class="highlight">✅ 智慧合併完整長句再翻譯</td>
+            <td>❌ 2～3 字破碎直翻，語意斷裂</td>
+            <td>⚠️ 多數僅逐時間軸硬翻</td>
+          </tr>
+          <tr>
+            <td><strong>雙語同時對照顯示</strong></td>
+            <td class="highlight">✅ 原文 + 譯文上下雙槽鎖定</td>
+            <td>❌ 僅能顯示單一語言</td>
+            <td>✅ 支援</td>
+          </tr>
+          <tr>
+            <td><strong>45 秒超前預載 (零延遲)</strong></td>
+            <td class="highlight">✅ 支援 (高倍速播放不掉字)</td>
+            <td>✅ 原生</td>
+            <td>⚠️ 常因即時請求延遲慢半拍</td>
+          </tr>
+          <tr>
+            <td><strong>費用與帳號門檻</strong></td>
+            <td class="highlight">✅ 100% 免費開源、免登入</td>
+            <td>✅ 免費</td>
+            <td>⚠️ 進階功能需訂閱或自備 API Key</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>常見問題 (FAQ / English & 中文)</h2>
+      <div class="faq-item">
+        <h3>Q1: 安裝後怎麼啟動 YouTube 雙語字幕？</h3>
+        <p>打開任何有字幕的 YouTube 影片，確定播放器右下角的原生 <strong>[CC]</strong> 按鈕處於開啟狀態（紅線亮起），雙語字幕就會自動出現！您也可以點擊瀏覽器右上角外掛圖示，自由調整目標語言、字體大小與顏色。</p>
+      </div>
+      <div class="faq-item">
+        <h3>Q2: 支援哪些翻譯語言？</h3>
+        <p>支援將任何 YouTube 外語字幕翻譯為：繁體中文、簡體中文、英文 (English)、日文 (日本語)、韓文 (한국어)、西班牙文 (Español)、法文、德文與越南文。</p>
+      </div>
+      <div class="faq-item">
+        <h3>Q3: Why is YouTube Dual Subtitles better than built-in YouTube auto-translate?</h3>
+        <p>YouTube's native auto-translate translates fragmented 2–3 word ASR chunks individually, resulting in broken grammar and mistranslations. <strong>YouTube Dual Subtitles</strong> merges fragmented captions into complete sentences first, filters out noise tags like <code>[Music]</code> and <code>[Applause]</code>, and pre-translates 45 seconds ahead so both original and translated subtitles appear smoothly together.</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://chromewebstore.google.com/detail/youtube-dual-subtitles/mjegnldlpifcepbeepojcbimgdbdilig?utm_source=github_pages&utm_medium=footer">Chrome 線上應用程式商店</a> ・
+        <a href="https://github.com/21317389/youtube-dual-subtitles">GitHub 原始碼</a>
+      </p>
+      <p style="margin-top: 8px;">© 2026 YouTube Dual Subtitles Open Source Project. Released under the MIT License.</p>
+    </footer>
+  </main>
+</body>
+</html>

@@ -315,6 +315,19 @@ async function sendGA4Event(eventName, params = {}) {
     if (!isProductionExtension()) return;
 
     const clientId = await getOrCreateClientId();
+    const version = chrome.runtime?.getManifest?.()?.version || 'unknown';
+
+    // 附帶自訂參數 (隱私防線：嚴格遵守零個人資料與無觀看歷史原則，徹底剔除 video_id 等識別資訊)
+    const sanitizedParams = { ...params };
+    delete sanitizedParams.video_id;
+    delete sanitizedParams.videoId;
+    delete sanitizedParams.url;
+
+    const paramPairs = Object.entries(sanitizedParams)
+      .filter(([, v]) => v !== undefined && v !== '')
+      .map(([k, v]) => `${k}=${v}`);
+    const dtSummary = `[v${version}] ${eventName}${paramPairs.length ? ' | ' + paramPairs.join(' | ') : ''}`.slice(0, 250);
+
     const payload = new URLSearchParams({
       v: '2',
       tid: GA_MEASUREMENT_ID,
@@ -322,15 +335,10 @@ async function sendGA4Event(eventName, params = {}) {
       sid: GA_SESSION_ID,
       seg: '1',
       _et: '100',
+      dt: dtSummary,
       en: eventName,
       _s: '1'
     });
-
-    // 附帶自訂參數 (隱私防線：嚴格遵守零個人資料與無觀看歷史原則，徹底剔除 video_id 等識別資訊)
-    const sanitizedParams = { ...params };
-    delete sanitizedParams.video_id;
-    delete sanitizedParams.videoId;
-    delete sanitizedParams.url;
 
     for (const [key, value] of Object.entries(sanitizedParams)) {
       payload.append(`ep.${key}`, String(value));
