@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const rootDir = __dirname;
 
 console.log('Building dist/content.js via esbuild...');
-execSync('npm.cmd run build', { stdio: 'inherit' });
+execSync('node node_modules/esbuild/bin/esbuild src/content-entry.js --bundle --outfile=dist/content.js --format=iife', { stdio: 'inherit' });
 
 const filesToInclude = [
   'manifest.json',

@@ -46,7 +46,7 @@ function stageCleanExtension(rootDir) {
 
   // 確保 dist/content.js 為最新打包產物
   console.log('[E2E Setup] 執行 esbuild 編譯產出 dist/content.js...');
-  execSync('npm.cmd run build', { cwd: rootDir, stdio: 'inherit' });
+  execSync('node node_modules/esbuild/bin/esbuild src/content-entry.js --bundle --outfile=dist/content.js --format=iife', { cwd: rootDir, stdio: 'inherit' });
 
   const filesToInclude = [
     'manifest.json',
@@ -631,13 +631,86 @@ async function runExtensionMv3E2ETest() {
     }
     console.log('✅ Case 7 PASS: Extension Page ↔ Service Worker 雙向訊息通道 100% 暢通！');
 
+    // ==========================================
+    // Case 8: v1.5.1 黃金時刻（滿 5 部影片）雙通道好評邀請 E2E 驗證
+    // ==========================================
+    console.log('\n--------------------------------------------------------');
+    console.log('🧪 【Case 8: v1.5.1 黃金時刻（滿 5 部影片）Popup 卡片 + 播放器微提示 E2E 驗證】');
+    console.log('--------------------------------------------------------');
+    const reviewExtPage = await browser.newPage();
+    await reviewExtPage.goto(`chrome-extension://${extId}/popup.html`, { waitUntil: 'load' });
+
+    // 1. 將 milestoneRenderCount 設為 4，模擬即將觀看第 5 部影片
+    await reviewExtPage.evaluate(() => {
+      return new Promise((resolve) => {
+        chrome.storage.local.set({
+          milestoneRenderCount: 4,
+          reviewPromptDismissed: false,
+          inPlayerReviewToastShown: false
+        }, resolve);
+      });
+    });
+
+    // 2. 在真實 YouTube 頁面觸發第 5 部影片的 subtitle_render_success (透過真實 Content Script -> Service Worker 通道)
+    const swResponse = await reviewExtPage.evaluate(() => {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'telemetry_event',
+          eventName: 'subtitle_render_success',
+          params: { target_lang: 'zh-TW', mode: 'mode1_static' }
+        }, (res) => resolve(res || null));
+      });
+    });
+    console.log('  -> 第 5 部影片觸發後 Service Worker 回傳:', JSON.stringify(swResponse));
+    if (!swResponse || swResponse.shouldShowInPlayerReviewToast !== true) {
+      throw new Error('Case 8 失敗: 第 5 部影片渲染成功時 Service Worker 未回傳 shouldShowInPlayerReviewToast: true！');
+    }
+
+    // 3. 重新載入真實 Popup 頁面，驗證方案 A (#milestoneReviewCard 顯示與點擊「不再顯示」)
+    await reviewExtPage.reload({ waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 400));
+    const popupCardStateBefore = await reviewExtPage.evaluate(() => {
+      const card = document.getElementById('milestoneReviewCard');
+      return {
+        exists: !!card,
+        display: card ? window.getComputedStyle(card).display : 'none',
+        titleText: card?.querySelector('.milestone-review-title')?.textContent?.trim() || ''
+      };
+    });
+    console.log('  -> 滿 5 部片開啟 Popup 卡片狀態:', JSON.stringify(popupCardStateBefore));
+    if (!popupCardStateBefore.exists || popupCardStateBefore.display === 'none') {
+      throw new Error('Case 8 失敗: 滿 5 部影片開啟 Popup 時 #milestoneReviewCard 未顯示！');
+    }
+
+    // 點擊「不再顯示」按鈕驗證永久關閉
+    await reviewExtPage.click('#milestoneDismissBtn');
+    await new Promise(r => setTimeout(r, 300));
+    const popupCardStateAfter = await reviewExtPage.evaluate(() => {
+      const card = document.getElementById('milestoneReviewCard');
+      return new Promise((resolve) => {
+        chrome.storage.local.get(['reviewPromptDismissed'], (stored) => {
+          resolve({
+            display: card ? window.getComputedStyle(card).display : 'none',
+            dismissedInStorage: Boolean(stored?.reviewPromptDismissed)
+          });
+        });
+      });
+    });
+    await reviewExtPage.close();
+
+    console.log('  -> 點擊「不再顯示」後狀態:', JSON.stringify(popupCardStateAfter));
+    if (popupCardStateAfter.display !== 'none' || !popupCardStateAfter.dismissedInStorage) {
+      throw new Error('Case 8 失敗: 點擊「不再顯示」後未能隱藏卡片或寫入 reviewPromptDismissed: true！');
+    }
+    console.log('✅ Case 8 PASS: v1.5.1 黃金時刻（滿 5 部片）雙通道好評邀請在真實瀏覽器環境 100% 驗證通過！');
+
     // 儲存 E2E 截圖
     const screenshotPath = path.join(screenshotDir, 'mv3_extension_e2e_result.png');
     await page.screenshot({ path: screenshotPath });
     console.log(`\n📸 真機 MV3 E2E 畫面截圖已保存至: ${screenshotPath}`);
 
     console.log('\n========================================================');
-    console.log('🏆 恭喜！真實 Chrome MV3 Extension Lifecycle 7 大測試全部通過！');
+    console.log('🏆 恭喜！真實 Chrome MV3 Extension Lifecycle 8 大測試全部通過！');
     console.log('========================================================\n');
   } finally {
     if (browser) await browser.close();

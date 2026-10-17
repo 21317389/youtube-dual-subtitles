@@ -1391,6 +1391,10 @@
           trackEvent("subtitle_render_success", {
             target_lang: session.userTargetLang,
             mode: session.sentenceList.length > 0 ? "mode1_static" : "mode2_rolling"
+          }, (res) => {
+            if (res && res.shouldShowInPlayerReviewToast) {
+              showInPlayerReviewToast();
+            }
           });
         }
       });
@@ -1410,17 +1414,79 @@
       var nativeCaptionObserver = null;
       var animationFrameId = null;
       var liveTransDebounceTimer = null;
-      console.log("[YT-Dual-Sub Content] \u96D9\u8A9E\u5B57\u5E55\u6A21\u7D44\u5316\u6838\u5FC3\u8173\u672C\u5DF2\u555F\u52D5 (v1.5.0 Modular Architecture)");
+      console.log("[YT-Dual-Sub Content] \u96D9\u8A9E\u5B57\u5E55\u6A21\u7D44\u5316\u6838\u5FC3\u8173\u672C\u5DF2\u555F\u52D5 (v1.5.1 Modular Architecture)");
       function isShortsPage() {
         if (typeof window === "undefined" || !window?.location?.href) return false;
         return /\/shorts\//.test(window.location.href);
       }
-      function trackEvent(eventName, params = {}) {
+      function trackEvent(eventName, params = {}, callback) {
         safeSendMessage({
           action: RuntimeAction.TELEMETRY_EVENT,
           eventName,
           params
-        });
+        }, callback);
+      }
+      function showInPlayerReviewToast() {
+        try {
+          const player = getActivePlayer();
+          if (!player || typeof document === "undefined") return;
+          const doc = player.ownerDocument || document;
+          let toast = doc.getElementById("yt-dual-review-toast");
+          if (!toast) {
+            toast = doc.createElement("div");
+            toast.id = "yt-dual-review-toast";
+            player.appendChild(toast);
+          } else if (toast.parentElement !== player) {
+            player.appendChild(toast);
+          }
+          toast.textContent = "";
+          const msgText = typeof chrome !== "undefined" && chrome.i18n?.getMessage?.("milestoneInPlayerToast") || "\u{1F389} \u5DF2\u966A\u60A8\u89C0\u770B 5 \u90E8\u96D9\u8A9E\u5F71\u7247\uFF01\u559C\u6B61\u9019\u500B\u514D\u8CBB\u5DE5\u5177\u55CE\uFF1F";
+          const ctaText = typeof chrome !== "undefined" && chrome.i18n?.getMessage?.("milestoneRateNow") || "\u2B50 \u7D66\u500B\u4E94\u661F\u9F13\u52F5";
+          const span = doc.createElement("span");
+          span.textContent = msgText;
+          toast.appendChild(span);
+          const cta = doc.createElement("a");
+          cta.className = "review-toast-cta";
+          cta.href = "https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig/reviews";
+          cta.target = "_blank";
+          cta.rel = "noopener noreferrer";
+          cta.textContent = ctaText;
+          toast.appendChild(cta);
+          const closeBtn = doc.createElement("button");
+          closeBtn.className = "review-toast-close";
+          closeBtn.type = "button";
+          closeBtn.textContent = "\u2715";
+          toast.appendChild(closeBtn);
+          let autoHideTimer = setTimeout(() => {
+            toast.classList.remove("show");
+          }, 1e4);
+          const dismissPermanently = (eventName, source) => {
+            if (autoHideTimer) clearTimeout(autoHideTimer);
+            toast.classList.remove("show");
+            try {
+              if (typeof chrome !== "undefined" && chrome.storage?.local) {
+                chrome.storage.local.set({ reviewPromptDismissed: true });
+              }
+            } catch (e) {
+            }
+            if (eventName) {
+              trackEvent(eventName, { source });
+            }
+          };
+          cta.addEventListener("click", (e) => {
+            e.stopPropagation();
+            dismissPermanently("popup_rate_clicked", "in_player_toast");
+          });
+          closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            dismissPermanently("milestone_review_dismissed", "in_player_toast");
+          });
+          requestAnimationFrame(() => {
+            toast.classList.add("show");
+          });
+          trackEvent("milestone_review_shown", { source: "in_player_toast", count: 5 });
+        } catch (e) {
+        }
       }
       function getActivePlayer() {
         if (typeof document === "undefined") return null;

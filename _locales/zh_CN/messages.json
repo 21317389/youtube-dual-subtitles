@@ -134,5 +134,9 @@
   "milestoneRateDismiss": {
     "message": "不再显示",
     "description": "永久关闭评价提示"
+  },
+  "milestoneInPlayerToast": {
+    "message": "🎉 已陪您观看 5 部双语视频！喜欢这个免费工具吗？",
+    "description": "播放器内微提示文字"
   }
 }

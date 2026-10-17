@@ -106,6 +106,10 @@ const renderer = new SubtitleRenderer({
     trackEvent('subtitle_render_success', {
       target_lang: session.userTargetLang,
       mode: session.sentenceList.length > 0 ? 'mode1_static' : 'mode2_rolling'
+    }, (res) => {
+      if (res && res.shouldShowInPlayerReviewToast) {
+        showInPlayerReviewToast();
+      }
     });
   }
 });
@@ -130,7 +134,7 @@ let nativeCaptionObserver = null;
 let animationFrameId = null;
 let liveTransDebounceTimer = null;
 
-console.log('[YT-Dual-Sub Content] 雙語字幕模組化核心腳本已啟動 (v1.5.0 Modular Architecture)');
+console.log('[YT-Dual-Sub Content] 雙語字幕模組化核心腳本已啟動 (v1.5.1 Modular Architecture)');
 
 // ==========================================
 // 3. 遙測與播放器 DOM 工具
@@ -140,12 +144,85 @@ function isShortsPage() {
   return /\/shorts\//.test(window.location.href);
 }
 
-function trackEvent(eventName, params = {}) {
+function trackEvent(eventName, params = {}, callback) {
   safeSendMessage({
     action: RuntimeAction.TELEMETRY_EVENT,
     eventName,
     params
-  });
+  }, callback);
+}
+
+function showInPlayerReviewToast() {
+  try {
+    const player = getActivePlayer();
+    if (!player || typeof document === 'undefined') return;
+    const doc = player.ownerDocument || document;
+    let toast = doc.getElementById('yt-dual-review-toast');
+    if (!toast) {
+      toast = doc.createElement('div');
+      toast.id = 'yt-dual-review-toast';
+      player.appendChild(toast);
+    } else if (toast.parentElement !== player) {
+      player.appendChild(toast);
+    }
+
+    toast.textContent = '';
+
+    const msgText = (typeof chrome !== 'undefined' && chrome.i18n?.getMessage?.('milestoneInPlayerToast'))
+      || '🎉 已陪您觀看 5 部雙語影片！喜歡這個免費工具嗎？';
+    const ctaText = (typeof chrome !== 'undefined' && chrome.i18n?.getMessage?.('milestoneRateNow'))
+      || '⭐ 給個五星鼓勵';
+
+    const span = doc.createElement('span');
+    span.textContent = msgText;
+    toast.appendChild(span);
+
+    const cta = doc.createElement('a');
+    cta.className = 'review-toast-cta';
+    cta.href = 'https://chromewebstore.google.com/detail/mjegnldlpifcepbeepojcbimgdbdilig/reviews';
+    cta.target = '_blank';
+    cta.rel = 'noopener noreferrer';
+    cta.textContent = ctaText;
+    toast.appendChild(cta);
+
+    const closeBtn = doc.createElement('button');
+    closeBtn.className = 'review-toast-close';
+    closeBtn.type = 'button';
+    closeBtn.textContent = '✕';
+    toast.appendChild(closeBtn);
+
+    let autoHideTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 10000);
+
+    const dismissPermanently = (eventName, source) => {
+      if (autoHideTimer) clearTimeout(autoHideTimer);
+      toast.classList.remove('show');
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+          chrome.storage.local.set({ reviewPromptDismissed: true });
+        }
+      } catch (e) {}
+      if (eventName) {
+        trackEvent(eventName, { source });
+      }
+    };
+
+    cta.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissPermanently('popup_rate_clicked', 'in_player_toast');
+    });
+
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissPermanently('milestone_review_dismissed', 'in_player_toast');
+    });
+
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+    trackEvent('milestone_review_shown', { source: 'in_player_toast', count: 5 });
+  } catch (e) {}
 }
 
 function getActivePlayer() {

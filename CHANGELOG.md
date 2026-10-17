@@ -4,6 +4,20 @@
 
 ---
 
+## [v1.5.1] - 2026-10-17
+
+### ⭐ 黃金時刻雙通道好評邀請機制與全球多語系 SEO/GEO 增長升級 (Smart Milestone Review Prompt & Multilingual Growth)
+
+* **黃金時刻（滿 5 部影片）雙通道零打擾好評邀請機制**：
+  * 當使用者累積成功觀看滿 **5 部雙語字幕影片**（`subtitle_render_success`）且未曾關閉評價提示時，自動觸發雙通道溫馨邀請：
+    1. **方案 B（播放器內右上角微提示 `#yt-dual-review-toast`）**：於第 5 部影片渲染成功時，在播放器右上角優雅滑出一次 10 秒自動消失的磨砂微提示，支援一鍵前往評價或 `✕` 永久關閉。
+    2. **方案 A（Popup 溫馨卡片與 `★` 徽章）**：於工具列圖示亮起金色 `★` 提示，打開設定面板時展示 6 國語系（繁中/簡中/英/日/韓/西）好評邀請卡，點選評價或「不再顯示」後終身不再打擾。
+  * 新增 GA4 轉換漏斗追蹤事件：`milestone_review_shown`、`popup_rate_clicked (source: in_player_toast / milestone_card / header_btn)` 與 `milestone_review_dismissed`。
+* **全球多語系 GitHub Pages 落地頁與 AI 搜尋引擎 (`llms.txt`) 矩陣**：
+  * 新增英文 (`/en/`)、日文 (`/ja/`)、韓文 (`/ko/`) 獨立靜態 SEO/GEO 落地頁、`hreflang` 跨語系標記與 `llms.txt` 標準摘要檔。
+
+---
+
 ## [v1.5.0] - 2026-10-17
 
 ### 🚀 核心架構模組化重構、切換語言零競態與跟讀快捷鍵全面升級 (Modular Architecture, Async Race Elimination & Hotkey Overhaul)

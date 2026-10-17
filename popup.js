@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const milestoneReviewCard = document.getElementById('milestoneReviewCard');
   const milestoneRateBtn = document.getElementById('milestoneRateBtn');
   const milestoneDismissBtn = document.getElementById('milestoneDismissBtn');
-  const REVIEW_MILESTONE_COUNT = 8;
+  const REVIEW_MILESTONE_COUNT = 5;
 
   function dismissMilestoneReviewPrompt() {
     if (milestoneReviewCard) milestoneReviewCard.style.display = 'none';

@@ -134,5 +134,9 @@
   "milestoneRateDismiss": {
     "message": "Don't show again",
     "description": "Dismiss review prompt permanently"
+  },
+  "milestoneInPlayerToast": {
+    "message": "🎉 5 videos watched with Dual Subtitles! Enjoying this free tool?",
+    "description": "In-player milestone review toast"
   }
 }

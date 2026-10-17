@@ -13,7 +13,7 @@
   ```
 * **版本號 (Version)**：
   ```text
-  1.5.0
+  1.5.1
   ```
 * **分類 (Category)**：
   ```text
@@ -411,11 +411,11 @@ Chrome 線上應用程式商店對於不同展示版位有嚴格的尺寸規範�
 
 ## 🌐 5. 零改碼跨平台上架指南：Microsoft Edge Add-ons 與 GitHub Releases
 
-本擴充功能採用 100% 標準 Chromium Manifest V3 架構，打包出的 `youtube-dual-subtitles-v1.5.0.zip` **無需修改任何一行程式碼**，即可直接同步上架至 **Microsoft Edge Add-ons 商店** 與 **GitHub Releases**，獲取 Windows 預設瀏覽器用戶與開源社群的免費長尾流量。
+本擴充功能採用 100% 標準 Chromium Manifest V3 架構，打包出的 `youtube-dual-subtitles-v1.5.1.zip` **無需修改任何一行程式碼**，即可直接同步上架至 **Microsoft Edge Add-ons 商店** 與 **GitHub Releases**，獲取 Windows 預設瀏覽器用戶與開源社群的免費長尾流量。
 
 ### A. Microsoft Edge Add-ons 商店上架步驟（免費註冊開發者）
 1. **前往後台**：登入 [Microsoft Partner Center (Edge 擴充功能開發者中心)](https://partner.microsoft.com/dashboard/microsoftedge/overview)（個人 Microsoft 帳號即可免費開通，無需註冊費）。
-2. **上傳套件**：點擊 **「Create new extension」**，直接拖曳上傳專案根目錄的 `youtube-dual-subtitles-v1.5.0.zip`。
+2. **上傳套件**：點擊 **「Create new extension」**，直接拖曳上傳專案根目錄的 `youtube-dual-subtitles-v1.5.1.zip`。
 3. **填寫商店資訊**：
    * Edge 商店會自動讀取 ZIP 內 `_locales/` 的 6 國語系名稱與短描述。
    * 分類選擇：`Productivity`（生產力工具）或 `Education`（教育）。
@@ -432,5 +432,5 @@ Chrome 線上應用程式商店對於不同展示版位有嚴格的尺寸規範�
    ```
 
 ### B. GitHub Releases 發布文案模板（提升 GitHub SEO 與 Star 轉換率）
-在 GitHub 儲存庫右側點擊 **Releases -> Draft a new release**，Tag 填寫 `v1.5.0`，標題填寫 `v1.5.0 - Modular Architecture, Zero-Race Language Switching & Hotkey Overhaul`，並附上 `youtube-dual-subtitles-v1.5.0.zip` 供進階用戶下載。
+在 GitHub 儲存庫右側點擊 **Releases -> Draft a new release**，Tag 填寫 `v1.5.1`，標題填寫 `v1.5.1 - Modular Architecture, Zero-Race Language Switching & Hotkey Overhaul`，並附上 `youtube-dual-subtitles-v1.5.1.zip` 供進階用戶下載。
 

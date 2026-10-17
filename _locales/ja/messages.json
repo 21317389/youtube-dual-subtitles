@@ -134,5 +134,9 @@
   "milestoneRateDismiss": {
     "message": "今後表示しない",
     "description": "非表示ボタン"
+  },
+  "milestoneInPlayerToast": {
+    "message": "🎉 5本の動画を二ヶ国語字幕で視聴しました！気に入っていただけましたか？",
+    "description": "プレーヤー内レビュー通知"
   }
 }

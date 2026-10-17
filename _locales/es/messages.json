@@ -134,5 +134,9 @@
   "milestoneRateDismiss": {
     "message": "No volver a mostrar",
     "description": "Botón descartar"
+  },
+  "milestoneInPlayerToast": {
+    "message": "🎉 ¡5 videos vistos con Subtítulos Dobles! ¿Te gusta esta herramienta gratuita?",
+    "description": "Notificación de reseña en el reproductor"
   }
 }

@@ -134,5 +134,9 @@
   "milestoneRateDismiss": {
     "message": "다시 보지 않기",
     "description": "닫기 버튼"
+  },
+  "milestoneInPlayerToast": {
+    "message": "🎉 5편의 영상을 이중 자막으로 시청하셨네요! 이 무료 도구가 마음에 드시나요?",
+    "description": "플레이어 내 리뷰 알림"
   }
 }

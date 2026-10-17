@@ -68,7 +68,10 @@ function runPopupSettingsIntegrationTest() {
     whatsNewCloseBtn: new MockElement('button', 'whatsNewCloseBtn'),
     whatsNewToggleBtn: new MockElement('button', 'whatsNewToggleBtn'),
     footerNewDot: new MockElement('span', 'footerNewDot'),
-    rateStoreBtn: new MockElement('button', 'rateStoreBtn')
+    rateStoreBtn: new MockElement('button', 'rateStoreBtn'),
+    milestoneReviewCard: new MockElement('div', 'milestoneReviewCard'),
+    milestoneRateBtn: new MockElement('a', 'milestoneRateBtn'),
+    milestoneDismissBtn: new MockElement('button', 'milestoneDismissBtn')
   };
 
   const docListeners = {};
@@ -92,11 +95,18 @@ function runPopupSettingsIntegrationTest() {
     subtitleOffset: 0
   };
 
+  let localStorageState = {
+    milestoneRenderCount: 0,
+    reviewPromptDismissed: false
+  };
+
   let syncSetCalls = [];
+  let localSetCalls = [];
+  let runtimeMessages = [];
   const mockChrome = {
     runtime: {
-      getManifest: () => ({ version: '1.5.0' }),
-      sendMessage: () => {}
+      getManifest: () => ({ version: '1.5.1' }),
+      sendMessage: (msg) => { runtimeMessages.push(msg); }
     },
     action: {
       setBadgeText: () => {}
@@ -119,9 +129,16 @@ function runPopupSettingsIntegrationTest() {
       },
       local: {
         get: (defaults, cb) => {
-          cb(defaults);
+          if (typeof defaults === 'object' && defaults !== null && !Array.isArray(defaults)) {
+            cb({ ...defaults, ...localStorageState });
+          } else {
+            cb({ ...localStorageState });
+          }
         },
         set: (data, cb) => {
+          const plainData = JSON.parse(JSON.stringify(data));
+          localStorageState = { ...localStorageState, ...plainData };
+          localSetCalls.push(plainData);
           if (cb) cb();
         }
       }
@@ -135,6 +152,7 @@ function runPopupSettingsIntegrationTest() {
     setTimeout,
     clearTimeout,
     parseFloat,
+    Number,
     Math
   };
 
@@ -155,6 +173,7 @@ function runPopupSettingsIntegrationTest() {
   assert.strictEqual(elements.hoverPause.checked, false, '懸停暫停預設應為 false');
   assert.strictEqual(elements.offsetDisplay.textContent, '0.0s', '時間軸偏置顯示預設應為 0.0s');
   assert.strictEqual(elements.settingsContent.classList.contains('disabled'), false, '總開關開啟時不應有 disabled 樣式');
+  assert.notStrictEqual(elements.milestoneReviewCard.style.display, 'block', '未滿 5 部影片時不應顯示好評邀請卡');
   console.log('  - 初次載入 DOM 與 storage.sync.get 綁定: ✅ PASS\n');
 
   // ------------------------------------------------------------------
@@ -231,6 +250,29 @@ function runPopupSettingsIntegrationTest() {
   console.log('  - #offsetMinus 點擊提前與顯示同步: ✅ PASS');
   console.log('  - #offsetPlus 點擊延後與顯示同步: ✅ PASS');
   console.log('  - #offsetReset 點擊重設與顯示同步: ✅ PASS\n');
+
+  // ------------------------------------------------------------------
+  // 7. 黃金時刻（滿 5 部影片）Popup 五星好評邀請卡整合檢驗 (方案 A)
+  // ------------------------------------------------------------------
+  console.log('【7. 黃金時刻（滿 5 部影片）Popup 五星好評邀請卡檢驗 (方案 A)】');
+  localStorageState = { milestoneRenderCount: 5, reviewPromptDismissed: false };
+  runtimeMessages = [];
+  mockDocument.dispatchEvent('DOMContentLoaded');
+
+  assert.strictEqual(elements.milestoneReviewCard.style.display, 'block', '觀看滿 5 部影片且未關閉時，開啟 Popup 必須顯示 milestoneReviewCard');
+  assert.strictEqual(runtimeMessages.some(m => m.eventName === 'milestone_review_shown'), true, '顯示好評邀請卡時必須發送 milestone_review_shown 遙測事件');
+
+  // 點擊「不再顯示」按鈕
+  elements.milestoneDismissBtn.click();
+  assert.strictEqual(elements.milestoneReviewCard.style.display, 'none', '點擊不再顯示後卡片應立即隱藏');
+  assert.strictEqual(localStorageState.reviewPromptDismissed, true, '點擊不再顯示後必須寫入 reviewPromptDismissed: true');
+  assert.strictEqual(runtimeMessages.some(m => m.eventName === 'milestone_review_dismissed'), true, '點擊不再顯示時必須發送 milestone_review_dismissed 遙測事件');
+
+  // 再次開啟 Popup，驗證終身不再打擾
+  elements.milestoneReviewCard.style.display = 'none';
+  mockDocument.dispatchEvent('DOMContentLoaded');
+  assert.strictEqual(elements.milestoneReviewCard.style.display, 'none', 'reviewPromptDismissed 為 true 時，再次開啟 Popup 絕不再顯示卡片');
+  console.log('  - 滿 5 部影片顯示卡片、遙測追蹤與永久關閉防打擾: ✅ PASS\n');
 
   console.log('🏆【Popup 設定面板真實事件整合測試】全部通過！\n');
   return { success: true };

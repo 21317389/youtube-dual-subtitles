@@ -178,7 +178,10 @@ function handleRuntimeMessage(request, sender, sendResponse) {
   if (request.action === 'telemetry_event') {
     sendGA4Event(request.eventName, request.params || {});
     if (request.eventName === 'subtitle_render_success') {
-      recordRenderSuccessForReviewPrompt();
+      recordRenderSuccessForReviewPrompt()
+        .then((shouldShowToast) => sendResponse({ success: true, shouldShowInPlayerReviewToast: Boolean(shouldShowToast) }))
+        .catch(() => sendResponse({ success: true, shouldShowInPlayerReviewToast: false }));
+      return true;
     }
     sendResponse({ success: true });
     return true;
@@ -356,19 +359,26 @@ async function sendGA4Event(eventName, params = {}) {
   }
 }
 
-const REVIEW_MILESTONE_COUNT = 8;
+const REVIEW_MILESTONE_COUNT = 5;
 
 async function recordRenderSuccessForReviewPrompt() {
   try {
-    const stored = await storageLocalGet(['milestoneRenderCount', 'reviewPromptDismissed']);
-    if (stored?.reviewPromptDismissed) return;
+    const stored = await storageLocalGet(['milestoneRenderCount', 'reviewPromptDismissed', 'inPlayerReviewToastShown']);
+    if (stored?.reviewPromptDismissed) return false;
     const nextCount = (Number(stored?.milestoneRenderCount) || 0) + 1;
     await storageLocalSet({ milestoneRenderCount: nextCount });
-    if (nextCount === REVIEW_MILESTONE_COUNT) {
+    if (nextCount >= REVIEW_MILESTONE_COUNT) {
       chrome.action?.setBadgeText?.({ text: '★' });
       chrome.action?.setBadgeBackgroundColor?.({ color: '#eab308' });
     }
-  } catch (e) {}
+    if (nextCount >= REVIEW_MILESTONE_COUNT && !stored?.inPlayerReviewToastShown) {
+      await storageLocalSet({ inPlayerReviewToastShown: true });
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
 }
 
 async function syncWhatsNewBadge() {
@@ -413,7 +423,10 @@ if (typeof module !== 'undefined' && module.exports) {
     setCache,
     persistCache,
     requestTranslationWithFallback,
-    handleRuntimeMessage
+    handleRuntimeMessage,
+    REVIEW_MILESTONE_COUNT,
+    recordRenderSuccessForReviewPrompt,
+    syncWhatsNewBadge
   };
 }
 
