@@ -304,7 +304,7 @@
       if (dict[k]) el.textContent = dict[k];
     });
 
-    function sendGA4(eventName, extraParams = {}) {
+    function sendGA4(eventName, extraParams = {}, customTitle = '') {
       try {
         const q = new URLSearchParams({
           v: '2',
@@ -314,6 +314,8 @@
           seg: '1',
           _et: '100',
           _s: '1',
+          dl: window.location.href.split('?')[0],
+          dt: customTitle || document.title,
           en: eventName
         });
         for (const [k, val] of Object.entries(extraParams)) {
@@ -346,20 +348,23 @@
       if (!checked) return;
       const reason = checked.value;
       const comment = document.getElementById('commentInput').value.trim();
+      const feedbackSummary = `[${reason}][v${extVersion}][${rawLang}] ${comment || '(無文字補充)'}`.slice(0, 250);
 
-      // 同時發送獨立事件名稱 (讓 export_ga4.py 直接在 ga4_events.csv 顯示各原因數量) 與帶參數總事件
+      // 1. 發送獨立原因事件 (供 ga4_events_summary.csv 直接統計各原因票數)
       sendGA4(`uninstall_reason_${reason}`, {
         reason,
         comment,
         version: extVersion,
         ui_lang: rawLang
-      });
+      }, feedbackSummary);
+
+      // 2. 利用 GA4 原生內建維度 dt (pageTitle) 夾帶完整文字回饋，無需自訂維度權限即可由 API 匯出！
       sendGA4('uninstall_feedback', {
         reason,
         comment,
         version: extVersion,
         ui_lang: rawLang
-      });
+      }, feedbackSummary);
 
       document.getElementById('surveyForm').style.display = 'none';
       document.getElementById('thankYouBox').style.display = 'block';
