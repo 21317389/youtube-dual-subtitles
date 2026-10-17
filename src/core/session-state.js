@@ -56,7 +56,9 @@ class SessionState {
 
     // 6. 遙測事件單次觸發防禦標記 (Per-Video Telemetry Flags)
     this.telemetry = {
-      hasTrackedTranslateError: false
+      hasTrackedTranslateError: false,
+      hasTrackedRateLimit429: false,
+      hasTrackedMode2Fallback: false
     };
   }
 
@@ -215,6 +217,8 @@ class SessionState {
    */
   resetTelemetry() {
     this.telemetry.hasTrackedTranslateError = false;
+    this.telemetry.hasTrackedRateLimit429 = false;
+    this.telemetry.hasTrackedMode2Fallback = false;
   }
 }
 

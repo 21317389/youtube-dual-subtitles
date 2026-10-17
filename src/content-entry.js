@@ -584,7 +584,10 @@ async function loadCaptionTrack(track) {
 
   session.fetch.inFlightKey = '';
   console.log('[YT-Dual-Sub] 靜態字幕不可用，啟動 Mode 2 (Gemini / DOM 串流監聽)');
-  trackEvent('fallback_mode2_active', { language_code: track.languageCode || 'unknown' });
+  if (!session.telemetry.hasTrackedMode2Fallback) {
+    session.telemetry.hasTrackedMode2Fallback = true;
+    trackEvent('fallback_mode2_activated', { language_code: track.languageCode || 'unknown' });
+  }
   observeNativePlayerCaptions();
 }
 
@@ -723,6 +726,10 @@ async function fetchCaptionTextWithFallback(track) {
 
       if (bgRes?.status === 429) {
         session.fetch.timedtextCooldownUntil = Date.now() + CONFIG.RATE_LIMIT_COOLDOWN_MS;
+        if (!session.telemetry.hasTrackedRateLimit429) {
+          session.telemetry.hasTrackedRateLimit429 = true;
+          trackEvent('fail_rate_limit_429', { error_category: 'rate_limit_429' });
+        }
         break;
       }
 

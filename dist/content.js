@@ -80,7 +80,9 @@
             lastFinishedTrans: ""
           };
           this.telemetry = {
-            hasTrackedTranslateError: false
+            hasTrackedTranslateError: false,
+            hasTrackedRateLimit429: false,
+            hasTrackedMode2Fallback: false
           };
         }
         // ==========================================
@@ -300,6 +302,8 @@
          */
         resetTelemetry() {
           this.telemetry.hasTrackedTranslateError = false;
+          this.telemetry.hasTrackedRateLimit429 = false;
+          this.telemetry.hasTrackedMode2Fallback = false;
         }
       };
       if (typeof module !== "undefined" && module.exports) {
@@ -1769,7 +1773,10 @@
         }
         session.fetch.inFlightKey = "";
         console.log("[YT-Dual-Sub] \u975C\u614B\u5B57\u5E55\u4E0D\u53EF\u7528\uFF0C\u555F\u52D5 Mode 2 (Gemini / DOM \u4E32\u6D41\u76E3\u807D)");
-        trackEvent("fallback_mode2_active", { language_code: track.languageCode || "unknown" });
+        if (!session.telemetry.hasTrackedMode2Fallback) {
+          session.telemetry.hasTrackedMode2Fallback = true;
+          trackEvent("fallback_mode2_activated", { language_code: track.languageCode || "unknown" });
+        }
         observeNativePlayerCaptions();
       }
       function fetchCaptionViaMainWorldInnerTube(videoId, languageCode) {
@@ -1891,6 +1898,10 @@
             });
             if (bgRes?.status === 429) {
               session.fetch.timedtextCooldownUntil = Date.now() + CONFIG.RATE_LIMIT_COOLDOWN_MS;
+              if (!session.telemetry.hasTrackedRateLimit429) {
+                session.telemetry.hasTrackedRateLimit429 = true;
+                trackEvent("fail_rate_limit_429", { error_category: "rate_limit_429" });
+              }
               break;
             }
             if (bgRes?.success && bgRes.text && bgRes.text.trim()) {
