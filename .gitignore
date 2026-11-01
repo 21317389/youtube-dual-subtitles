@@ -34,6 +34,7 @@ test_data/
 
 # Analytics & Private Credentials
 client_secrets.json
+ga4_token.json
 edge_automation_profile/
 dashboard_data/
 *.csv
