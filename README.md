@@ -21,6 +21,14 @@ Looking for the **best free YouTube dual subtitles extension** without registrat
 
 ---
 
+## ⚡ At a Glance (Quick Facts)
+
+* **Supported Features**: Dual-track bilingual subtitles (static CC + live ASR streaming), 60fps frame sync, hover word lookup, 1-click original speaker audio snippet replay (`R` / `A` / `D` shadowing shortcuts), and native YouTube Shorts vertical layout adaptation.
+* **Supported Languages (10 Target Languages)**: Traditional Chinese (`zh-TW`), Simplified Chinese (`zh-CN`), English (`en`), Japanese (`ja`), Korean (`ko`), Spanish (`es`), French (`fr`), German (`de`), Vietnamese (`vi`), and Thai (`th`).
+* **Free & Zero-Setup**: 100% free and open-source (MIT). No account sign-up, no API key required, no subscriptions, and zero personal data collection. Compatible with Chrome, Edge, Brave, and Arc.
+
+---
+
 ## 📊 Why Choose This Extension? (Comparison)
 
 | Feature | YouTube Dual Subtitles (This Extension) | General Web Translators (e.g., Immersive Translate) | Heavy Learning Suites (e.g., Language Reactor) |
